@@ -1,0 +1,13 @@
+{
+    "gpu_choice": 1,
+    "spoof_dll_name": "dxgi.dll",
+    "fg_mode": "Autom\u00e1tico",
+    "upscaler": "Autom\u00e1tico",
+    "upscale_mode": "Autom\u00e1tico",
+    "sharpness": 0.8,
+    "overlay": false,
+    "motion_blur": true,
+    "theme": "Oscuro",
+    "scale": "100%",
+    "custom_search_folders": []
+}

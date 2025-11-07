@@ -1,0 +1,5 @@
+customtkinter>=5.2.0
+pillow>=10.0.0
+pygame>=2.5.0
+pywin32>=306
+requests>=2.31.0
