@@ -1,0 +1,76 @@
+site_name: OptiScaler Manager
+site_description: Gestor automatizado de OptiScaler para inyectar FSR 3.1/4.0, XeSS y DLSS en juegos
+site_author: Jorge Coronas
+site_url: https://bigflood92.github.io/OptiScaler-Manager/
+
+repo_name: Bigflood92/OptiScaler-Manager
+repo_url: https://github.com/Bigflood92/OptiScaler-Manager
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Inicio: index.md
+  - Guía de Usuario:
+    - Instalación: user-guide/installation.md
+    - Primeros Pasos: user-guide/getting-started.md
+    - Configuración: user-guide/configuration.md
+    - Modo Gaming: user-guide/gaming-mode.md
+  - Desarrollo:
+    - Contribuir: development/contributing.md
+    - Arquitectura: development/architecture.md
+    - API: development/api.md
+  - FAQ: faq.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Bigflood92
+    - icon: fontawesome/solid/download
+      link: https://github.com/Bigflood92/OptiScaler-Manager/releases
