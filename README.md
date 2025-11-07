@@ -1,92 +1,55 @@
-# Gestor OptiScaler V2.0# 🎮 Gestor OptiScaler V2.0# Gestor OptiScaler V2.0 (FSR Injector)# FSR3 Injector
+# 🎮 OptiScaler Manager
 
-
-
-Aplicación de gestión e inyección de OptiScaler (FSR 3.1/4.0, XeSS, DLSS) con interfaz gráfica moderna y soporte completo para mando.
-
-
-
-![Version](https://img.shields.io/badge/version-2.0.0-blue)**Gestor automatizado de OptiScaler** - Herramienta gráfica avanzada para inyectar FSR3 (AMD FidelityFX Super Resolution 3) en juegos compatibles mediante OptiScaler/DLSS Enabler.
-
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![Python](https://img.shields.io/badge/python-3.12-green)
-
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-orange)
+[![GitHub release](https://img.shields.io/github/v/release/Bigflood92/OptiScaler-Manager)](https://github.com/Bigflood92/OptiScaler-Manager/releases)
+[![GitHub stars](https://img.shields.io/github/stars/Bigflood92/OptiScaler-Manager?style=social)](https://github.com/Bigflood92/OptiScaler-Manager)
+
+**Gestor automatizado de OptiScaler** - Herramienta gráfica avanzada para inyectar FSR3 (AMD FidelityFX Super Resolution 3) en juegos compatibles mediante OptiScaler/DLSS Enabler.
 
 
 
-## 🎮 Características![Version](https://img.shields.io/badge/version-2.1.0-blue)Herramienta para inyectar FSR 3.1 en juegos mediante OptiScaler/DLSS Enabler.Herramienta gráfica para inyectar FSR3 (FidelityFX Super Resolution 3) en juegos compatibles.
 
+## ✨ Características
 
-
-### Interfaz Dual![Python](https://img.shields.io/badge/python-3.12-green)
-
+### Interfaz Dual
 - **Interfaz Clásica**: Vista tradicional de pestañas para configuración detallada
-
-- **Interfaz Gaming**: Diseño optimizado para navegación con mando (Xbox/PlayStation)![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
-
+- **Interfaz Gaming**: Diseño optimizado para navegación con mando (Xbox/PlayStation)
   - Navegación completa con D-Pad y botones
-
-  - Indicadores visuales de foco (bordes de colores)![License](https://img.shields.io/badge/license-MIT-orange)
-
+  - Indicadores visuales de foco (bordes de colores)
   - Panel lateral de navegación
+  - Soporte táctil en dispositivos compatibles
 
-  - Soporte táctil en dispositivos compatibles## 🚀 Inicio Rápido## Requisitos
-
-
-
-### Gestión de Mods---
-
+### Gestión de Mods
 - **Detección automática** de juegos en múltiples launchers
-
 - **Instalación/desinstalación masiva** en juegos seleccionados
-
 - **Configuración individual** por juego
-
-- **Sistema de caché** para detección rápida de juegos## ✨ Características
-
+- **Sistema de caché** para detección rápida de juegos
 - **Presets rápidos**: Default, Performance, Balanced, Quality, Custom
 
-### Ejecutar la aplicación- Windows 10/11 x64
-
 ### Configuración Avanzada
-
-- **GPU**: AMD/Intel o NVIDIA- 🎯 **Detección automática** de juegos instalados (Steam, Epic Games, Xbox Game Pass)
-
+- **GPU**: AMD/Intel o NVIDIA
 - **DLL de inyección**: dxgi.dll, d3d11.dll, d3d12.dll, dinput8.dll, winmm.dll
-
-- **Frame Generation**: Automático, Activado, Desactivado- 🎨 **Interfaz dual**: Modo clásico (completo) y modo gaming (simplificado)- Python 3.10 o superior
-
+- **Frame Generation**: Automático, Activado, Desactivado
 - **Upscaler**: FSR 3.1, FSR 4.0, XeSS, DLSS, Automático
-
-- **Modo de reescalado**: Performance, Balanced, Quality, Ultra Performance, Native AA, Automático- 🎮 **Navegación por teclado y mando** - Optimizado para consolas portátiles
-
+- **Modo de reescalado**: Performance, Balanced, Quality, Ultra Performance, Native AA, Automático
 - **Sharpness**: Control deslizante 0.0 - 1.0
+- **Extras**: Overlay debug, Motion Blur
 
-- **Extras**: Overlay debug, Motion Blur- ⚙️ **Presets rápidos**: Default, Performance, Balanced, Quality**Opción 1: Script de arranque (Recomendado)**- Permisos de administrador
-
-
-
-### Gestión de Versiones- 📦 **Gestión de versiones** de OptiScaler con descarga automática desde GitHub
-
+### Gestión de Versiones
 - **Descarga automática** de versiones de GitHub
-
-- **Instalación directa** desde el gestor- 🔧 **Configuración granular**: Frame Generation, Upscaler, modo de escalado, nitidez```powershell
-
+- **Instalación directa** desde el gestor
 - **Caché de versiones** para trabajo offline
+- **Actualización automática** cada 24h
 
-- **Actualización automática** cada 24h- 🗂️ **Carpetas personalizadas** para juegos no detectados automáticamente
+## 📥 Descarga
 
+**[Descargar última versión](https://github.com/Bigflood92/OptiScaler-Manager/releases/latest)**
 
+El ejecutable es portable, no requiere instalación.
 
-## 📥 Descarga- 💾 **Backup automático** de archivos originales.\run.ps1## Instalación
-
-
-
-**[Descargar última versión](../../releases/latest)**- 📝 **Log detallado** de todas las operaciones
-
-
-
-El ejecutable es portable, no requiere instalación.```
 
 
 
