@@ -1,9 +1,10 @@
 # 🎮 OptiScaler Manager
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.1-blue)
 ![Python](https://img.shields.io/badge/python-3.12-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-orange)
+[![Build](https://github.com/Bigflood92/OptiScaler-Manager/actions/workflows/build.yml/badge.svg)](https://github.com/Bigflood92/OptiScaler-Manager/actions)
 [![GitHub release](https://img.shields.io/github/v/release/Bigflood92/OptiScaler-Manager)](https://github.com/Bigflood92/OptiScaler-Manager/releases)
 [![GitHub stars](https://img.shields.io/github/stars/Bigflood92/OptiScaler-Manager?style=social)](https://github.com/Bigflood92/OptiScaler-Manager)
 
@@ -260,11 +261,14 @@ Ver [LICENSE](LICENSE) para más detalles.
 
 ¡Las contribuciones son bienvenidas! Por favor:
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add: Amazing Feature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+1. Lee la [Guía de Contribución](CONTRIBUTING.md)
+2. Fork el proyecto
+3. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+4. Commit tus cambios (`git commit -m 'Add: Amazing Feature'`)
+5. Push a la rama (`git push origin feature/AmazingFeature`)
+6. Abre un Pull Request
+
+Ver [CHANGELOG.md](CHANGELOG.md) para el historial de cambios del proyecto.
 
 ---
 
