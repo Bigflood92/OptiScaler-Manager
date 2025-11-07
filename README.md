@@ -11,6 +11,34 @@
 
 ---
 
+## 📸 Capturas de Pantalla
+
+### Interfaz Principal (Modo Clásico)
+<div align="center">
+  <img src=".github/images/main-interface.png" alt="Interfaz Principal" width="800"/>
+  <p><em>Vista principal con lista de juegos detectados y configuración de mods</em></p>
+</div>
+
+### Modo Gaming (Navegación por Mando)
+<div align="center">
+  <img src=".github/images/gaming-mode.png" alt="Modo Gaming" width="800"/>
+  <p><em>Interfaz optimizada para navegación con mando Xbox/PlayStation</em></p>
+</div>
+
+### Descarga de Mods
+<div align="center">
+  <img src=".github/images/mod-downloader.png" alt="Descarga de Mods" width="600"/>
+  <p><em>Gestor de versiones de OptiScaler con descarga desde GitHub</em></p>
+</div>
+
+### Configuración de Juego
+<div align="center">
+  <img src=".github/images/game-config.png" alt="Configuración de Juego" width="600"/>
+  <p><em>Configuración individual por juego con presets disponibles</em></p>
+</div>
+
+---
+
 ## ✨ Características
 
 ### 🎨 Interfaz Dual
