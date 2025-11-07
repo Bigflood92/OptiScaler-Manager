@@ -95,6 +95,9 @@ ICON_USAGE_EXAMPLE.py
 run.py
 run.bat
 fsr_injector.py
+take-screenshots.ps1
+SETUP_INSTRUCTIONS.md
+7z.exe
 
 # Build artifacts (keep dist/ for releases when needed)
 version_info.txt.bak
