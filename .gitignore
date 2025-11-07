@@ -80,10 +80,18 @@ desktop.ini
 # Project specific
 *.log
 gestor_optiscaler_log.txt
-Config Optiscaler Gestor/games_caché.json
-Config Optiscaler Gestor/releases_caché.json
+Config Optiscaler Gestor/
 baks/
 NO/
+
+# Development/testing files (keep in local only)
+add_gaming_interface.py
+add_populate_gaming.py
+fix_icons.py
+fix_load_config.py
+update_gaming_mode_config.py
+run_test_skip_admin.py
+ICON_USAGE_EXAMPLE.py
 
 # Build artifacts (keep dist/ for releases when needed)
 version_info.txt.bak
