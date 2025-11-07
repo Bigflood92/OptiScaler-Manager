@@ -8,6 +8,7 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [No publicado]
 
 ### Por añadir
+- Arreglar navegación por gamepad
 - Sistema de actualización automática de la aplicación
 - Soporte para más launchers (Ubisoft Connect, Battle.net)
 - Perfiles de configuración guardados
