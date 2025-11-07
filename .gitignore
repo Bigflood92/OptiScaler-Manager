@@ -114,6 +114,12 @@ dist/
 *.exe
 *.msi
 
+# PyInstaller generated files
+version_info.txt
+
+# User configuration files
+injector_config.json
+
 # Database
 *.db
 *.sqlite
