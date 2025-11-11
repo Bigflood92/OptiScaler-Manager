@@ -29,7 +29,16 @@ jobs:
       - name: Build (Nuitka onefile with UAC)
         shell: pwsh
         run: |
-          ./build_nuitka_admin.ps1
+          python -m nuitka `
+            --standalone `
+            --onefile `
+            --windows-console-mode=disable `
+            --enable-plugin=tk-inter `
+            --include-data-dir=icons=icons `
+            --windows-uac-admin `
+            --output-dir=dist `
+            --output-filename="Gestor Optiscaler V2.0 ADMIN.exe" `
+            src/main.py
 
       - name: Generate SHA256 checksum
         shell: pwsh

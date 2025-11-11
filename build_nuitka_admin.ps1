@@ -3,7 +3,12 @@
 
 $ErrorActionPreference = "Stop"
 
-$python = ".\.venv312\Scripts\python.exe"
+# Use venv Python if exists, otherwise system Python
+if (Test-Path ".\.venv312\Scripts\python.exe") {
+    $python = ".\.venv312\Scripts\python.exe"
+} else {
+    $python = "python"
+}
 
 # Ensure output directory exists
 if (-not (Test-Path -Path "dist")) {
@@ -20,7 +25,7 @@ if (-not (Test-Path -Path "dist")) {
   --windows-uac-admin `
   --output-dir=dist `
   --output-filename="Gestor Optiscaler V2.0 ADMIN.exe" `
-  fsr_injector.py
+  src/main.py
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed with exit code $LASTEXITCODE" -ForegroundColor Red
