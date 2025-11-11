@@ -6,11 +6,10 @@ import glob
 import winreg
 import ctypes
 from typing import List, Tuple, Optional
-from ..config.constants import (
+from ..config.paths import (
     STEAM_COMMON_DIR,
     EPIC_COMMON_DIR,
-    XBOX_GAMES_DIR,
-    NVIDIA_CHECK_FILE
+    XBOX_GAMES_DIR
 )
 
 def is_admin() -> bool:
@@ -153,7 +152,14 @@ def is_nvidia_gpu() -> bool:
     Returns:
         bool: True if NVIDIA GPU detected
     """
-    return os.path.exists(NVIDIA_CHECK_FILE)
+    # Check common NVIDIA paths
+    nvidia_paths = [
+        r"C:\Program Files\NVIDIA Corporation",
+        r"C:\Windows\System32\nvapi64.dll",
+        r"C:\Windows\System32\nvcuda.dll"
+    ]
+    
+    return any(os.path.exists(path) for path in nvidia_paths)
 
 def normalize_path(path: str) -> str:
     """Normalize a file system path.

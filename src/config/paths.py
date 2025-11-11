@@ -4,10 +4,31 @@ import os
 import sys
 from pathlib import Path
 
-# Application paths
-APP_DIR = Path(os.path.dirname(sys.argv[0] if hasattr(sys, 'frozen') else __file__))
+# Get base directory (where the exe will be or where the script is run from)
+if hasattr(sys, 'frozen'):
+    # Running as compiled executable
+    BASE_DIR = Path(os.path.dirname(sys.executable))
+else:
+    # Running as script - go up to project root
+    BASE_DIR = Path(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+# Application configuration directory (next to exe)
+APP_DIR = BASE_DIR / "Config Optiscaler Gestor"
+
+# Configuration and cache files
 CONFIG_FILE = APP_DIR / "injector_config.json"
+GAMES_CACHE_FILE = APP_DIR / "games_caché.json"
+RELEASES_CACHE_FILE = APP_DIR / "releases_caché.json"
+
+# Mod source directories
 MOD_SOURCE_DIR = APP_DIR / "mod_source"
+OPTISCALER_DIR = MOD_SOURCE_DIR / "OptiScaler"
+DLSSG_TO_FSR3_DIR = MOD_SOURCE_DIR / "dlssg-to-fsr3"
+
+# Tools
+SEVEN_ZIP_PATH = MOD_SOURCE_DIR / "7z.exe"
+
+# Other directories
 CACHE_DIR = APP_DIR / ".cache"
 LOG_DIR = APP_DIR / "logs"
 
@@ -26,6 +47,20 @@ COMMON_EXE_SUBFOLDERS_DIRECT = [
 
 RECURSIVE_EXE_PATTERNS = [
     '**/Binaries/Win64/*.exe', '**/Binaries/WinGDK/*.exe',
-    '**/*Game/Binaries/Win64/*.exe', '**/*Shipping.exe',
-    '**/bin/x64/*.exe', '**/x64/*.exe'
+    '**/*Game/Binaries/Win64/*.exe', '**/x64/*.exe'
 ]
+
+
+def initialize_directories():
+    """Create all required directories if they don't exist."""
+    directories = [
+        APP_DIR,
+        MOD_SOURCE_DIR,
+        OPTISCALER_DIR,
+        DLSSG_TO_FSR3_DIR,
+        CACHE_DIR,
+        LOG_DIR
+    ]
+    
+    for directory in directories:
+        os.makedirs(directory, exist_ok=True)

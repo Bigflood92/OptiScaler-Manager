@@ -28,8 +28,22 @@ def is_admin():
         return False
 
 def run_as_admin():
-    """(Función desactivada) - PyInstaller --uac-admin se encarga."""
-    pass
+    """Relanza el proceso actual con privilegios de administrador (UAC).
+
+    Returns:
+        bool: True si se lanzó correctamente la elevación (el proceso actual
+              debe salir inmediatamente después). False si falló.
+    """
+    try:
+        # Construir los parámetros del proceso actual
+        params = " ".join([f'"{arg}"' for arg in sys.argv[1:]])
+
+        # Ejecutar con "runas" para disparar UAC
+        ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, params, None, 1)
+        # ShellExecuteW devuelve un valor > 32 en caso de éxito
+        return ret > 32
+    except Exception:
+        return False
 
 def get_script_base_path():
     """Obtiene la ruta base del script o del .exe compilado."""
@@ -245,3 +259,78 @@ def get_game_name(folder_name):
     if len(name_parts) > 1 and len(name_parts[0]) > 0:
         return name_parts[0]
     return folder_name
+
+
+def detect_gpu_vendor():
+    """Detecta el fabricante de GPU principal del sistema.
+    
+    Returns:
+        str: 'nvidia', 'amd', 'intel', o 'unknown'
+    """
+    if platform.system() != "Windows":
+        return 'unknown'
+    
+    try:
+        # Buscar en el registro de Windows
+        gpu_key_path = r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"
+        
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, gpu_key_path) as key:
+            i = 0
+            gpus_found = []
+            
+            while True:
+                try:
+                    subkey_name = winreg.EnumKey(key, i)
+                    subkey_path = f"{gpu_key_path}\\{subkey_name}"
+                    
+                    with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, subkey_path) as subkey:
+                        try:
+                            # Leer descripción de la GPU
+                            desc = str(winreg.QueryValueEx(subkey, "DriverDesc")[0]).lower()
+                            
+                            # Clasificar por vendor
+                            if 'nvidia' in desc or 'geforce' in desc or 'rtx' in desc or 'gtx' in desc:
+                                gpus_found.append(('nvidia', desc))
+                            elif 'amd' in desc or 'radeon' in desc:
+                                gpus_found.append(('amd', desc))
+                            elif 'intel' in desc or 'arc' in desc:
+                                gpus_found.append(('intel', desc))
+                        except:
+                            pass
+                    i += 1
+                except OSError:
+                    break
+            
+            # Priorizar: NVIDIA > AMD > Intel
+            # (Porque si tiene NVIDIA, probablemente quiere usar DLSS nativo)
+            for vendor, desc in gpus_found:
+                if vendor == 'nvidia':
+                    return 'nvidia'
+            for vendor, desc in gpus_found:
+                if vendor == 'amd':
+                    return 'amd'
+            for vendor, desc in gpus_found:
+                if vendor == 'intel':
+                    return 'intel'
+                    
+    except Exception:
+        pass
+    
+    return 'unknown'
+
+
+def should_use_dual_mod(gpu_vendor=None):
+    """Determina si debe usar dual-mod (OptiScaler + dlssg-to-fsr3).
+    
+    Args:
+        gpu_vendor: Vendor de GPU ('nvidia', 'amd', 'intel', 'unknown').
+                   Si es None, se detecta automáticamente.
+    
+    Returns:
+        bool: True si debe usar dual-mod (AMD/Intel), False si solo OptiScaler (NVIDIA)
+    """
+    if gpu_vendor is None:
+        gpu_vendor = detect_gpu_vendor()
+    
+    # AMD e Intel necesitan dlssg-to-fsr3 para frame generation
+    return gpu_vendor in ('amd', 'intel', 'unknown')

@@ -97,7 +97,11 @@ class GameConfigWindow(ctk.CTkToplevel, NavigableMixin):
         self.spoof_dll_name = ctk.StringVar(value="dxgi.dll")
         # Map codes (from INI) to human-friendly labels when needed
         fg_display = FG_MODE_MAP_INVERSE.get(current_config.get("fg_mode", "auto"), "Automático")
-        upscaler_display = UPSCALER_MAP_INVERSE.get(current_config.get("upscaler", "auto"), "Automático")
+        # 'fsr40' y similares se normalizan en el mapeo a continuación
+        upscaler_code = current_config.get("upscaler", "auto")
+        if upscaler_code == "fsr40":
+            upscaler_code = "fsr31"  # OptiScaler usa fsr31 para FSR4 en Dx12
+        upscaler_display = UPSCALER_MAP_INVERSE.get(upscaler_code, "Automático")
         upscale_display = UPSCALE_MODE_MAP_INVERSE.get(current_config.get("upscale_mode", "auto"), "Automático")
 
         self.fg_mode = ctk.StringVar(value=fg_display)
@@ -106,6 +110,7 @@ class GameConfigWindow(ctk.CTkToplevel, NavigableMixin):
         self.sharpness = ctk.DoubleVar(value=current_config["sharpness"])
         self.overlay = ctk.BooleanVar(value=current_config["overlay"])
         self.motion_blur = ctk.BooleanVar(value=current_config["motion_blur"])
+        self.install_nukem = ctk.BooleanVar(value=False)  # Modo AMD/Handheld
         
         # Frame principal
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -138,6 +143,31 @@ class GameConfigWindow(ctk.CTkToplevel, NavigableMixin):
         )
         self.r_gpu_nvidia.pack(side="left", padx=10)
         current_row += 1
+        
+        # --- Modo AMD/Handheld (instalar dlssg-to-fsr3) ---
+        self.check_amd_handheld = ctk.CTkCheckBox(
+            main_frame,
+            text="🎮 Modo AMD/Handheld (Frame Generation para AMD/Intel)",
+            variable=self.install_nukem,
+            font=ctk.CTkFont(size=12)
+        )
+        self.check_amd_handheld.grid(
+            row=current_row, column=0, columnspan=3,
+            sticky="w", pady=(10, 5)
+        )
+        
+        # Label informativo
+        info_label = ctk.CTkLabel(
+            main_frame,
+            text="ℹ️ Instala OptiScaler (upscaling) + dlssg-to-fsr3 (frame generation)",
+            font=ctk.CTkFont(size=10),
+            text_color="gray"
+        )
+        info_label.grid(
+            row=current_row + 1, column=0, columnspan=3,
+            sticky="w", padx=20
+        )
+        current_row += 2
         
         # --- DLL Choice ---
         ctk.CTkLabel(
@@ -404,6 +434,8 @@ class GameConfigWindow(ctk.CTkToplevel, NavigableMixin):
             # Map human-friendly labels to INI codes
             fg_code = FG_MODE_MAP.get(self.fg_mode.get(), 'auto')
             upscaler_code = UPSCALER_MAP.get(self.upscaler.get(), 'auto')
+            if upscaler_code == 'fsr40':
+                upscaler_code = 'fsr31'  # compatibilidad con INI
             upscale_code = UPSCALE_MODE_MAP.get(self.upscale_mode.get(), 'auto')
             result = update_optiscaler_ini(
                 self.game_path,

@@ -11,11 +11,19 @@ from urllib.parse import urljoin
 import requests
 from ..config.constants import (
     GITHUB_API_URL,
-    MOD_SOURCE_DIR,
     SEVEN_ZIP_EXE_NAME,
     GITHUB_REPO_OWNER,
     GITHUB_REPO_NAME,
+    NUKEM_API_URL,
+    NUKEM_REPO_OWNER,
+    NUKEM_REPO_NAME,
     CACHE_DIR
+)
+from ..config.paths import (
+    MOD_SOURCE_DIR,
+    OPTISCALER_DIR,
+    DLSSG_TO_FSR3_DIR,
+    SEVEN_ZIP_PATH
 )
 from ..utils.error_handling import error_handler, FSRException
 from ..utils.paths import normalize_path, create_directory
@@ -23,11 +31,12 @@ from ..utils.paths import normalize_path, create_directory
 class GitHubClient:
     """Client for interacting with GitHub API."""
     
-    def __init__(self, logger: Optional[Callable] = None):
+    def __init__(self, logger: Optional[Callable] = None, repo_type: str = "optiscaler"):
         """Initialize the GitHub client.
         
         Args:
             logger: Optional logging function to use
+            repo_type: 'optiscaler' or 'nukem' to select which repository to target
         """
         self.logger = logger or print
         self.session = requests.Session()
@@ -35,10 +44,19 @@ class GitHubClient:
             'Accept': 'application/vnd.github.v3+json',
             'User-Agent': 'FSR-Injector'
         })
-        self.api_base = GITHUB_API_URL
-        self.owner = GITHUB_REPO_OWNER
-        self.repo = GITHUB_REPO_NAME
-        self.cache_dir = os.path.join(CACHE_DIR, "github")
+        
+        # Configurar según el tipo de repositorio
+        if repo_type == "nukem":
+            self.api_base = NUKEM_API_URL
+            self.owner = NUKEM_REPO_OWNER
+            self.repo = NUKEM_REPO_NAME
+        else:  # optiscaler por defecto
+            self.api_base = GITHUB_API_URL
+            self.owner = GITHUB_REPO_OWNER
+            self.repo = GITHUB_REPO_NAME
+        
+        self.repo_type = repo_type
+        self.cache_dir = os.path.join(CACHE_DIR, "github", repo_type)
         create_directory(self.cache_dir)
         
     def _get_api_url(self, endpoint: str) -> str:
@@ -259,8 +277,8 @@ class GitHubClient:
             bool: True if successful, False otherwise
         """
         try:
-            # Create mod_source directory if needed
-            os.makedirs(MOD_SOURCE_DIR, exist_ok=True)
+            # Create OptiScaler directory if needed
+            os.makedirs(OPTISCALER_DIR, exist_ok=True)
             
             # Get download URL and expected file size
             assets = release_info.get('assets', [])
@@ -284,8 +302,8 @@ class GitHubClient:
             download_url = asset['browser_download_url']
             expected_size = asset['size']
             
-            # Download file with progress reporting
-            local_file = os.path.join(MOD_SOURCE_DIR, asset['name'])
+            # Download file with progress reporting to OPTISCALER_DIR
+            local_file = os.path.join(OPTISCALER_DIR, asset['name'])
             
             response = self.session.get(download_url, stream=True)
             response.raise_for_status()
@@ -345,29 +363,15 @@ class GitHubClient:
             FSRException: If extraction fails
         """
         try:
-            # Get possible 7z.exe paths
-            base_path = self._get_script_base_path()
-            search_paths = [
-                os.path.join(base_path, SEVEN_ZIP_EXE_NAME),
-                os.path.join(base_path, "tools", SEVEN_ZIP_EXE_NAME),
-                os.path.join(os.environ.get("ProgramFiles", ""), "7-Zip", "7z.exe"),
-                os.path.join(os.environ.get("ProgramFiles(x86)", ""), "7-Zip", "7z.exe")
-            ]
-            
-            seven_zip_exe = None
-            for path in search_paths:
-                if os.path.exists(path):
-                    seven_zip_exe = path
-                    break
-                    
-            if not seven_zip_exe:
-                error_msg = "7-Zip executable not found. Please make sure 7-Zip is installed."
-                self.logger('ERROR', f"{error_msg}\nSearched paths:\n" + "\n".join(f"- {p}" for p in search_paths))
+            # Use SEVEN_ZIP_PATH from paths module
+            if not os.path.exists(SEVEN_ZIP_PATH):
+                error_msg = f"7-Zip executable not found at: {SEVEN_ZIP_PATH}"
+                self.logger('ERROR', error_msg)
                 raise FSRException(error_msg)
                 
             # Prepare extraction directory name from archive name
             extract_dir = os.path.splitext(os.path.basename(archive_path))[0]
-            extract_path = os.path.join(MOD_SOURCE_DIR, extract_dir)
+            extract_path = os.path.join(OPTISCALER_DIR, extract_dir)
             
             # Create extraction directory
             os.makedirs(extract_path, exist_ok=True)
@@ -377,7 +381,7 @@ class GitHubClient:
                 
             # Run 7z.exe command
             command = [
-                seven_zip_exe,
+                str(SEVEN_ZIP_PATH),
                 'x',       # Extract with full paths
                 '-y',      # Yes to all prompts
                 f'-o{extract_path}',  # Output directory
@@ -474,3 +478,215 @@ class GitHubClient:
                 return os.path.dirname(os.path.dirname(__file__))
         except Exception:
             return os.path.abspath(".")
+    
+    def download_nukem_release(
+        self, 
+        release_info: Dict, 
+        extract_dir: str,
+        progress_callback: Optional[Callable] = None
+    ) -> bool:
+        """Descarga y extrae un release de dlssg-to-fsr3.
+        
+        Args:
+            release_info: Información del release de GitHub
+            extract_dir: Directorio donde extraer los archivos
+            progress_callback: Callback opcional para progreso
+            
+        Returns:
+            bool: True si fue exitoso
+        """
+        try:
+            assets = release_info.get('assets', [])
+            
+            # Debug: Log de assets encontrados
+            self.logger('INFO', f"Assets encontrados: {len(assets)}")
+            for asset in assets:
+                self.logger('INFO', f"  - {asset.get('name', 'unknown')}")
+            
+            if not assets:
+                # Si no hay assets, intentar buscar en el tarball_url o zipball_url
+                zipball_url = release_info.get('zipball_url')
+                if zipball_url:
+                    self.logger('INFO', f"No hay assets, usando zipball_url: {zipball_url}")
+                    return self._download_from_source_archive(
+                        zipball_url,
+                        extract_dir,
+                        progress_callback,
+                        "dlssg-to-fsr3.zip"
+                    )
+                else:
+                    error_msg = "No se encontraron assets ni zipball_url en el release"
+                    self.logger('ERROR', error_msg)
+                    raise FSRException(error_msg)
+                
+            # Buscar archivo ZIP o cualquier archivo descargable
+            asset = None
+            
+            # Prioridad 1: archivo .zip
+            for a in assets:
+                if a['name'].endswith('.zip'):
+                    asset = a
+                    break
+            
+            # Prioridad 2: archivo .7z
+            if not asset:
+                for a in assets:
+                    if a['name'].endswith('.7z'):
+                        asset = a
+                        break
+            
+            # Prioridad 3: cualquier archivo binario grande
+            if not asset and assets:
+                asset = max(assets, key=lambda a: a.get('size', 0))
+                self.logger('WARN', f"No se encontró .zip/.7z, usando el asset más grande: {asset['name']}")
+                    
+            if not asset:
+                error_msg = "No se encontró ningún asset descargable en el release"
+                self.logger('ERROR', error_msg)
+                raise FSRException(error_msg)
+                
+            download_url = asset['browser_download_url']
+            expected_size = asset['size']
+            file_name = asset['name']
+            
+            # Crear directorio temporal de descarga
+            os.makedirs(MOD_SOURCE_DIR, exist_ok=True)
+            download_path = os.path.join(MOD_SOURCE_DIR, file_name)
+            
+            self.logger('INFO', f"Descargando {file_name}...")
+            
+            # Descargar archivo
+            response = self.session.get(download_url, stream=True)
+            response.raise_for_status()
+            
+            downloaded = 0
+            with open(download_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        
+                        if progress_callback:
+                            progress = min(downloaded / expected_size, 1.0)
+                            progress_callback(
+                                downloaded, 
+                                expected_size, 
+                                False,
+                                f"Descargando dlssg-to-fsr3... {progress:.1%}"
+                            )
+                            
+            self.logger('OK', f"Descarga completada: {file_name}")
+            
+            # Extraer ZIP
+            if progress_callback:
+                progress_callback(0, 1, False, "Extrayendo archivos...")
+                
+            import zipfile
+            os.makedirs(extract_dir, exist_ok=True)
+            
+            with zipfile.ZipFile(download_path, 'r') as zip_ref:
+                zip_ref.extractall(extract_dir)
+                
+            self.logger('OK', f"Extracción completada en: {extract_dir}")
+            
+            # Limpiar archivo descargado
+            try:
+                os.remove(download_path)
+            except Exception as e:
+                self.logger('WARN', f"No se pudo eliminar archivo temporal: {e}")
+                
+            if progress_callback:
+                progress_callback(1, 1, True, "¡Descarga y extracción completas!")
+                
+            return True
+            
+        except requests.RequestException as e:
+            error_msg = f"Error al descargar release: {e}"
+            self.logger('ERROR', error_msg)
+            if progress_callback:
+                progress_callback(0, 1, True, f"Error: {e}")
+            raise FSRException(error_msg)
+        except Exception as e:
+            error_msg = f"Error inesperado durante descarga: {e}"
+            self.logger('ERROR', error_msg)
+            if progress_callback:
+                progress_callback(0, 1, True, f"Error: {e}")
+            raise FSRException(error_msg)
+    
+    def _download_from_source_archive(
+        self,
+        archive_url: str,
+        extract_dir: str,
+        progress_callback: Optional[Callable],
+        filename: str
+    ) -> bool:
+        """Descarga desde zipball_url o tarball_url cuando no hay assets.
+        
+        Args:
+            archive_url: URL del archivo fuente
+            extract_dir: Directorio de extracción
+            progress_callback: Callback de progreso
+            filename: Nombre del archivo a guardar
+            
+        Returns:
+            bool: True si fue exitoso
+        """
+        try:
+            os.makedirs(MOD_SOURCE_DIR, exist_ok=True)
+            download_path = os.path.join(MOD_SOURCE_DIR, filename)
+            
+            self.logger('INFO', f"Descargando desde {archive_url}...")
+            
+            response = self.session.get(archive_url, stream=True)
+            response.raise_for_status()
+            
+            # Obtener tamaño si está disponible
+            total_size = int(response.headers.get('content-length', 0))
+            
+            downloaded = 0
+            with open(download_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        
+                        if progress_callback and total_size > 0:
+                            progress = min(downloaded / total_size, 1.0)
+                            progress_callback(
+                                downloaded,
+                                total_size,
+                                False,
+                                f"Descargando código fuente... {progress:.1%}"
+                            )
+            
+            self.logger('OK', f"Descarga completada: {filename}")
+            
+            # Extraer
+            if progress_callback:
+                progress_callback(0, 1, False, "Extrayendo archivos...")
+            
+            import zipfile
+            os.makedirs(extract_dir, exist_ok=True)
+            
+            with zipfile.ZipFile(download_path, 'r') as zip_ref:
+                zip_ref.extractall(extract_dir)
+            
+            self.logger('OK', f"Extracción completada en: {extract_dir}")
+            
+            # Limpiar
+            try:
+                os.remove(download_path)
+            except Exception as e:
+                self.logger('WARN', f"No se pudo eliminar archivo temporal: {e}")
+            
+            if progress_callback:
+                progress_callback(1, 1, True, "¡Descarga y extracción completas!")
+            
+            return True
+            
+        except Exception as e:
+            error_msg = f"Error al descargar desde archivo fuente: {e}"
+            self.logger('ERROR', error_msg)
+            if progress_callback:
+                progress_callback(0, 1, True, f"Error: {e}")
+            raise FSRException(error_msg)

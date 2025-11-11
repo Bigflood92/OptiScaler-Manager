@@ -17,14 +17,27 @@ import glob
 import re
 import platform
 import winreg
+from functools import lru_cache
+from threading import Lock
 
 from ..config.paths import (
     STEAM_COMMON_DIR, EPIC_COMMON_DIR, XBOX_GAMES_DIR,
     RECURSIVE_EXE_PATTERNS, COMMON_EXE_SUBFOLDERS_DIRECT
 )
 from .settings import EXE_BLACKLIST_KEYWORDS
-from ..config.constants import MOD_CHECK_FILES
+from ..config.constants import MOD_CHECK_FILES, MOD_CHECK_FILES_OPTISCALER, MOD_CHECK_FILES_NUKEM
 from ..config.settings import SPOOFING_DLL_NAMES
+
+# Cache simple para scan_games
+_scan_cache = None
+_scan_cache_lock = Lock()
+
+
+def invalidate_scan_cache():
+    """Invalida el cache de scan_games para forzar un nuevo escaneo."""
+    global _scan_cache
+    with _scan_cache_lock:
+        _scan_cache = None
 
 
 def get_dynamic_steam_paths(log_func) -> List[str]:
@@ -184,19 +197,55 @@ def get_game_name(folder_name: str) -> str:
 
 
 def check_mod_status(game_target_dir: str) -> str:
+    """Verifica el estado de instalación de los mods.
+    
+    Detecta:
+    - OptiScaler (upscaling): OptiScaler.dll o dlls de spoofing
+    - dlssg-to-fsr3 (frame generation): dlssg_to_fsr3_amd_is_better.dll
+    
+    Args:
+        game_target_dir: Directorio del juego a verificar
+        
+    Returns:
+        str: Estado de instalación con emojis
+    """
     if not os.path.isdir(game_target_dir):
         return "ERROR: Carpeta no válida"
+        
+    # Detectar OptiScaler instalado
+    optiscaler_installed = False
     for dll_name in SPOOFING_DLL_NAMES:
-        if os.path.exists(os.path.join(game_target_dir, dll_name)):
+        dll_path = os.path.join(game_target_dir, dll_name)
+        if os.path.exists(dll_path):
             try:
-                size_mb = os.path.getsize(os.path.join(game_target_dir, dll_name)) / (1024*1024)
-                if size_mb > 0.5:
-                    return f"✅ INSTALADO (usando {dll_name})"
+                size_mb = os.path.getsize(dll_path) / (1024*1024)
+                if size_mb > 0.5:  # OptiScaler renombrado es >1MB
+                    optiscaler_installed = True
+                    break
             except Exception:
-                return f"✅ INSTALADO (usando {dll_name})"
-    if any(os.path.exists(os.path.join(game_target_dir, f)) for f in MOD_CHECK_FILES):
-        return "✅ INSTALADO (OptiScaler.dll)"
-    return "❌ AUSENTE"
+                optiscaler_installed = True
+                break
+                
+    if not optiscaler_installed:
+        # Verificar OptiScaler.dll directamente
+        if any(os.path.exists(os.path.join(game_target_dir, f)) for f in MOD_CHECK_FILES_OPTISCALER):
+            optiscaler_installed = True
+            
+    # Detectar dlssg-to-fsr3 instalado
+    nukem_installed = any(
+        os.path.exists(os.path.join(game_target_dir, f)) 
+        for f in MOD_CHECK_FILES_NUKEM
+    )
+    
+    # Retornar estado combinado
+    if optiscaler_installed and nukem_installed:
+        return "✅ COMPLETO (Upscaling + FG)"
+    elif optiscaler_installed:
+        return "✅ OptiScaler (Upscaling)"
+    elif nukem_installed:
+        return "⚠️ Solo Frame Generation"
+    else:
+        return "❌ AUSENTE"
 
 
 def check_registry_override(log_func) -> bool:
@@ -224,7 +273,25 @@ def check_registry_override(log_func) -> bool:
         return False
 
 
-def scan_games(log_func, custom_folders=None):
+def scan_games(log_func, custom_folders=None, use_cache=True):
+    """
+    Escanea juegos en Steam, Epic, Xbox y carpetas personalizadas.
+    
+    Args:
+        log_func: Función para logging
+        custom_folders: Carpetas adicionales a escanear
+        use_cache: Si True, devuelve resultado cacheado si existe (útil para evitar rescans costosos)
+    
+    Returns:
+        Lista de tuplas (path, name, status, exe_name, platform_tag)
+    """
+    global _scan_cache
+    
+    # Si hay cache válido y se permite usarlo, devolver cache
+    if use_cache and _scan_cache is not None:
+        log_func('INFO', "Usando caché de juegos escaneados")
+        return _scan_cache
+    
     if custom_folders is None:
         custom_folders = []
     all_games = []
@@ -313,4 +380,9 @@ def scan_games(log_func, custom_folders=None):
 
     all_games.sort(key=lambda x: x[1])
     log_func('INFO', f"Escaneo completado. {len(all_games)} juegos encontrados.")
+    
+    # Guardar en cache global
+    with _scan_cache_lock:
+        _scan_cache = all_games
+    
     return all_games

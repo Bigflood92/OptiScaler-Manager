@@ -13,22 +13,46 @@ APP_VERSION = "2.0"
 
 # Filenames / small paths (kept as strings for backwards compatibility)
 CONFIG_FILE = "injector_config.json"
-MOD_SOURCE_DIR = os.path.join(os.getcwd(), "mod_source")
 CACHE_DIR = os.path.join(os.getcwd(), ".cache")
 
-# GitHub configuration
+# GitHub configuration - OptiScaler (upscaler)
 GITHUB_REPO_OWNER = "optiscaler"
 GITHUB_REPO_NAME = "OptiScaler"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/releases"
 GITHUB_LATEST_RELEASE_URL = f"{GITHUB_API_URL}/latest"
 COMPATIBILITY_URL = f"https://github.com/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/wiki/FSR4-Compatibility-List"
 
+# GitHub configuration - dlssg-to-fsr3 (frame generation para AMD/no-RTX40)
+NUKEM_REPO_OWNER = "Nukem9"
+NUKEM_REPO_NAME = "dlssg-to-fsr3"
+NUKEM_API_URL = f"https://api.github.com/repos/{NUKEM_REPO_OWNER}/{NUKEM_REPO_NAME}/releases"
+NUKEM_LATEST_RELEASE_URL = f"{NUKEM_API_URL}/latest"
+
+# Archivos requeridos de dlssg-to-fsr3 (Nukem) para Frame Generation
+NUKEM_REQUIRED_FILES = [
+    'dlssg_to_fsr3_amd_is_better.dll',  # Core FG implementation
+    'nvngx.dll',                         # NVNGX wrapper (o version.dll, etc.)
+]
+
+# Archivos opcionales de dlssg-to-fsr3
+NUKEM_OPTIONAL_FILES = [
+    'version.dll',      # Alternative wrapper
+    'winhttp.dll',      # Alternative wrapper
+    'dbghelp.dll',      # Alternative wrapper
+    'dlssg_to_fsr3.ini' # Optional config for debug overlay
+]
+
 # 7-Zip helper
 SEVEN_ZIP_DOWNLOAD_URL = "https://www.7-zip.org/a/7zr.exe"
 SEVEN_ZIP_EXE_NAME = "7z.exe"
 
 # Files and folders related to the mod (used for install/uninstall)
-MOD_CHECK_FILES = ['OptiScaler.dll', 'dlssg_to_fsr3_amd_is_better.dll']
+# OptiScaler files
+MOD_CHECK_FILES_OPTISCALER = ['OptiScaler.dll', 'OptiScaler.ini']
+# dlssg-to-fsr3 files
+MOD_CHECK_FILES_NUKEM = ['dlssg_to_fsr3_amd_is_better.dll', 'nvngx.dll']
+# Combined check (any of these indicates mods installed)
+MOD_CHECK_FILES = MOD_CHECK_FILES_OPTISCALER + MOD_CHECK_FILES_NUKEM
 
 TARGET_MOD_FILES = [
     'dlssg_to_fsr3_amd_is_better.dll', 'version.dll', 'nvngx_dlss.dll', 'fsr3_config.json',

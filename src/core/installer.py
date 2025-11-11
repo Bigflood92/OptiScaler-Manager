@@ -14,12 +14,20 @@ import configparser
 from typing import Tuple
 
 from ..config.constants import (
-    MOD_SOURCE_DIR, SEVEN_ZIP_EXE_NAME, SEVEN_ZIP_DOWNLOAD_URL,
+    SEVEN_ZIP_EXE_NAME, SEVEN_ZIP_DOWNLOAD_URL,
     TARGET_MOD_FILES, TARGET_MOD_DIRS, GENERIC_SPOOF_FILES, MOD_CHECK_FILES,
-    GITHUB_API_URL
+    GITHUB_API_URL, NUKEM_REQUIRED_FILES, NUKEM_OPTIONAL_FILES,
+    MOD_CHECK_FILES_OPTISCALER, MOD_CHECK_FILES_NUKEM
+)
+from ..config.paths import (
+    MOD_SOURCE_DIR,
+    OPTISCALER_DIR,
+    DLSSG_TO_FSR3_DIR,
+    SEVEN_ZIP_PATH
 )
 from ..config.settings import (
-    FG_MODE_MAP, UPSCALE_MODE_MAP, UPSCALER_MAP
+    FG_MODE_MAP, UPSCALE_MODE_MAP, UPSCALER_MAP,
+    FG_MODE_MAP_INVERSE, UPSCALE_MODE_MAP_INVERSE, UPSCALER_MAP_INVERSE
 )
 
 try:
@@ -29,28 +37,73 @@ except Exception:
     REQUESTS_AVAILABLE = False
 
 
+def _map_upscaler_to_api(upscaler_code, api):
+    """
+    Mapea un código de upscaler genérico a su equivalente válido para una API específica.
+    
+    Args:
+        upscaler_code: Código genérico (auto, fsr31, fsr22, xess, dlss, fsr40, fsr21)
+        api: 'dx11', 'dx12', o 'vulkan'
+    
+    Returns:
+        Código válido para esa API según OptiScaler.ini
+    """
+    if upscaler_code in ('auto', 'dlss'):
+        return upscaler_code
+    
+    if api == 'dx11':
+        # Dx11 nativo: fsr22, fsr31, xess
+        if upscaler_code in ('fsr22', 'fsr31', 'xess'):
+            return upscaler_code
+        elif upscaler_code == 'fsr21':
+            return 'fsr21_12'  # Emular vía Dx12
+        elif upscaler_code == 'fsr40':
+            return 'fsr31'  # FSR4 → FSR3.1
+        return 'auto'
+    
+    elif api == 'dx12':
+        # Dx12: fsr31 cubre fsr40
+        if upscaler_code == 'fsr40':
+            return 'fsr31'
+        elif upscaler_code in ('xess', 'fsr21', 'fsr22', 'fsr31'):
+            return upscaler_code
+        return 'auto'
+    
+    elif api == 'vulkan':
+        # Vulkan: fsr21, fsr22, fsr31, xess
+        if upscaler_code in ('fsr21', 'fsr22', 'fsr31', 'xess'):
+            return upscaler_code
+        elif upscaler_code == 'fsr40':
+            return 'fsr31'
+        return 'auto'
+    
+    return 'auto'
+
+
 def get_script_base_path() -> str:
     try:
         if getattr(sys, 'frozen', False):
             return os.path.dirname(sys.executable)
         else:
-            return os.path.dirname(__file__)
+            # Retornar src/ (un nivel arriba de src/core/)
+            return os.path.dirname(os.path.dirname(__file__))
     except Exception:
         return os.path.abspath('.')
 
 
 def check_and_download_7zip(log_func, master_widget=None) -> bool:
-    base_path = get_script_base_path()
-    seven_zip_exe_path = os.path.join(base_path, SEVEN_ZIP_EXE_NAME)
-    if os.path.exists(seven_zip_exe_path):
-        log_func('INFO', f"{SEVEN_ZIP_EXE_NAME} encontrado. Extracción habilitada.")
+    # Asegurar que el directorio mod_source existe
+    os.makedirs(os.path.dirname(SEVEN_ZIP_PATH), exist_ok=True)
+    
+    if os.path.exists(SEVEN_ZIP_PATH):
+        log_func('INFO', f"{SEVEN_ZIP_EXE_NAME} encontrado en {SEVEN_ZIP_PATH}")
         return True
 
     log_func('ERROR', f"¡No se encontró {SEVEN_ZIP_EXE_NAME}!")
     try:
-        with urllib.request.urlopen(SEVEN_ZIP_DOWNLOAD_URL) as response, open(seven_zip_exe_path, 'wb') as out_file:
+        with urllib.request.urlopen(SEVEN_ZIP_DOWNLOAD_URL) as response, open(SEVEN_ZIP_PATH, 'wb') as out_file:
             out_file.write(response.read())
-        log_func('OK', f"{SEVEN_ZIP_EXE_NAME} descargado con éxito en {seven_zip_exe_path}")
+        log_func('OK', f"{SEVEN_ZIP_EXE_NAME} descargado con éxito en {SEVEN_ZIP_PATH}")
         return True
     except Exception as e:
         log_func('ERROR', f"Fallo al descargar {SEVEN_ZIP_EXE_NAME}: {e}")
@@ -62,16 +115,20 @@ def check_mod_source_files(mod_source_dir: str, log_func) -> Tuple[str, bool]:
     source_dir = mod_source_dir
     dll_found = False
     if not source_dir or not os.path.isdir(source_dir):
-        if not os.path.isdir(MOD_SOURCE_DIR):
-            log_func('ERROR', "La carpeta de origen del Mod no está seleccionada.")
+        # Buscar en ambos directorios de mods
+        for mod_dir in [OPTISCALER_DIR, DLSSG_TO_FSR3_DIR]:
+            if not os.path.isdir(mod_dir):
+                continue
+            log_func('WARN', f"Buscando en {mod_dir}...")
+            subdirs = sorted([d for d in os.listdir(mod_dir) if os.path.isdir(os.path.join(mod_dir, d))], reverse=True)
+            if subdirs:
+                source_dir = os.path.join(mod_dir, subdirs[0])
+                log_func('INFO', f"Carpeta de Mod detectada: {source_dir}")
+                break
+        
+        if not source_dir or not os.path.isdir(source_dir):
+            log_func('ERROR', "No se encontraron mods descargados. Por favor, descargue el mod.")
             return None, False
-        log_func('WARN', "Usando la carpeta de auto-descarga. Buscando la última versión...")
-        subdirs = sorted([d for d in os.listdir(MOD_SOURCE_DIR) if os.path.isdir(os.path.join(MOD_SOURCE_DIR, d))], reverse=True)
-        if not subdirs:
-            log_func('ERROR', "La carpeta 'mod_source' está vacía. Por favor, descargue el mod.")
-            return None, False
-        source_dir = os.path.join(MOD_SOURCE_DIR, subdirs[0])
-        log_func('INFO', f"Carpeta de Mod detectada: {source_dir}")
 
     try:
         for root, _, files in os.walk(source_dir):
@@ -91,15 +148,13 @@ def check_mod_source_files(mod_source_dir: str, log_func) -> Tuple[str, bool]:
 
 
 def extract_mod_archive(archive_path: str, extract_path: str, log_func) -> bool:
-    base_path = get_script_base_path()
-    seven_zip_exe = os.path.join(base_path, SEVEN_ZIP_EXE_NAME)
-    if not os.path.exists(seven_zip_exe):
-        log_func('ERROR', f"¡No se encontró {SEVEN_ZIP_EXE_NAME}!")
+    if not os.path.exists(SEVEN_ZIP_PATH):
+        log_func('ERROR', f"¡No se encontró {SEVEN_ZIP_EXE_NAME} en {SEVEN_ZIP_PATH}!")
         return False
     try:
         if os.path.isdir(extract_path):
             shutil.rmtree(extract_path)
-        command = [seven_zip_exe, 'x', archive_path, f'-o{extract_path}', '-y']
+        command = [str(SEVEN_ZIP_PATH), 'x', archive_path, f'-o{extract_path}', '-y']
         startupinfo = None
         if platform.system() == "Windows":
             startupinfo = subprocess.STARTUPINFO()
@@ -164,111 +219,207 @@ def configure_and_rename_dll(target_dir: str, spoof_dll_name: str, log_func) -> 
 
 
 def update_optiscaler_ini(target_dir: str, gpu_choice: int, fg_mode_selected: str, upscaler_selected: str, upscale_mode_selected: str, sharpness_selected: float, overlay_selected: bool, mb_selected: bool, log_func) -> bool:
+    """Actualiza OptiScaler.ini con las opciones seleccionadas.
+
+    Ajustado para coincidir con la estructura real del INI:
+      - FrameGen -> FGType
+      - Upscalers -> Dx12Upscaler (por ahora; se podría extender a Dx11/Vulkan)
+      - Sharpness -> sección [Sharpness] Sharpness
+    Valores previos escritos en secciones inexistentes se mantienen como fallback para compatibilidad.
+    """
     ini_path = os.path.join(target_dir, 'OptiScaler.ini')
     if not os.path.exists(ini_path):
         log_func('WARN', "OptiScaler.ini no encontrado en el destino. No se pueden aplicar configuraciones.")
         return False
     try:
         config = configparser.ConfigParser(comment_prefixes=';', allow_no_value=True)
-        from io import StringIO
         with open(ini_path, 'r', encoding='utf-8') as f:
-            ini_content = f.read()
-        stringio_content = StringIO(ini_content)
-        config.read_file(stringio_content)
+            config.read_file(f)
         changes_made = False
+
+        # GPU spoof (Dxgi)
         dxgi_value = 'true' if gpu_choice == 1 else 'auto'
-        if not config.has_section('Dxgi'): config.add_section('Dxgi')
-        if config.get('Dxgi', 'Dxgi', fallback='auto') != dxgi_value:
-            config.set('Dxgi', 'Dxgi', dxgi_value)
-            log_func('INFO', f"OptiScaler.ini: [Dxgi] Dxgi cambiado a '{dxgi_value}'.")
+        if not config.has_section('Spoofing'):  # Dxgi vive en [Spoofing] según INI (Dxgi=auto)
+            config.add_section('Spoofing')
+        if config.get('Spoofing', 'Dxgi', fallback='auto') != dxgi_value:
+            config.set('Spoofing', 'Dxgi', dxgi_value)
+            log_func('INFO', f"OptiScaler.ini: [Spoofing] Dxgi -> {dxgi_value}")
             changes_made = True
-        fg_mode_ini_value = fg_mode_selected
-        if not config.has_section('FrameGeneration'): config.add_section('FrameGeneration')
-        if config.get('FrameGeneration', 'Mode', fallback='auto') != fg_mode_ini_value:
-             config.set('FrameGeneration', 'Mode', fg_mode_ini_value)
-             log_func('INFO', f"OptiScaler.ini: [FrameGeneration] Mode cambiado a '{fg_mode_ini_value}'.")
-             changes_made = True
-        # Upscaler Backend
-        upscaler_ini_value = upscaler_selected
-        if not config.has_section('Upscaler'): config.add_section('Upscaler')
-        if config.get('Upscaler', 'Backend', fallback='auto') != upscaler_ini_value:
-            config.set('Upscaler', 'Backend', upscaler_ini_value)
-            log_func('INFO', f"OptiScaler.ini: [Upscaler] Backend cambiado a '{upscaler_ini_value}'.")
+
+        # Frame Generation Type
+        fg_code = fg_mode_selected  # ya viene mapeado (auto/optifg/nukems/nofg)
+        if not config.has_section('FrameGen'):
+            config.add_section('FrameGen')
+        if config.get('FrameGen', 'FGType', fallback='auto') != fg_code:
+            config.set('FrameGen', 'FGType', fg_code)
+            log_func('INFO', f"OptiScaler.ini: [FrameGen] FGType -> {fg_code}")
             changes_made = True
-        upscale_mode_ini_value = upscale_mode_selected
-        sharpness_ini_value = f"{sharpness_selected:.2f}"
-        if not config.has_section('Upscale'): config.add_section('Upscale')
-        if config.get('Upscale', 'Mode', fallback='auto') != upscale_mode_ini_value:
-            config.set('Upscale', 'Mode', upscale_mode_ini_value)
-            log_func('INFO', f"OptiScaler.ini: [Upscale] Mode cambiado a '{upscale_mode_ini_value}'.")
+        # OptiFG enable flag si corresponde
+        if fg_code == 'optifg':
+            if not config.has_section('OptiFG'):
+                config.add_section('OptiFG')
+            if config.get('OptiFG', 'Enabled', fallback='false') != 'true':
+                config.set('OptiFG', 'Enabled', 'true')
+                log_func('INFO', "OptiScaler.ini: [OptiFG] Enabled -> true")
+                changes_made = True
+        elif fg_code in ('nukems', 'nofg'):
+            if config.has_section('OptiFG') and config.get('OptiFG', 'Enabled', fallback='false') != 'false':
+                config.set('OptiFG', 'Enabled', 'false')
+                log_func('INFO', "OptiScaler.ini: [OptiFG] Enabled -> false")
+                changes_made = True
+
+        # Upscaler backend (mapear a opciones válidas por API)
+        upscaler_code = upscaler_selected  # codes como fsr40, fsr31, fsr22, xess, dlss
+        if not config.has_section('Upscalers'):
+            config.add_section('Upscalers')
+        
+        changed_local = False
+        
+        # Dx12
+        dx12_code = _map_upscaler_to_api(upscaler_code, 'dx12')
+        if config.get('Upscalers', 'Dx12Upscaler', fallback='auto') != dx12_code:
+            config.set('Upscalers', 'Dx12Upscaler', dx12_code)
+            log_func('INFO', f"OptiScaler.ini: [Upscalers] Dx12Upscaler -> {dx12_code}")
+            changed_local = True
+        
+        # Dx11
+        dx11_code = _map_upscaler_to_api(upscaler_code, 'dx11')
+        if config.get('Upscalers', 'Dx11Upscaler', fallback='auto') != dx11_code:
+            config.set('Upscalers', 'Dx11Upscaler', dx11_code)
+            log_func('INFO', f"OptiScaler.ini: [Upscalers] Dx11Upscaler -> {dx11_code}")
+            changed_local = True
+        
+        # Vulkan
+        vulkan_code = _map_upscaler_to_api(upscaler_code, 'vulkan')
+        if config.get('Upscalers', 'VulkanUpscaler', fallback='auto') != vulkan_code:
+            config.set('Upscalers', 'VulkanUpscaler', vulkan_code)
+            log_func('INFO', f"OptiScaler.ini: [Upscalers] VulkanUpscaler -> {vulkan_code}")
+            changed_local = True
+        
+        if changed_local:
             changes_made = True
-        if config.get('Upscale', 'Sharpness', fallback='0.80') != sharpness_ini_value:
-             config.set('Upscale', 'Sharpness', sharpness_ini_value)
-             log_func('INFO', f"OptiScaler.ini: [Upscale] Sharpness cambiado a '{sharpness_ini_value}'.")
-             changes_made = True
-        overlay_ini_value = "basic" if overlay_selected else "off"
-        if not config.has_section('Overlay'): config.add_section('Overlay')
-        if config.get('Overlay', 'Mode', fallback='off') != overlay_ini_value:
-            config.set('Overlay', 'Mode', overlay_ini_value)
-            log_func('INFO', f"OptiScaler.ini: [Overlay] Mode cambiado a '{overlay_ini_value}'.")
+
+        # Upscale quality mode (legacy + aplicar ratios si existe sección QualityOverrides)
+        upscale_code = upscale_mode_selected
+        if not config.has_section('Upscale'):
+            config.add_section('Upscale')
+        if config.get('Upscale', 'Mode', fallback='auto') != upscale_code:
+            config.set('Upscale', 'Mode', upscale_code)
+            log_func('INFO', f"OptiScaler.ini: [Upscale] Mode -> {upscale_code}")
             changes_made = True
-        mb_ini_value = "true" if mb_selected else "false"
-        if not config.has_section('MotionBlur'): config.add_section('MotionBlur')
-        if config.get('MotionBlur', 'Disable', fallback='false') != mb_ini_value:
-            config.set('MotionBlur', 'Disable', mb_ini_value)
-            log_func('INFO', f"OptiScaler.ini: [MotionBlur] Disable cambiado a '{mb_ini_value}'.")
+
+        # Opcional: ratios mapeados básicos (usar override sólo si usuario no ha personalizado INI)
+        ratio_map = {
+            'quality': 1.5,
+            'balanced': 1.7,
+            'performance': 2.0,
+            'ultra_performance': 3.0
+        }
+        if upscale_code in ratio_map:
+            if not config.has_section('QualityOverrides'):
+                config.add_section('QualityOverrides')
+            # Activar si no estaba
+            if config.get('QualityOverrides', 'QualityRatioOverrideEnabled', fallback='false') != 'true':
+                config.set('QualityOverrides', 'QualityRatioOverrideEnabled', 'true')
+                log_func('INFO', 'OptiScaler.ini: [QualityOverrides] QualityRatioOverrideEnabled -> true')
+                changes_made = True
+            # Establecer sólo la categoría seleccionada como ratio base, mantener otras en auto
+            key_map = {
+                'quality': 'QualityRatioQuality',
+                'balanced': 'QualityRatioBalanced',
+                'performance': 'QualityRatioPerformance',
+                'ultra_performance': 'QualityRatioUltraPerformance'
+            }
+            ratio_key = key_map[upscale_code]
+            new_ratio_val = f"{ratio_map[upscale_code]:.2f}"
+            if config.get('QualityOverrides', ratio_key, fallback='auto') != new_ratio_val:
+                config.set('QualityOverrides', ratio_key, new_ratio_val)
+                log_func('INFO', f"OptiScaler.ini: [QualityOverrides] {ratio_key} -> {new_ratio_val}")
+                changes_made = True
+
+        # Sharpness (en INI real está en [Sharpness] Sharpness)
+        sharpness_str = f"{sharpness_selected:.2f}"
+        if not config.has_section('Sharpness'):
+            config.add_section('Sharpness')
+        if config.get('Sharpness', 'Sharpness', fallback='0.30') != sharpness_str:
+            config.set('Sharpness', 'Sharpness', sharpness_str)
+            log_func('INFO', f"OptiScaler.ini: [Sharpness] Sharpness -> {sharpness_str}")
             changes_made = True
+
+        # Overlay (aprox: usar [Menu] OverlayMenu=true/basic/off). Simplificamos a habilitar menú si overlay_selected
+        if not config.has_section('Menu'):
+            config.add_section('Menu')
+        overlay_val = 'true' if overlay_selected else 'auto'
+        if config.get('Menu', 'OverlayMenu', fallback='auto') != overlay_val:
+            config.set('Menu', 'OverlayMenu', overlay_val)
+            log_func('INFO', f"OptiScaler.ini: [Menu] OverlayMenu -> {overlay_val}")
+            changes_made = True
+
+        # Motion blur (no existe sección directa; ignoramos para no introducir claves ficticias)
+
         if changes_made:
-             with open(ini_path, 'w', encoding='utf-8') as f:
-                 config.write(f, space_around_delimiters=False)
-             log_func('OK', "OptiScaler.ini actualizado con éxito.")
+            with open(ini_path, 'w', encoding='utf-8') as f:
+                config.write(f, space_around_delimiters=False)
+            log_func('OK', "OptiScaler.ini actualizado con éxito.")
+        else:
+            log_func('INFO', "OptiScaler.ini ya estaba actualizado.")
         return True
     except configparser.Error as e:
-         log_func('ERROR', f"Error al parsear OptiScaler.ini: {e}")
-         return False
+        log_func('ERROR', f"Error al parsear OptiScaler.ini: {e}")
+        return False
     except Exception as e:
         log_func('ERROR', f"Error al actualizar OptiScaler.ini: {e}")
         return False
 
 
 def read_optiscaler_ini(target_dir: str, log_func):
+    """Lee OptiScaler.ini devolviendo valores normalizados según mappings.
+
+    Usa las secciones reales y mantiene compatibilidad con nombres legacy.
+    """
     ini_path = os.path.join(target_dir, 'OptiScaler.ini')
     defaults = {
         "gpu_choice": 2,
         "fg_mode": "Automático",
-        "upscale_mode": "Automático",
+        "upscaler": "auto",
+        "upscale_mode": "auto",
         "sharpness": 0.8,
         "overlay": False,
         "motion_blur": True
     }
     if not os.path.exists(ini_path):
-        log_func('WARN', f"No se encontró OptiScaler.ini en {target_dir}. Devolviendo valores por defecto.")
+        log_func('WARN', f"No se encontró OptiScaler.ini en {target_dir}. Usando valores por defecto.")
         return defaults
     try:
         config = configparser.ConfigParser(comment_prefixes=';', allow_no_value=True)
         config.read(ini_path)
-        dxgi_value = config.get('Dxgi', 'Dxgi', fallback='auto')
+        # GPU spoof
+        dxgi_value = config.get('Spoofing', 'Dxgi', fallback='auto')
         gpu_choice = 1 if dxgi_value == 'true' else 2
-        fg_mode_ini = config.get('FrameGeneration', 'Mode', fallback='auto')
-        upscaler_ini = config.get('Upscaler', 'Backend', fallback='auto')
-        upscale_mode_ini = config.get('Upscale', 'Mode', fallback='auto')
-        sharpness = config.getfloat('Upscale', 'Sharpness', fallback=0.8)
-        overlay_ini = config.get('Overlay', 'Mode', fallback='off')
-        overlay = (overlay_ini != 'off')
-        mb_ini = config.get('MotionBlur', 'Disable', fallback='false')
-        motion_blur = (mb_ini == 'true')
+        # Frame Generation Type
+        fg_type_code = config.get('FrameGen', 'FGType', fallback='auto')
+        # Upscaler (Simplificado a Dx12Upscaler)
+        upscaler_code = config.get('Upscalers', 'Dx12Upscaler', fallback='auto')
+        # Upscale quality mode (legacy fallback)
+        upscale_mode_code = config.get('Upscale', 'Mode', fallback='auto')
+        # Sharpness
+        sharpness_val = config.getfloat('Sharpness', 'Sharpness', fallback=0.30)
+        # Overlay
+        overlay_ini = config.get('Menu', 'OverlayMenu', fallback='auto')
+        overlay_enabled = (overlay_ini in ('true', 'basic'))
+
         log_func('INFO', f"Lectura de {ini_path} exitosa.")
         return {
             "gpu_choice": gpu_choice,
-            "fg_mode": fg_mode_ini,
-            "upscaler": upscaler_ini,
-            "upscale_mode": upscale_mode_ini,
-            "sharpness": sharpness,
-            "overlay": overlay,
-            "motion_blur": motion_blur
+            "fg_mode": fg_type_code,  # devolver código; ventana lo mapeará a label
+            "upscaler": upscaler_code,
+            "upscale_mode": upscale_mode_code,
+            "sharpness": sharpness_val,
+            "overlay": overlay_enabled,
+            "motion_blur": True  # placeholder; no mapeado todavía
         }
     except Exception as e:
-        log_func('ERROR', f"Error al leer OptiScaler.ini: {e}. Devolviendo valores por defecto.")
+        log_func('ERROR', f"Error al leer OptiScaler.ini: {e}. Usando valores por defecto.")
         return defaults
 
 
@@ -486,6 +637,211 @@ def clean_orphan_backups(all_games_data, log_func):
                 log_func('ERROR', f"No se pudo limpiar backups de {os.path.basename(game_path)}: {e}")
     log_func('OK', f"Limpieza de {cleaned_count} backups huérfanos completada.")
     return cleaned_count
+
+
+def check_nukem_mod_files(nukem_source_dir: str, log_func) -> Tuple[str, bool]:
+    """Verifica y encuentra archivos del mod dlssg-to-fsr3 de Nukem.
+    
+    Args:
+        nukem_source_dir: Directorio de origen del mod Nukem
+        log_func: Función de logging
+        
+    Returns:
+        Tuple[str, bool]: (ruta_source_dir, archivos_encontrados)
+    """
+    source_dir = nukem_source_dir
+    mod_found = False
+    
+    if not source_dir or not os.path.isdir(source_dir):
+        log_func('ERROR', "La carpeta de origen del mod dlssg-to-fsr3 no está seleccionada.")
+        return None, False
+        
+    try:
+        # Buscar recursivamente los archivos requeridos
+        for root, _, files in os.walk(source_dir):
+            if all(f in files for f in NUKEM_REQUIRED_FILES):
+                source_dir = root
+                mod_found = True
+                break
+    except Exception as e:
+        log_func('ERROR', f"Error al escanear la carpeta del mod dlssg-to-fsr3: {e}")
+        return None, False
+
+    if not mod_found:
+        log_func('ERROR', f"La carpeta de origen NO contiene los archivos clave del mod dlssg-to-fsr3: {', '.join(NUKEM_REQUIRED_FILES)}")
+        return None, False
+        
+    log_func('INFO', f"Archivos del mod dlssg-to-fsr3 encontrados en: {source_dir}")
+    return source_dir, True
+
+
+def install_nukem_mod(nukem_source_dir: str, target_dir: str, log_func) -> bool:
+    """Instala el mod dlssg-to-fsr3 (Frame Generation para AMD/Intel).
+    
+    Args:
+        nukem_source_dir: Directorio de origen con archivos de dlssg-to-fsr3
+        target_dir: Directorio de destino del juego
+        log_func: Función de logging
+        
+    Returns:
+        bool: True si la instalación fue exitosa
+    """
+    source_dir, source_ok = check_nukem_mod_files(nukem_source_dir, log_func)
+    if not source_ok:
+        return False
+        
+    try:
+        log_func('TITLE', "Instalando dlssg-to-fsr3 (Frame Generation)...")
+        copied_files = 0
+        created_backups = []
+        
+        # Lista de archivos a copiar (requeridos + opcionales)
+        files_to_copy = NUKEM_REQUIRED_FILES + NUKEM_OPTIONAL_FILES
+        
+        for filename in files_to_copy:
+            source_file = os.path.join(source_dir, filename)
+            if not os.path.exists(source_file):
+                if filename in NUKEM_REQUIRED_FILES:
+                    log_func('ERROR', f"Archivo requerido no encontrado: {filename}")
+                    return False
+                else:
+                    log_func('INFO', f"Archivo opcional no encontrado, omitiendo: {filename}")
+                    continue
+                    
+            target_file = os.path.join(target_dir, filename)
+            
+            # Crear backup si el archivo ya existe
+            if os.path.exists(target_file):
+                backup_path = target_file + ".bak"
+                try:
+                    if os.path.exists(backup_path):
+                        os.remove(backup_path)
+                    os.rename(target_file, backup_path)
+                    log_func('WARN', f"Archivo existente {filename} renombrado a {filename}.bak")
+                    created_backups.append(backup_path)
+                except Exception as e:
+                    log_func('ERROR', f"No se pudo crear backup de {filename}: {e}")
+                    # Continuar de todos modos
+                    
+            # Copiar archivo
+            try:
+                shutil.copy2(source_file, target_dir)
+                copied_files += 1
+                log_func('INFO', f"  -> Copiado: {filename}")
+            except Exception as e:
+                log_func('ERROR', f"Error al copiar {filename}: {e}")
+                if filename in NUKEM_REQUIRED_FILES:
+                    # Restaurar backups si falla archivo crítico
+                    for bak_file in created_backups:
+                        original_file = bak_file[:-4]
+                        try:
+                            if os.path.exists(original_file):
+                                os.remove(original_file)
+                            os.rename(bak_file, original_file)
+                        except Exception:
+                            pass
+                    return False
+                    
+        log_func('OK', f"dlssg-to-fsr3 instalado con éxito. Archivos copiados: {copied_files}")
+        log_func('INFO', "NOTA: dlssg-to-fsr3 proporciona FRAME GENERATION para GPUs AMD/Intel.")
+        return True
+        
+    except PermissionError:
+        log_func('ERROR', "ACCESO DENEGADO. Asegúrese de que el juego está CERRADO.")
+        return False
+    except Exception as e:
+        log_func('ERROR', f"Error al instalar dlssg-to-fsr3: {e}")
+        return False
+
+
+def install_combined_mods(
+    optiscaler_source_dir: str,
+    nukem_source_dir: str, 
+    target_dir: str,
+    log_func,
+    spoof_dll_name: str = "dxgi.dll",
+    gpu_choice: int = 2,
+    fg_mode_selected: str = "Automático",
+    upscaler_selected: str = "Automático", 
+    upscale_mode_selected: str = "Automático",
+    sharpness_selected: float = 0.8,
+    overlay_selected: bool = False,
+    mb_selected: bool = True,
+    install_nukem: bool = True
+) -> bool:
+    """Instala OptiScaler (upscaling) y opcionalmente dlssg-to-fsr3 (frame generation).
+    
+    Esta función combina ambos mods para proporcionar soporte completo en GPUs AMD/Intel
+    y handhelds (Steam Deck, ROG Ally, Legion Go):
+    - OptiScaler: Upscaling (FSR, XeSS, DLSS)
+    - dlssg-to-fsr3: Frame Generation (intercepta DLSS-G → FSR3 FG)
+    
+    Args:
+        optiscaler_source_dir: Directorio de origen de OptiScaler
+        nukem_source_dir: Directorio de origen de dlssg-to-fsr3
+        target_dir: Directorio de destino del juego
+        log_func: Función de logging
+        spoof_dll_name: Nombre del DLL de inyección para OptiScaler
+        gpu_choice: 1=NVIDIA, 2=AMD/Intel
+        fg_mode_selected: Modo de Frame Generation
+        upscaler_selected: Backend de upscaling
+        upscale_mode_selected: Modo de calidad de upscaling
+        sharpness_selected: Nivel de sharpness
+        overlay_selected: Habilitar overlay
+        mb_selected: Habilitar motion blur
+        install_nukem: Si True, instala dlssg-to-fsr3 además de OptiScaler
+        
+    Returns:
+        bool: True si la instalación fue exitosa
+    """
+    log_func('TITLE', "=== INSTALACIÓN COMBINADA: OptiScaler + dlssg-to-fsr3 ===")
+    log_func('INFO', "OptiScaler = UPSCALING (FSR/XeSS/DLSS quality modes)")
+    log_func('INFO', "dlssg-to-fsr3 = FRAME GENERATION (FSR3 FG para AMD/Intel)")
+    log_func('INFO', "")
+    
+    # 1. Instalar OptiScaler primero
+    log_func('TITLE', "Paso 1/2: Instalando OptiScaler (Upscaling)...")
+    optiscaler_ok = inject_fsr_mod(
+        optiscaler_source_dir,
+        target_dir,
+        log_func,
+        spoof_dll_name,
+        gpu_choice,
+        fg_mode_selected,
+        upscaler_selected,
+        upscale_mode_selected,
+        sharpness_selected,
+        overlay_selected,
+        mb_selected
+    )
+    
+    if not optiscaler_ok:
+        log_func('ERROR', "Instalación de OptiScaler falló. Abortando.")
+        return False
+        
+    # 2. Instalar dlssg-to-fsr3 si se solicita
+    if install_nukem:
+        log_func('INFO', "")
+        log_func('TITLE', "Paso 2/2: Instalando dlssg-to-fsr3 (Frame Generation)...")
+        nukem_ok = install_nukem_mod(nukem_source_dir, target_dir, log_func)
+        
+        if not nukem_ok:
+            log_func('ERROR', "Instalación de dlssg-to-fsr3 falló.")
+            log_func('WARN', "OptiScaler está instalado, pero sin Frame Generation.")
+            return False
+            
+        log_func('INFO', "")
+        log_func('OK', "=== INSTALACIÓN COMPLETA ===")
+        log_func('OK', "✅ OptiScaler: Upscaling habilitado")
+        log_func('OK', "✅ dlssg-to-fsr3: Frame Generation habilitado")
+        log_func('INFO', "Tu GPU AMD/Intel ahora tiene upscaling + frame generation!")
+    else:
+        log_func('INFO', "")
+        log_func('OK', "=== INSTALACIÓN BÁSICA COMPLETA ===")
+        log_func('OK', "✅ OptiScaler: Upscaling habilitado")
+        log_func('INFO', "💡 Para Frame Generation en AMD/Intel, activa 'Modo AMD/Handheld'")
+        
+    return True
 
 
 def fetch_github_releases(log_func):

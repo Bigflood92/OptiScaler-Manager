@@ -169,5 +169,13 @@ class NavigableMixin:
                 elif hat_x == -1: self.move_focus('left')
                 elif hat_x == 1: self.move_focus('right')
         elif event.type == pygame.JOYBUTTONDOWN:
-            if event.button == 0: # A
+            if event.button == 0: # A -> aceptar/activar
                 self.activate_focused_widget()
+            elif event.button == 1: # B -> cancelar si existe
+                # B: si la ventana define on_cancel_and_close, invocarla
+                cancel_fn = getattr(self, 'on_cancel_and_close', None)
+                if callable(cancel_fn):
+                    try:
+                        cancel_fn()
+                    except Exception:
+                        pass

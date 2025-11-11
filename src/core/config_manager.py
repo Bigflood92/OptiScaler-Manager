@@ -6,18 +6,18 @@ import os
 import json
 from typing import Dict, Any
 
-from ..config.constants import CONFIG_FILE, MOD_SOURCE_DIR, CACHE_DIR
+from ..config.constants import CACHE_DIR
+from ..config.paths import MOD_SOURCE_DIR, CONFIG_FILE
 
 
 def get_config_path() -> str:
-    # Preferir la carpeta actual del proyecto, fallback al cwd
-    base = os.getcwd()
-    return os.path.join(base, CONFIG_FILE)
+    """Obtiene la ruta del archivo de configuración desde paths.py"""
+    return str(CONFIG_FILE)
 
 
 def default_config() -> Dict[str, Any]:
     return {
-        "mod_source_dir": MOD_SOURCE_DIR,
+        "mod_source_dir": str(MOD_SOURCE_DIR),
         "last_spoof_name": "dxgi.dll",
         "gpu_choice": 2,
         "fg_mode": "Automático",
@@ -61,7 +61,7 @@ def save_config(cfg: Dict[str, Any], path: str = None) -> bool:
 
 
 def ensure_mod_source_dir(cfg: Dict[str, Any]) -> str:
-    path = cfg.get('mod_source_dir') or MOD_SOURCE_DIR
+    path = cfg.get('mod_source_dir') or str(MOD_SOURCE_DIR)
     try:
         if not os.path.exists(path):
             os.makedirs(path, exist_ok=True)

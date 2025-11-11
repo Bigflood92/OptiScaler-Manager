@@ -4,7 +4,8 @@ import os
 import json
 from typing import Dict, Any, List, Optional, Callable
 from ..utils.error_handling import ConfigurationError, error_handler
-from ..config.constants import CONFIG_FILE, CUSTOM_SEARCH_FOLDERS_CONFIG_KEY
+from ..config.constants import CUSTOM_SEARCH_FOLDERS_CONFIG_KEY
+from ..config.paths import CONFIG_FILE
 
 class ConfigManager:
     """Manages FSR Injector configuration."""
@@ -16,6 +17,7 @@ class ConfigManager:
             logger: Optional logging function to use
         """
         self.logger = logger or print
+        self.config_file = str(CONFIG_FILE)  # Usar la ruta centralizada
         self.config = {
             "gpu_choice": None,
             "spoof_dll_name": None,
@@ -35,8 +37,8 @@ class ConfigManager:
             bool: True if successful, False otherwise
         """
         try:
-            if os.path.exists(CONFIG_FILE):
-                with open(CONFIG_FILE, 'r') as f:
+            if os.path.exists(self.config_file):
+                with open(self.config_file, 'r') as f:
                     saved_config = json.load(f)
                     
                 # Update config with saved values
@@ -61,7 +63,12 @@ class ConfigManager:
             bool: True if successful, False otherwise
         """
         try:
-            with open(CONFIG_FILE, 'w') as f:
+            # Asegurar que el directorio existe
+            config_dir = os.path.dirname(self.config_file)
+            if config_dir and not os.path.exists(config_dir):
+                os.makedirs(config_dir, exist_ok=True)
+                
+            with open(self.config_file, 'w') as f:
                 json.dump(self.config, f, indent=4)
                 
             self.logger('INFO', "Configuration saved successfully")

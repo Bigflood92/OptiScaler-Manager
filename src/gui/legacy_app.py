@@ -7123,6 +7123,31 @@ class GameConfigWindow(ctk.CTkToplevel):
         self.switch_motion_blur.pack(side='left', padx=10, pady=5)
         current_config_row += 1
 
+        # --- Fila Modo AMD/Handheld (Dual-Mod) ---
+        self.install_nukem = ctk.BooleanVar(value=current_config.get("install_nukem", False))
+        ctk.CTkLabel(config_main_frame, text="Instalación:", font=ctk.CTkFont(size=12, weight="bold")).grid(row=current_config_row, column=0, sticky='w', padx=(15, 5))
+        nukem_frame = ctk.CTkFrame(config_main_frame, fg_color="transparent")
+        nukem_frame.grid(row=current_config_row, column=1, sticky='w', pady=5, padx=5)
+        nukem_frame.grid_columnconfigure(0, weight=1)
+        
+        self.checkbox_nukem = ctk.CTkCheckBox(
+            nukem_frame,
+            text="🎮 Modo AMD/Handheld (Frame Generation para AMD/Intel)",
+            variable=self.install_nukem,
+            onvalue=True,
+            offvalue=False
+        )
+        self.checkbox_nukem.grid(row=0, column=0, sticky='w', padx=10, pady=5)
+        
+        nukem_info = ctk.CTkLabel(
+            nukem_frame,
+            text="ℹ️ Instala OptiScaler (upscaling) + dlssg-to-fsr3 (frame generation para GPUs AMD/Intel)",
+            font=ctk.CTkFont(size=10),
+            text_color="#888888"
+        )
+        nukem_info.grid(row=1, column=0, sticky='w', padx=10)
+        current_config_row += 1
+
         # --- Botones Guardar/Cancelar ---
         bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
         bottom_frame.pack(fill='x', pady=(10, 15), padx=15)

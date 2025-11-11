@@ -7,8 +7,21 @@ binaries_list = [('7z.exe', '.')]
 
 # 2. Definir los archivos de datos (iconos)
 datas_list = [
+    ('icons/add.png', 'icons'),
+    ('icons/apply.png', 'icons'),
+    ('icons/auto.png', 'icons'),
+    ('icons/config.png', 'icons'),
+    ('icons/download.png', 'icons'),
+    ('icons/exit.png', 'icons'),
+    ('icons/filter.png', 'icons'),
+    ('icons/folder.png', 'icons'),
+    ('icons/folder_open.png', 'icons'),
+    ('icons/gaming.png', 'icons'),
+    ('icons/help.png', 'icons'),
+    ('icons/launch.png', 'icons'),
+    ('icons/manual.png', 'icons'),
     ('icons/rescan.png', 'icons'),
-    ('icons/filter.png', 'icons')
+    ('icons/settings.png', 'icons')
 ]
 
 a = Analysis(['fsr_injector.py'],

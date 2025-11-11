@@ -6,6 +6,22 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
+## [2.1.0] - 2025-11-11
+
+### Añadido
+- Build nativo con Nuitka (onefile) para máxima compatibilidad
+- Ejecutable con elevación UAC automática (`--windows-uac-admin`)
+- Fallback de auto-elevación en código (relanza si no hay admin)
+
+### Cambiado
+- Centralización de rutas y logs usando `src/config/paths.py`
+- README actualizado con instrucciones de compilación vía Nuitka
+- Nombre del artefacto de release: `Gestor Optiscaler V2.0 ADMIN.exe`
+
+### Corregido
+- Error de logging en compilado (uso de `self.log_dir`)
+- Crash silencioso en .exe compilado con PyInstaller (migración recomendada a Nuitka)
+
 
 ### Por añadir
 - Arreglar navegación por gamepad
@@ -77,7 +93,8 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-[No publicado]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.0.1...HEAD
+[No publicado]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Bigflood92/OptiScaler-Manager/releases/tag/v2.0.0
 [1.0.0]: https://github.com/Bigflood92/OptiScaler-Manager/releases/tag/v1.0.0

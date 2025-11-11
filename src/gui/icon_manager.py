@@ -74,6 +74,7 @@ class IconManager:
         self.use_custom = use_custom_icons and PIL_AVAILABLE
         self.icons_dir = icons_dir or self._get_default_icons_dir()
         self.custom_icons = {}
+        self._image_references = []  # Mantener referencias a las imágenes PIL
         
         if self.use_custom:
             self._load_custom_icons()
@@ -124,11 +125,14 @@ class IconManager:
             if icon_path.exists():
                 try:
                     # Cargar imagen con PIL
-                    img = Image.open(icon_path)
-                    # Crear CTkImage con soporte light/dark (usa la misma imagen para ambos)
+                    pil_image = Image.open(str(icon_path))
+                    pil_image.load()  # Forzar carga completa en memoria
+                    # Guardar referencia a la imagen PIL
+                    self._image_references.append(pil_image)
+                    # Crear CTkImage
                     self.custom_icons[icon_name] = ctk.CTkImage(
-                        light_image=img,
-                        dark_image=img,
+                        light_image=pil_image,
+                        dark_image=pil_image,
                         size=(32, 32)  # Tamaño por defecto
                     )
                 except Exception as e:
@@ -177,10 +181,12 @@ class IconManager:
             return None
         
         try:
-            img = Image.open(icon_path)
+            pil_image = Image.open(str(icon_path))
+            pil_image.load()  # Forzar carga completa
+            self._image_references.append(pil_image)
             return ctk.CTkImage(
-                light_image=img,
-                dark_image=img,
+                light_image=pil_image,
+                dark_image=pil_image,
                 size=size
             )
         except Exception as e:
@@ -201,10 +207,12 @@ class IconManager:
             icon_path = self.icons_dir / f"{icon_name}.png"
             if icon_path.exists():
                 try:
-                    img = Image.open(icon_path)
+                    pil_image = Image.open(str(icon_path))
+                    pil_image.load()
+                    self._image_references.append(pil_image)
                     self.custom_icons[icon_name] = ctk.CTkImage(
-                        light_image=img,
-                        dark_image=img,
+                        light_image=pil_image,
+                        dark_image=pil_image,
                         size=(width, height)
                     )
                 except Exception as e:

@@ -4,12 +4,8 @@ import pygame
 import tkinter as tk
 from tkinter import messagebox
 import customtkinter as ctk
-from .widgets.tabs import (
-    TabGamesPanel,
-    TabModsPanel,
-    TabSettingsPanel,
-    TabHelpPanel
-)
+# Lazy imports - no cargar tabs hasta que se necesiten
+# from .widgets.tabs import TabGamesPanel, TabModsPanel, TabSettingsPanel, TabHelpPanel
 from .components.navigation import NavigableMixin
 from ..core.settings import APP_VERSION, APP_TITLE
 
@@ -45,6 +41,17 @@ class MainWindow(ctk.CTk, NavigableMixin):
         
         # Selecciona el primer tab por defecto
         self.select_tab(0)
+
+        # Soporte básico de mando (pygame) - sondeo periódico
+        try:
+            pygame.init()
+            pygame.joystick.init()
+            if pygame.joystick.get_count() > 0:
+                self._joystick = pygame.joystick.Joystick(0)
+                self._joystick.init()
+                self.after(33, self._poll_controller)
+        except Exception:
+            self._joystick = None
 
     def setup_navigation(self):
         """Configura la barra lateral de navegación."""
@@ -127,37 +134,49 @@ class MainWindow(ctk.CTk, NavigableMixin):
         self.nav_buttons.append(self.nav_btn_help)
 
     def setup_tabs(self):
-        """Crea y configura los paneles de tabs."""
+        """Crea y configura los paneles de tabs (lazy loading)."""
         # Frame contenedor
         self.tabs_frame = ctk.CTkFrame(self, corner_radius=0)
         self.tabs_frame.grid(row=0, column=1, sticky="nsew")
         
-        # Pestañas
-        self.tabs = []
-        
-        # Tab de juegos
-        self.tab_games = TabGamesPanel(self.tabs_frame, self)
-        self.tab_games.grid(row=0, column=0, sticky="nsew")
-        self.tabs.append(self.tab_games)
-        
-        # Tab de mods
-        self.tab_mods = TabModsPanel(self.tabs_frame, self)
-        self.tab_mods.grid(row=0, column=0, sticky="nsew")
-        self.tabs.append(self.tab_mods)
-        
-        # Tab de ajustes
-        self.tab_settings = TabSettingsPanel(self.tabs_frame, self)
-        self.tab_settings.grid(row=0, column=0, sticky="nsew")
-        self.tabs.append(self.tab_settings)
-        
-        # Tab de ayuda
-        self.tab_help = TabHelpPanel(self.tabs_frame)
-        self.tab_help.grid(row=0, column=0, sticky="nsew")
-        self.tabs.append(self.tab_help)
-        
         # Grid configuration del frame contenedor
         self.tabs_frame.grid_rowconfigure(0, weight=1)
         self.tabs_frame.grid_columnconfigure(0, weight=1)
+        
+        # Tabs se crearán bajo demanda (lazy loading)
+        self.tabs = [None, None, None, None]  # Placeholders
+        self._tab_classes = None  # Se cargará cuando se necesite
+
+    def _ensure_tab_loaded(self, tab_index):
+        """
+        Asegura que un tab esté cargado, creándolo si es necesario.
+        
+        Args:
+            tab_index (int): Índice del tab (0-3)
+        """
+        if self.tabs[tab_index] is not None:
+            return  # Ya está cargado
+        
+        # Lazy import de las clases de tabs
+        if self._tab_classes is None:
+            from .widgets.tabs import (
+                TabGamesPanel,
+                TabModsPanel,
+                TabSettingsPanel,
+                TabHelpPanel
+            )
+            self._tab_classes = [TabGamesPanel, TabModsPanel, TabSettingsPanel, TabHelpPanel]
+        
+        # Crear el tab
+        tab_class = self._tab_classes[tab_index]
+        if tab_index in (0, 1, 2):  # Games, Mods, Settings necesitan main_window
+            tab = tab_class(self.tabs_frame, self)
+        else:  # Help no lo necesita
+            tab = tab_class(self.tabs_frame)
+        
+        tab.grid(row=0, column=0, sticky="nsew")
+        tab.grid_remove()  # Oculto inicialmente
+        self.tabs[tab_index] = tab
 
     def select_tab(self, tab_index):
         """
@@ -166,9 +185,13 @@ class MainWindow(ctk.CTk, NavigableMixin):
         Args:
             tab_index (int): Índice del tab a mostrar (0-3)
         """
+        # Asegurar que el tab esté cargado (lazy loading)
+        self._ensure_tab_loaded(tab_index)
+        
         # Oculta todos los tabs
         for tab in self.tabs:
-            tab.grid_remove()
+            if tab is not None:
+                tab.grid_remove()
         
         # Resetea el color de los botones
         for btn in self.nav_buttons:
@@ -188,3 +211,44 @@ class MainWindow(ctk.CTk, NavigableMixin):
         """Manejador del evento de cierre de ventana."""
         if messagebox.askokcancel("Salir", "¿Seguro que quieres salir?"):
             self.quit()
+
+    # --- Controller handling ---
+    def _poll_controller(self):
+        try:
+            events = pygame.event.get()
+            # Reenviar eventos a la vista activa si implementa NavigableMixin
+            target = None
+            # Prioridad a ventanas hijas (popups) que hereden de Toplevel
+            if hasattr(self, 'child_popup') and self.child_popup is not None:
+                target = self.child_popup
+            else:
+                # Tab activo (buscar cuál está visible)
+                for idx, tab in enumerate(self.tabs):
+                    if tab is not None and str(tab) in str(tab.grid_info()):
+                        target = tab
+                        break
+            
+            if target and hasattr(target, 'handle_controller_event'):
+                # Encontrar índice del tab actual
+                current_index = next((i for i, tab in enumerate(self.tabs) 
+                                     if tab is not None and str(tab) in str(tab.grid_info())), 0)
+                
+                for event in events:
+                    # Botones LB/RB para cambiar de tab
+                    if event.type == pygame.JOYBUTTONDOWN:
+                        if event.button in (4,):  # LB
+                            self.select_tab(max(0, current_index - 1))
+                            continue
+                        if event.button in (5,):  # RB
+                            self.select_tab(min(len(self.tabs) - 1, current_index + 1))
+                            continue
+                        if event.button == 7:  # Start -> ir a Ajustes
+                            self.select_tab(2)
+                            continue
+                    try:
+                        target.handle_controller_event(event)
+                    except Exception:
+                        pass
+        finally:
+            # Continuar sondeando
+            self.after(33, self._poll_controller)

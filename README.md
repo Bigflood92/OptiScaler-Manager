@@ -1,6 +1,6 @@
 # 🎮 OptiScaler Manager
 
-![Version](https://img.shields.io/badge/version-2.0.1-blue)
+![Version](https://img.shields.io/badge/version-2.1.0-blue)
 ![Python](https://img.shields.io/badge/python-3.12-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-orange)
@@ -8,7 +8,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/Bigflood92/OptiScaler-Manager)](https://github.com/Bigflood92/OptiScaler-Manager/releases)
 [![GitHub stars](https://img.shields.io/github/stars/Bigflood92/OptiScaler-Manager?style=social)](https://github.com/Bigflood92/OptiScaler-Manager)
 
-**Gestor automatizado de OptiScaler** - Herramienta gráfica avanzada para inyectar FSR 3.1/4.0 (AMD FidelityFX Super Resolution), XeSS y DLSS en juegos compatibles mediante OptiScaler.
+**Gestor automatizado de OptiScaler** - Herramienta gráfica avanzada para inyectar FSR 3.1/4.0 (AMD FidelityFX Super Resolution), XeSS y DLSS en juegos compatibles mediante OptiScaler. Ahora con build nativa vía Nuitka + elevación UAC automática.
 
 ---
 
@@ -80,9 +80,10 @@
 
 **[📦 Descargar última versión](https://github.com/Bigflood92/OptiScaler-Manager/releases/latest)**
 
-1. Descarga `Gestor optiscaler V2.0.exe` desde la página de releases
-2. Ejecuta como **administrador**
-3. ¡Listo para usar!
+1. Descarga `Gestor Optiscaler V2.0 ADMIN.exe` (build Nuitka onefile con UAC)
+2. Doble clic (Windows mostrará el prompt de administrador automáticamente)
+3. Se crearán las carpetas en `Config Optiscaler Gestor/` junto al .exe
+4. ¡Listo para usar!
 
 > **Nota**: El ejecutable no está firmado digitalmente. Es seguro, solo acepta el aviso UAC de Windows.
 
@@ -197,16 +198,33 @@ OptiScaler-Manager/
 
 ## 🛠️ Desarrollo
 
-### Compilar Ejecutable
+### Compilar Ejecutable (Nuitka recomendado)
+
+Requiere Python 3.12 y (opcional) Visual Studio Build Tools. Nuitka descargará un toolchain MinGW si no existe MSVC.
 
 ```powershell
 # Activar entorno virtual
 .\.venv312\Scripts\Activate.ps1
 
-# Compilar con PyInstaller
+# Instalar dependencias de build (una sola vez)
+pip install nuitka ordered-set zstandard
+
+# Build con elevación UAC automática
+./build_nuitka_admin.ps1
+
+# El ejecutable queda en dist/ Gestor Optiscaler V2.0 ADMIN.exe
+```
+
+### Alternativa: PyInstaller (no recomendada actualmente)
+
+```powershell
+# Activar entorno virtual
+.\.venv312\Scripts\Activate.ps1
+
+# (Puede fallar con ciertos problemas de imágenes en CustomTkinter)
 pyinstaller --noconfirm "Gestor optiscaler V2.0.spec"
 
-# El ejecutable estará en: dist/Gestor optiscaler V2.0.exe
+# Executable: dist/Gestor optiscaler V2.0.exe
 ```
 
 ### Ejecutar Tests

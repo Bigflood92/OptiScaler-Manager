@@ -23,7 +23,10 @@ __all__ = [
     'TARGET_MOD_DIRS',
     'scan_games',
     'inject_fsr_mod',
+    'install_combined_mods',
     'check_mod_source_files',
+    'check_nukem_mod_files',
+    'install_nukem_mod',
     'restore_original_dll',
     'uninstall_fsr_mod',
     'clean_logs',
@@ -43,6 +46,7 @@ def inject_fsr_mod(
     spoof_dll_name: str = "dxgi.dll",
     gpu_choice: int = 2,
     fg_mode_selected: str = "Automático",
+    upscaler_selected: str = "Automático",
     upscale_mode_selected: str = "Automático",
     sharpness_selected: float = 0.8,
     overlay_selected: bool = False,
@@ -52,9 +56,40 @@ def inject_fsr_mod(
     return installer.inject_fsr_mod(
         mod_source_dir, target_dir, log_func,
         spoof_dll_name, gpu_choice, fg_mode_selected,
-        upscale_mode_selected, sharpness_selected, 
-        overlay_selected, mb_selected
+        upscaler_selected, upscale_mode_selected,
+        sharpness_selected, overlay_selected, mb_selected
     )
+
+def install_combined_mods(
+    optiscaler_source_dir: str,
+    nukem_source_dir: str,
+    target_dir: str,
+    log_func,
+    spoof_dll_name: str = "dxgi.dll",
+    gpu_choice: int = 2,
+    fg_mode_selected: str = "Automático",
+    upscaler_selected: str = "Automático",
+    upscale_mode_selected: str = "Automático",
+    sharpness_selected: float = 0.8,
+    overlay_selected: bool = False,
+    mb_selected: bool = True,
+    install_nukem: bool = True
+) -> bool:
+    """Adapter for installer.install_combined_mods() with legacy signature."""
+    return installer.install_combined_mods(
+        optiscaler_source_dir, nukem_source_dir, target_dir, log_func,
+        spoof_dll_name, gpu_choice, fg_mode_selected,
+        upscaler_selected, upscale_mode_selected,
+        sharpness_selected, overlay_selected, mb_selected, install_nukem
+    )
+
+def check_nukem_mod_files(nukem_source_dir: str, log_func) -> Tuple[str, bool]:
+    """Adapter for installer.check_nukem_mod_files()."""
+    return installer.check_nukem_mod_files(nukem_source_dir, log_func)
+
+def install_nukem_mod(nukem_source_dir: str, target_dir: str, log_func) -> bool:
+    """Adapter for installer.install_nukem_mod()."""
+    return installer.install_nukem_mod(nukem_source_dir, target_dir, log_func)
 
 def check_mod_source_files(mod_source_dir: str, log_func) -> Tuple[str, bool]:
     """Adapter for installer.check_mod_source_files()."""

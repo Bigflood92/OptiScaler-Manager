@@ -3,21 +3,22 @@
 import logging
 import os
 from datetime import datetime
+from ..config.paths import LOG_DIR
 
 class LogManager:
     """Manages logging operations for FSR Injector."""
     
-    def __init__(self, log_dir="logs"):
+    def __init__(self, log_dir=None):
         """Initialize the log manager.
         
         Args:
-            log_dir (str): Directory to store log files
+            log_dir (str): Directory to store log files. If None, uses LOG_DIR from paths.py
         """
-        self.log_dir = log_dir
-        os.makedirs(log_dir, exist_ok=True)
+        self.log_dir = str(log_dir) if log_dir else str(LOG_DIR)
+        os.makedirs(self.log_dir, exist_ok=True)
         
         # Configure file handler
-        log_file = os.path.join(log_dir, f"fsr_injector_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+        log_file = os.path.join(self.log_dir, f"fsr_injector_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
         file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')

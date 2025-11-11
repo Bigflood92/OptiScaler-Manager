@@ -34,15 +34,15 @@ SPOOFING_OPTIONS = {
 }
 SPOOFING_DLL_NAMES = list(SPOOFING_OPTIONS.values())
 
-# Frame Generation Options
-FG_OPTIONS = ["Automático", "FSR 4.0", "FSR 3.1", "FSR 3.0", "XeSS", "Desactivada"]
-FG_MODE_MAP = {
+# Frame Generation Type Options (actual OptiScaler FGType values)
+# Nota: Antes la lista contenía opciones de reescalado (FSR/XeSS) que pertenecen a UPSCALER_OPTIONS.
+# Ahora se alinean con los valores reales soportados por OptiScaler.ini -> [FrameGen] FGType
+FG_OPTIONS = ["Automático", "OptiFG", "NukemFG", "Desactivada"]
+FG_MODE_MAP = {  # Conservamos el nombre para compatibilidad con imports existentes
     "Automático": "auto",
-    "FSR 4.0": "fsr40",
-    "FSR 3.1": "fsr31",
-    "FSR 3.0": "fsr30",
-    "XeSS": "xess",
-    "Desactivada": "off"
+    "OptiFG": "optifg",
+    "NukemFG": "nukems",
+    "Desactivada": "nofg"
 }
 FG_MODE_MAP_INVERSE = {v: k for k, v in FG_MODE_MAP.items()}
 
@@ -52,6 +52,7 @@ UPSCALER_OPTIONS = [
     "FSR 4.0",
     "FSR 3.1",
     "FSR 2.2",
+    "FSR 2.1",
     "XeSS",
     "DLSS"
 ]
@@ -60,10 +61,73 @@ UPSCALER_MAP = {
     "FSR 4.0": "fsr40",
     "FSR 3.1": "fsr31",
     "FSR 2.2": "fsr22",
+    "FSR 2.1": "fsr21",
     "XeSS": "xess",
     "DLSS": "dlss"
 }
 UPSCALER_MAP_INVERSE = {v: k for k, v in UPSCALER_MAP.items()}
+
+# Upscaler options específicas por API (según OptiScaler.ini real)
+# Nota: Estas son las opciones válidas que OptiScaler acepta para cada backend
+UPSCALER_OPTIONS_DX11 = [
+    "Automático",
+    "FSR 2.2 (nativo)",
+    "FSR 3.1 (nativo)",
+    "XeSS (nativo)",
+    "XeSS 1.2 (Dx11on12)",
+    "FSR 2.1 1.2 (Dx11on12)",
+    "FSR 2.2 1.2 (Dx11on12)",
+    "FSR 3.1 1.2 (Dx11on12)",
+    "DLSS"
+]
+
+UPSCALER_MAP_DX11 = {
+    "Automático": "auto",
+    "FSR 2.2 (nativo)": "fsr22",
+    "FSR 3.1 (nativo)": "fsr31",
+    "XeSS (nativo)": "xess",
+    "XeSS 1.2 (Dx11on12)": "xess_12",
+    "FSR 2.1 1.2 (Dx11on12)": "fsr21_12",
+    "FSR 2.2 1.2 (Dx11on12)": "fsr22_12",
+    "FSR 3.1 1.2 (Dx11on12)": "fsr31_12",
+    "DLSS": "dlss"
+}
+
+UPSCALER_OPTIONS_DX12 = [
+    "Automático",
+    "XeSS",
+    "FSR 2.1",
+    "FSR 2.2",
+    "FSR 3.1 (también FSR4)",
+    "DLSS"
+]
+
+UPSCALER_MAP_DX12 = {
+    "Automático": "auto",
+    "XeSS": "xess",
+    "FSR 2.1": "fsr21",
+    "FSR 2.2": "fsr22",
+    "FSR 3.1 (también FSR4)": "fsr31",  # fsr31 cubre también fsr40 en Dx12
+    "DLSS": "dlss"
+}
+
+UPSCALER_OPTIONS_VULKAN = [
+    "Automático",
+    "FSR 2.1",
+    "FSR 2.2",
+    "FSR 3.1",
+    "XeSS",
+    "DLSS"
+]
+
+UPSCALER_MAP_VULKAN = {
+    "Automático": "auto",
+    "FSR 2.1": "fsr21",
+    "FSR 2.2": "fsr22",
+    "FSR 3.1": "fsr31",
+    "XeSS": "xess",
+    "DLSS": "dlss"
+}
 
 # Upscaling Options
 UPSCALE_OPTIONS = ["Automático", "Calidad", "Equilibrado", "Rendimiento", "Ultra Rendimiento"]

@@ -1,10 +1,9 @@
 """Punto de entrada principal de la aplicación.
 
-Este archivo intentará cargar la GUI original (monolito) desde
-`baks/fsr_injector_original.py` si existe. Esto permite mantener la
-interfaz EXACTA que tenías antes mientras trabajamos sobre la nueva
-estructura modular. Si no se encuentra el backup, se usa la GUI
-modular en `src.gui.main_window.MainWindow`.
+Modo de ejecución:
+ - Por defecto se fuerza la GUI modular (más ligera y rápida).
+ - Si estableces la variable de entorno OPTISCALER_USE_LEGACY=1
+     se intentará cargar la GUI legacy para compatibilidad.
 """
 
 import os
@@ -29,7 +28,9 @@ def setup_path():
 project_root = setup_path()
 
 # Now we can import our modules
-from .core.utils import is_admin
+from .core.utils import is_admin, run_as_admin
+from .config.paths import initialize_directories
+import time
 
 
 def _load_legacy_app(path):
@@ -55,53 +56,63 @@ def main():
     monolítico está presente, intenta ejecutar exactamente esa GUI
     (Option B) para mantener comportamiento idéntico al original.
     """
-    # Verifica permisos de administrador
+    # Inicializar estructura de directorios
+    initialize_directories()
+    
+    # Verifica permisos de administrador y relanza si falta elevación
     if not is_admin():
-        print("El programa requiere permisos de administrador.")
-        print("Por favor, ejecutar como administrador.")
-        return 1
+        print("[UAC] No se detectan privilegios de administrador. Intentando elevar...")
+        elevated = run_as_admin()
+        if elevated:
+            print("[UAC] Elevación solicitada. Cerrando proceso actual.")
+            return 0  # El nuevo proceso elevado continuará.
+        else:
+            print("[UAC] Falló la elevación automática. Ejecuta manualmente 'Ejecutar como administrador'.")
+            return 1
+    # Perfilado opcional
+    profile = os.environ.get("OPTISCALER_PROFILE") == "1"
+    t0 = time.perf_counter()
 
-    # Primero intentar importar la versión migrada/expuesta en src.gui.legacy_app
-    try:
-        from .gui import legacy_app
-        LegacyAppClass = getattr(legacy_app, 'FSRInjectorApp', None)
-        if LegacyAppClass is not None:
-            app = LegacyAppClass()
-            # IMPORTANTE: ejecutar el loop de la app; de lo contrario el proceso termina inmediatamente
-            try:
-                app.mainloop()
-            except AttributeError:
-                # Por compatibilidad con posibles implementaciones que ya hacen mainloop() en __init__
-                pass
-            return 0
-    except ImportError as e:
-        # Falló la importación desde .gui.legacy_app, intentaremos cargar desde el backup
-        print(f"Intento de cargar legacy desde .gui.legacy_app falló: {e}")
-        # continuar al fallback que carga el baks/ archivo directamente
-        pass
-
-    # Intentar cargar GUI legacy directamente desde el backup (antiguo comportamiento)
-    backup_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'baks', 'fsr_injector_original.py')
-    backup_path = os.path.normpath(os.path.abspath(backup_path))
-    LegacyAppClass = _load_legacy_app(backup_path)
-    if LegacyAppClass is not None:
+    # GUI Gaming (nueva y simplificada) - POR DEFECTO
+    # Para usar legacy: set OPTISCALER_USE_LEGACY=1
+    use_legacy = os.environ.get("OPTISCALER_USE_LEGACY") == "1"
+    
+    if not use_legacy:
+        # GUI Gaming Mode (Nueva)
         try:
-            app = LegacyAppClass()
+            from .gui.gaming_app import GamingApp
+            if profile:
+                t1 = time.perf_counter()
+            app = GamingApp()
+            if profile:
+                t2 = time.perf_counter()
+                log_path = os.path.join(project_root, "profile_startup.log")
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(f"imports: {(t1-t0)*1000:.1f} ms | gaming_app init: {(t2-t1)*1000:.1f} ms\n")
             app.mainloop()
             return 0
         except Exception as e:
-            print(f"Error al ejecutar GUI legacy (backup): {e}")
-            # Caeremos al fallback modular
-
-    # Fallback: usar GUI modular si la legacy no está disponible o falla
-    try:
-        from .gui.main_window import MainWindow
-        app = MainWindow()
-        app.mainloop()
-        return 0
-    except Exception as e:
-        print(f"Error al iniciar la GUI modular: {e}")
-        return 2
+            print(f"Error al iniciar Gaming App: {e}")
+            import traceback
+            traceback.print_exc()
+            # Fallback a legacy si falla
+            use_legacy = True
+    
+    if use_legacy:
+        # Fallback: GUI Legacy
+        try:
+            from .gui import legacy_app
+            LegacyAppClass = getattr(legacy_app, 'FSRInjectorApp', None)
+            if LegacyAppClass is not None:
+                app = LegacyAppClass()
+                try:
+                    app.mainloop()
+                except AttributeError:
+                    pass
+                return 0
+        except ImportError as e:
+            print(f"Error al cargar legacy: {e}")
+            return 2
 
 
 if __name__ == "__main__":
