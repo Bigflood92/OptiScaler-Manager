@@ -5,9 +5,18 @@ import sys
 from pathlib import Path
 
 # Get base directory (where the exe will be or where the script is run from)
-if hasattr(sys, 'frozen'):
-    # Running as compiled executable
-    BASE_DIR = Path(os.path.dirname(sys.executable))
+# Check for Nuitka onefile FIRST (before sys.frozen, because Nuitka doesn't set it reliably)
+if 'NUITKA_ONEFILE_DIRECTORY' in os.environ:
+    # Nuitka onefile: use the directory where the original .exe is located
+    BASE_DIR = Path(os.environ['NUITKA_ONEFILE_DIRECTORY'])
+elif hasattr(sys, 'frozen'):
+    # PyInstaller or other freezers
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller onefile
+        BASE_DIR = Path(os.path.dirname(sys.executable))
+    else:
+        # Other frozen executables
+        BASE_DIR = Path(os.path.dirname(sys.executable))
 else:
     # Running as script - go up to project root
     BASE_DIR = Path(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
