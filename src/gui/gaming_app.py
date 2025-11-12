@@ -1596,7 +1596,7 @@ class GamingApp(ctk.CTk):
         # Botón examinar
         ctk.CTkButton(
             path_frame,
-            text="� Examinar",
+            text="🔍 Examinar",
             command=self.browse_nukem_folder,
             height=35,
             width=100,
