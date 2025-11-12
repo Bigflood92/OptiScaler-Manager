@@ -503,11 +503,27 @@ class GitHubClient:
             for asset in assets:
                 self.logger('INFO', f"  - {asset.get('name', 'unknown')}")
             
+            # Verificar si el release indica descarga externa (ej: Nexus Mods)
+            body = release_info.get('body', '').lower()
+            if not assets and ('nexus' in body or 'nexusmods' in body):
+                nexus_msg = (
+                    "⚠️ Los binarios de dlssg-to-fsr3 se han movido a Nexus Mods.\n\n"
+                    "Para descargar manualmente:\n"
+                    "1. Ve a: https://www.nexusmods.com/site/mods/738\n"
+                    "2. Descarga 'dlssg-to-fsr3-0.130' (Main Files)\n"
+                    "3. Extrae en: Config Optiscaler Gestor\\mod_source\\dlssg-to-fsr3\\dlssg-to-fsr3_0.130\\\n\n"
+                    "NOTA: El autor ya no sube binarios a GitHub."
+                )
+                self.logger('WARN', nexus_msg)
+                raise FSRException(nexus_msg)
+            
             if not assets:
                 # Si no hay assets, intentar buscar en el tarball_url o zipball_url
+                # ADVERTENCIA: Esto descarga código fuente, no binarios
                 zipball_url = release_info.get('zipball_url')
                 if zipball_url:
-                    self.logger('INFO', f"No hay assets, usando zipball_url: {zipball_url}")
+                    self.logger('WARN', "⚠️ No hay assets binarios, descargando código fuente (requiere compilación)")
+                    self.logger('INFO', f"Usando zipball_url: {zipball_url}")
                     return self._download_from_source_archive(
                         zipball_url,
                         extract_dir,
