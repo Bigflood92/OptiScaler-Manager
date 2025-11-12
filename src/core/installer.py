@@ -445,20 +445,31 @@ def inject_fsr_mod(mod_source_dir: str, target_dir: str, log_func, spoof_dll_nam
                         os.rename(target_item_path, backup_path)
                         log_func('WARN', f"Archivo existente {item_name} renombrado a {item_name}.bak")
                         created_backups.append(backup_path)
+                    except PermissionError:
+                        log_func('ERROR', f"ACCESO DENEGADO al archivo '{item_name}'. Cierra el juego/launcher.")
+                        return False
                     except Exception as e:
                         log_func('ERROR', f"No se pudo crear backup de {item_name}: {e}. Se intentará sobrescribir.")
-                shutil.copy2(source_item_path, target_dir)
-                copied_files += 1
-                log_func('INFO', f"  -> Copiando archivo: {item_name}")
+                try:
+                    shutil.copy2(source_item_path, target_dir)
+                    copied_files += 1
+                    log_func('INFO', f"  -> Copiando archivo: {item_name}")
+                except PermissionError:
+                    log_func('ERROR', f"ACCESO DENEGADO al copiar '{item_name}'. Cierra el juego/launcher.")
+                    return False
         for dir_name in TARGET_MOD_DIRS:
             source_path = os.path.join(source_dir, dir_name)
             target_path = os.path.join(target_dir, dir_name)
             if os.path.isdir(source_path):
-                if os.path.exists(target_path):
-                    shutil.rmtree(target_path)
-                    log_func('WARN', f"  -> Eliminando carpeta existente: {dir_name}")
-                shutil.copytree(source_path, target_path)
-                log_func('INFO', f"  -> Copiando carpeta recursiva: {dir_name}")
+                try:
+                    if os.path.exists(target_path):
+                        shutil.rmtree(target_path)
+                        log_func('WARN', f"  -> Eliminando carpeta existente: {dir_name}")
+                    shutil.copytree(source_path, target_path)
+                    log_func('INFO', f"  -> Copiando carpeta recursiva: {dir_name}")
+                except PermissionError:
+                    log_func('ERROR', f"ACCESO DENEGADO a la carpeta '{dir_name}'. Cierra el juego/launcher.")
+                    return False
         if copied_files == 0 and not os.path.exists(os.path.join(target_dir, 'OptiScaler.dll')):
              log_func('WARN', "No se encontraron archivos relevantes para copiar.")
              return False
