@@ -53,7 +53,28 @@ en tus juegos favoritos.
                 "emoji": "🎮"
             },
             {
-                "title": "Paso 1: Configurar Carpetas 📁",
+                "title": "Paso 1: Descargar Mods 📥",
+                "content": """Descarga los mods necesarios:
+
+OptiScaler (REQUERIDO):
+1. Ve a "Ajustes de la App" → "Gestión de Mods"
+2. Haz clic en "⬇️ Descargar / Gestionar OptiScaler"
+3. Selecciona la versión que quieras (recomendado: última)
+4. Espera a que se descargue
+
+dlssg-to-fsr3 (Solo AMD/Intel/NVIDIA no-RTX40):
+1. En la misma sección, haz clic en "🔗 Descargar desde Nexus Mods"
+2. Se abrirá Nexus Mods en tu navegador
+3. Descarga el archivo ZIP (Main Files)
+4. Extrae el contenido en una carpeta
+5. Pega la ruta en el campo de texto o usa "🔍 Examinar"
+
+Nota: NVIDIA RTX 40+ no necesita dlssg-to-fsr3 (tiene DLSS FG nativo).
+                """,
+                "emoji": "📥"
+            },
+            {
+                "title": "Paso 2: Configurar Carpetas 📁",
                 "content": """Antes de empezar, añade tus carpetas de juegos:
 
 1. Ve a la pestaña "Ajustes de la App"
@@ -69,7 +90,7 @@ automáticamente, pero puedes añadir carpetas personalizadas.
                 "emoji": "📁"
             },
             {
-                "title": "Paso 2: Seleccionar Juegos ✅",
+                "title": "Paso 3: Seleccionar Juegos ✅",
                 "content": """Instalar mods en tus juegos es muy fácil:
 
 1. En la pestaña "Juegos Detectados", verás todos tus juegos
@@ -83,7 +104,7 @@ la configuración a todos a la vez.
                 "emoji": "✅"
             },
             {
-                "title": "Paso 3: Configurar Mod ⚙️",
+                "title": "Paso 4: Configurar Mod ⚙️",
                 "content": """Personaliza el mod según tu hardware:
 
 Presets Rápidos:
@@ -102,7 +123,7 @@ Si no sabes qué elegir, usa el preset "Balanced".
                 "emoji": "⚙️"
             },
             {
-                "title": "Paso 4: Aplicar e Instalar 🚀",
+                "title": "Paso 5: Aplicar e Instalar 🚀",
                 "content": """¡Listo para instalar!
 
 1. Revisa tu configuración en el panel derecho
