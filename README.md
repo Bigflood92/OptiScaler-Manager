@@ -84,12 +84,12 @@
 
 **[📦 Descargar última versión](https://github.com/Bigflood92/OptiScaler-Manager/releases/latest)**
 
-1. Descarga `Gestor Optiscaler V2.0 ADMIN.exe` (build Nuitka onefile con UAC)
-2. Doble clic (Windows mostrará el prompt de administrador automáticamente)
+1. Descarga `Gestor OptiScaler V2.1.exe`
+2. Doble clic (Windows solicitará permisos de administrador automáticamente)
 3. Se crearán las carpetas en `Config Optiscaler Gestor/` junto al .exe
 4. ¡Listo para usar!
 
-> **Nota**: El ejecutable no está firmado digitalmente. Es seguro, solo acepta el aviso UAC de Windows.
+> **Nota**: El ejecutable requiere permisos de administrador para funcionar (necesarios para copiar archivos en carpetas de juegos). No está firmado digitalmente - acepta el aviso UAC de Windows.
 
 ### Desde Código Fuente (Desarrolladores)
 
@@ -124,10 +124,11 @@ python -m src.main
 
 ### Primera Ejecución
 
-1. Ejecuta `Gestor optiscaler V2.0.exe` como **administrador**
-2. Ve a **Ajustes de la App** → **Carpetas Personalizadas**
-3. Añade rutas donde tienes juegos instalados (ej: `D:\Juegos`)
-4. Pulsa **🔍 Escanear** para detectar juegos
+1. Ejecuta `Gestor OptiScaler V2.1.exe` (solicitará permisos de administrador automáticamente)
+2. Aparecerá un tutorial de bienvenida en el primer inicio
+3. Ve a **Ajustes de la App** → **Carpetas Personalizadas**
+4. Añade rutas donde tienes juegos instalados (ej: `D:\Juegos`)
+5. Pulsa **🔍 Escanear** para detectar juegos
 
 ### Instalar Mod en Juegos
 
@@ -200,19 +201,19 @@ pip install nuitka ordered-set zstandard
 # Build con elevación UAC automática
 ./build_nuitka_admin.ps1
 
-# El ejecutable queda en dist/ Gestor Optiscaler V2.0 ADMIN.exe
+# El ejecutable queda en dist/Gestor OptiScaler V2.1.exe
 ```
 
-### Alternativa: PyInstaller (no recomendada actualmente)
+### Alternativa: PyInstaller (obsoleto, no recomendado)
 
 ```powershell
 # Activar entorno virtual
 .\.venv312\Scripts\Activate.ps1
 
-# (Puede fallar con ciertos problemas de imágenes en CustomTkinter)
+# Puede fallar con ciertos problemas de imágenes en CustomTkinter
 pyinstaller --noconfirm "Gestor optiscaler V2.0.spec"
 
-# Executable: dist/Gestor optiscaler V2.0.exe
+# Ejecutable: dist/Gestor optiscaler V2.0.exe
 ```
 
 ### Ejecutar Tests

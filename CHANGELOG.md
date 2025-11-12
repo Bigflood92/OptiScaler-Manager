@@ -9,6 +9,9 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [2.1.0] - 2025-11-12
 
 ### Añadido
+- **Tutorial de bienvenida interactivo**: 6 páginas con guía completa para nuevos usuarios
+  - Auto-muestra en primer inicio con opción "No volver a mostrar"
+  - Navegación intuitiva con emojis grandes y contenido claro
 - Build nativo con Nuitka (onefile) para máxima compatibilidad
 - Ejecutable con elevación UAC automática (`--windows-uac-admin`)
 - Fallback de auto-elevación en código (relanza si no hay admin)
@@ -18,10 +21,14 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Detección de entorno Nuitka usando `NUITKA_ONEFILE_DIRECTORY`
 
 ### Cambiado
+- **Nombre del ejecutable simplificado**: `Gestor OptiScaler V2.1.exe` (elimina sufijo "ADMIN")
+  - El permiso de administrador es obligatorio y se solicita automáticamente
+- **Código base limpio**: Eliminados 10,004 líneas de código legacy obsoleto
+  - Eliminadas interfaces antiguas (legacy_app.py, main_window.py)
+  - Una única interfaz moderna (gaming_app.py)
 - Centralización de rutas y logs usando `src/config/paths.py`
 - README actualizado con nuevas capturas de pantalla (5 imágenes)
 - README actualizado con instrucciones de compilación vía Nuitka
-- Nombre del artefacto de release: `Gestor Optiscaler V2.0 ADMIN.exe`
 - Interfaz simplificada (eliminada información de GPU en settings)
 - Iconos de botones de gamepad corregidos (Xbox/PlayStation)
 
