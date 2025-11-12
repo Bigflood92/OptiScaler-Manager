@@ -57,6 +57,10 @@ if (-not $SkipBackup -and -not $DryRun) {
 
 # 4. Verificar/instalar Java (necesario para BFG)
 Write-Host "[4/8] Verificando Java..." -ForegroundColor Cyan
+
+# Refresh PATH para detectar Java recién instalado
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
 try {
     $javaVersion = java -version 2>&1 | Select-Object -First 1
     Write-Host "OK Java instalado: $javaVersion" -ForegroundColor Green
