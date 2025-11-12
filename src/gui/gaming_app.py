@@ -1013,9 +1013,7 @@ class GamingApp(ctk.CTk):
             text_color="#00FF00"
         ).pack(side="left", padx=10)
         
-        # Determinar opciones según GPU y mods instalados
-        self.update_fg_options()
-        
+        # Crear combobox primero (con valores por defecto)
         self.fg_combo = ctk.CTkComboBox(
             fg_frame,
             variable=self.fg_mode_var,
@@ -1024,6 +1022,9 @@ class GamingApp(ctk.CTk):
             width=300
         )
         self.fg_combo.pack(padx=15, pady=(0, 10), fill="x")
+        
+        # Actualizar opciones según configuración (después de crear el combobox)
+        self.update_fg_options()
         
         # === 5. LÍMITE DE FPS ===
         fps_frame = ctk.CTkFrame(self.config_options_frame, fg_color="#1a1a1a", corner_radius=8)
@@ -2861,18 +2862,22 @@ Licencia: Open Source
         if not hasattr(self, 'fg_combo'):
             return
         
-        # Verificar si está instalado dlssg-to-fsr3
-        nukem_installed = False
-        if os.path.exists(DLSSG_TO_FSR3_DIR):
-            import glob
-            nukem_folders = glob.glob(os.path.join(DLSSG_TO_FSR3_DIR, "dlssg-to-fsr3_*"))
-            nukem_installed = len(nukem_folders) > 0
+        # Verificar si dlssg-to-fsr3 está configurado en ajustes
+        nukem_configured = False
+        if hasattr(self, 'nukem_path_var'):
+            # Si ya existe la variable, usarla
+            nukem_path = self.nukem_path_var.get().strip()
+            nukem_configured = bool(nukem_path and os.path.exists(nukem_path))
+        else:
+            # Si aún no existe (primera carga), leer del config
+            nukem_path = self.config.get("nukem_mod_path", "").strip()
+            nukem_configured = bool(nukem_path and os.path.exists(nukem_path))
         
-        # Opciones base
+        # Opciones base (siempre disponibles con OptiScaler)
         options = ["Desactivado", "OptiFG"]
         
-        # Añadir FSR-FG solo si está instalado
-        if nukem_installed:
+        # Añadir FSR-FG solo si está configurado en ajustes
+        if nukem_configured:
             options.append("FSR-FG (Nukem's DLSSG)")
         
         # Actualizar combobox
@@ -3036,6 +3041,9 @@ Licencia: Open Source
         self.nukem_path_var.set(folder)
         self.config["nukem_mod_path"] = folder
         save_config(self.config)
+        
+        # Actualizar opciones de Frame Generation
+        self.update_fg_options()
         
         self.log(f"✅ Carpeta de dlssg-to-fsr3 configurada: {folder}")
         messagebox.showinfo(

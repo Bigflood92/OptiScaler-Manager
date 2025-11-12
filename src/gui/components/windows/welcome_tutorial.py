@@ -13,6 +13,7 @@ class WelcomeTutorial(ctk.CTkToplevel):
     def __init__(self, parent, config_path: Path, on_close: Optional[Callable] = None):
         super().__init__(parent)
         
+        self.parent_app = parent  # Store reference to parent app
         self.config_path = config_path
         self.on_close_callback = on_close
         self.current_page = 0
@@ -303,7 +304,11 @@ Controles útiles:
     def save_preference(self):
         """Guarda la preferencia de no mostrar el tutorial."""
         try:
-            # Cargar config existente
+            # Actualizar config del padre (para que no se sobrescriba al cerrar la app)
+            if hasattr(self.parent_app, 'config'):
+                self.parent_app.config['show_welcome_tutorial'] = False
+            
+            # Cargar config existente del archivo
             if self.config_path.exists():
                 with open(self.config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
