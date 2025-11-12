@@ -1551,78 +1551,59 @@ class GamingApp(ctk.CTk):
             text_color="#888888"
         ).pack(anchor="w", padx=15, pady=(0, 5))
         
-        ctk.CTkButton(
-            mod_frame,
-            text="⬇️ Descargar / Gestionar dlssg-to-fsr3",
-            command=self.open_nukem_downloader,
-            height=40,
-            fg_color="#3a3a3a",
-            hover_color="#4a4a4a",
-            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold")
-        ).pack(fill="x", padx=15, pady=5)
-        
-        # Selector de versión dlssg-to-fsr3
-        version_frame_nukem = ctk.CTkFrame(mod_frame, fg_color="transparent")
-        version_frame_nukem.pack(fill="x", padx=15, pady=(5, 5))
-        
-        ctk.CTkLabel(
-            version_frame_nukem,
-            text="Versión activa:",
-            font=ctk.CTkFont(size=FONT_SMALL),
-            text_color="#888888"
-        ).pack(side="left", padx=(0, 10))
-        
-        # Obtener versiones y establecer valor inicial
-        nukem_versions = self.get_downloaded_nukem_versions()
-        default_nukem = nukem_versions[0] if nukem_versions else "Sin versiones descargadas"
-        
-        self.nukem_version_var = ctk.StringVar(value=default_nukem)
-        self.nukem_version_combo = ctk.CTkComboBox(
-            version_frame_nukem,
-            variable=self.nukem_version_var,
-            values=nukem_versions,
-            state="readonly",
-            width=250,
-            fg_color="#2a2a2a",
-            button_color="#3a3a3a",
-            button_hover_color="#4a4a4a",
-            dropdown_fg_color="#2a2a2a"
-        )
-        self.nukem_version_combo.pack(side="left", fill="x", expand=True)
-        
-        # Botón de carpeta personalizada para Nukem
-        ctk.CTkButton(
-            mod_frame,
-            text="📂 Usar carpeta personalizada...",
-            command=self.select_custom_nukem_folder,
-            height=30,
-            fg_color="#2a2a2a",
-            hover_color="#3a3a3a",
-            font=ctk.CTkFont(size=11)
-        ).pack(fill="x", padx=15, pady=(2, 5))
-        
         # Link a Nexus Mods
-        nexus_link_frame = ctk.CTkFrame(mod_frame, fg_color="transparent")
-        nexus_link_frame.pack(fill="x", padx=15, pady=(2, 10))
-        
         ctk.CTkLabel(
-            nexus_link_frame,
+            mod_frame,
             text="💡 Los binarios están en Nexus Mods:",
             font=ctk.CTkFont(size=FONT_TINY),
             text_color="#888888"
-        ).pack(side="left")
+        ).pack(anchor="w", padx=15, pady=(5, 2))
         
         nexus_btn = ctk.CTkButton(
-            nexus_link_frame,
-            text="🔗 Descargar desde Nexus",
+            mod_frame,
+            text="🔗 Descargar desde Nexus Mods",
             command=self.open_nexus_mods,
-            height=25,
-            fg_color="#FF6600",
-            hover_color="#FF8833",
-            font=ctk.CTkFont(size=FONT_TINY, weight="bold"),
-            width=150
+            height=30,
+            fg_color="#2a2a2a",
+            hover_color="#3a3a3a",
+            font=ctk.CTkFont(size=FONT_SMALL)
         )
-        nexus_btn.pack(side="left", padx=10)
+        nexus_btn.pack(fill="x", padx=15, pady=(0, 10))
+        
+        # Campo de ruta + botón examinar
+        ctk.CTkLabel(
+            mod_frame,
+            text="Ruta de la carpeta descargada:",
+            font=ctk.CTkFont(size=FONT_SMALL),
+            text_color="#888888"
+        ).pack(anchor="w", padx=15, pady=(5, 2))
+        
+        path_frame = ctk.CTkFrame(mod_frame, fg_color="transparent")
+        path_frame.pack(fill="x", padx=15, pady=(0, 10))
+        
+        # Campo de texto para la ruta
+        self.nukem_path_var = ctk.StringVar(value=self.config.get("nukem_mod_path", ""))
+        self.nukem_path_entry = ctk.CTkEntry(
+            path_frame,
+            textvariable=self.nukem_path_var,
+            placeholder_text="Pega aquí la ruta o usa el botón Examinar",
+            font=ctk.CTkFont(size=FONT_SMALL),
+            fg_color="#2a2a2a",
+            height=35
+        )
+        self.nukem_path_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        
+        # Botón examinar
+        ctk.CTkButton(
+            path_frame,
+            text="� Examinar",
+            command=self.browse_nukem_folder,
+            height=35,
+            width=100,
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
+            font=ctk.CTkFont(size=FONT_SMALL)
+        ).pack(side="left")
         
         # Carpeta de mods
         ctk.CTkButton(
@@ -2461,54 +2442,22 @@ Licencia: Open Source
         return None
     
     def get_nukem_source_dir(self):
-        """Obtiene la carpeta de dlssg-to-fsr3 según la versión seleccionada.
+        """Obtiene la carpeta de dlssg-to-fsr3 desde el campo de ruta.
         
         Returns:
             str|None: Ruta a la carpeta del mod o None si no se encuentra
         """
-        import glob
+        # Leer la ruta del campo de texto
+        nukem_path = self.nukem_path_var.get().strip()
         
-        selected_version = self.nukem_version_var.get()
-        
-        # Si no hay versiones descargadas
-        if selected_version == "Sin versiones descargadas":
-            return None
-        
-        # Si es versión custom
-        if selected_version.startswith("[Custom]"):
-            folder_name = selected_version.replace("[Custom] ", "")
-            # Buscar primero en config
-            custom_path = self.config.get("custom_nukem_folder")
-            if custom_path and os.path.exists(custom_path):
-                return custom_path
-            # Buscar en DLSSG_TO_FSR3_DIR
-            custom_path = os.path.join(DLSSG_TO_FSR3_DIR, folder_name)
-            if os.path.exists(custom_path):
-                return custom_path
-        
-        # La versión viene en formato "dlssg-to-fsr3_X.X.X"
-        if selected_version.startswith("dlssg-to-fsr3_"):
-            nukem_path = os.path.join(DLSSG_TO_FSR3_DIR, selected_version)
-            if os.path.exists(nukem_path):
+        # Si hay una ruta y existe, usarla
+        if nukem_path and os.path.exists(nukem_path):
+            # Verificar que tenga archivos .dll
+            dll_files = [f for f in os.listdir(nukem_path) if f.endswith('.dll')]
+            if dll_files:
                 return nukem_path
         
-        # Buscar por patrón
-        patterns = [
-            os.path.join(DLSSG_TO_FSR3_DIR, f"*{selected_version}*"),
-            os.path.join(DLSSG_TO_FSR3_DIR, f"dlssg-to-fsr3_{selected_version}"),
-            os.path.join(DLSSG_TO_FSR3_DIR, f"dlssg-to-fsr3*{selected_version}*")
-        ]
-        
-        for pattern in patterns:
-            matches = glob.glob(pattern)
-            if matches and os.path.isdir(matches[0]):
-                return matches[0]
-        
-        # Si no se encuentra, usar la primera disponible
-        all_nukem = glob.glob(os.path.join(DLSSG_TO_FSR3_DIR, "dlssg-to-fsr3_*"))
-        if all_nukem:
-            return all_nukem[0]
-        
+        # Si no hay ruta válida, retornar None
         return None
         
     def apply_to_selected(self):
@@ -2965,33 +2914,6 @@ Licencia: Open Source
         
         return versions
     
-    def get_downloaded_nukem_versions(self):
-        """Obtiene lista de versiones de dlssg-to-fsr3 descargadas.
-        
-        Returns:
-            list: Lista de versiones disponibles
-        """
-        import glob
-        
-        if not os.path.exists(DLSSG_TO_FSR3_DIR):
-            return ["Sin versiones descargadas"]
-        
-        # Buscar carpetas de dlssg-to-fsr3
-        nukem_folders = glob.glob(os.path.join(DLSSG_TO_FSR3_DIR, "dlssg-to-fsr3_*"))
-        
-        if not nukem_folders:
-            return ["Sin versiones descargadas"]
-        
-        versions = []
-        for folder in nukem_folders:
-            folder_name = os.path.basename(folder)
-            versions.append(folder_name)
-        
-        # Ordenar por versión (más reciente primero)
-        versions.sort(reverse=True)
-        
-        return versions
-    
     def update_version_combos(self):
         """Actualiza los valores de los combos de versión."""
         try:
@@ -3001,11 +2923,7 @@ Licencia: Open Source
             if optiscaler_versions and (self.optiscaler_version_var.get() not in optiscaler_versions):
                 self.optiscaler_version_var.set(optiscaler_versions[0])
             
-            # Actualizar dlssg-to-fsr3
-            nukem_versions = self.get_downloaded_nukem_versions()
-            self.nukem_version_combo.configure(values=nukem_versions)
-            if nukem_versions and (self.nukem_version_var.get() not in nukem_versions):
-                self.nukem_version_var.set(nukem_versions[0])
+            # Para dlssg-to-fsr3, ya no hay combo de versiones (se usa campo de ruta)
             
             self.log('INFO', 'Selectores de versión actualizados')
         except Exception as e:
@@ -3063,6 +2981,40 @@ Licencia: Open Source
         messagebox.showinfo(
             "Carpeta configurada",
             f"Se usará la carpeta personalizada:\n{folder}"
+        )
+    
+    def browse_nukem_folder(self):
+        """Permite seleccionar la carpeta de dlssg-to-fsr3 descargada desde Nexus Mods."""
+        from tkinter import filedialog
+        
+        folder = filedialog.askdirectory(
+            title="Seleccionar carpeta de dlssg-to-fsr3 descargada desde Nexus Mods",
+            initialdir=MOD_SOURCE_DIR if os.path.exists(MOD_SOURCE_DIR) else None
+        )
+        
+        if not folder:
+            return
+        
+        # Verificar que tenga archivos .dll (validación básica)
+        dll_files = [f for f in os.listdir(folder) if f.endswith('.dll')]
+        
+        if not dll_files:
+            messagebox.showwarning(
+                "Carpeta inválida",
+                "La carpeta seleccionada no contiene archivos .dll de dlssg-to-fsr3.\n\n"
+                "Asegúrate de seleccionar la carpeta que contiene los archivos del mod descargado desde Nexus Mods."
+            )
+            return
+        
+        # Actualizar el campo de texto y guardar en config
+        self.nukem_path_var.set(folder)
+        self.config["nukem_mod_path"] = folder
+        save_config(self.config)
+        
+        self.log(f"✅ Carpeta de dlssg-to-fsr3 configurada: {folder}")
+        messagebox.showinfo(
+            "Carpeta configurada",
+            f"Se usará la carpeta de dlssg-to-fsr3:\n{folder}"
         )
     
     def select_custom_nukem_folder(self):
