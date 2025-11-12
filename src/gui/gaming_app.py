@@ -1590,6 +1590,40 @@ class GamingApp(ctk.CTk):
         )
         self.nukem_version_combo.pack(side="left", fill="x", expand=True)
         
+        # Botón de carpeta personalizada para Nukem
+        ctk.CTkButton(
+            mod_frame,
+            text="📂 Usar carpeta personalizada...",
+            command=self.select_custom_nukem_folder,
+            height=30,
+            fg_color="#2a2a2a",
+            hover_color="#3a3a3a",
+            font=ctk.CTkFont(size=11)
+        ).pack(fill="x", padx=15, pady=(2, 5))
+        
+        # Link a Nexus Mods
+        nexus_link_frame = ctk.CTkFrame(mod_frame, fg_color="transparent")
+        nexus_link_frame.pack(fill="x", padx=15, pady=(2, 10))
+        
+        ctk.CTkLabel(
+            nexus_link_frame,
+            text="💡 Los binarios están en Nexus Mods:",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#888888"
+        ).pack(side="left")
+        
+        nexus_btn = ctk.CTkButton(
+            nexus_link_frame,
+            text="🔗 Descargar desde Nexus",
+            command=self.open_nexus_mods,
+            height=25,
+            fg_color="#FF6600",
+            hover_color="#FF8833",
+            font=ctk.CTkFont(size=FONT_TINY, weight="bold"),
+            width=150
+        )
+        nexus_btn.pack(side="left", padx=10)
+        
         # Carpeta de mods
         ctk.CTkButton(
             mod_frame,
@@ -2440,6 +2474,18 @@ Licencia: Open Source
         if selected_version == "Sin versiones descargadas":
             return None
         
+        # Si es versión custom
+        if selected_version.startswith("[Custom]"):
+            folder_name = selected_version.replace("[Custom] ", "")
+            # Buscar primero en config
+            custom_path = self.config.get("custom_nukem_folder")
+            if custom_path and os.path.exists(custom_path):
+                return custom_path
+            # Buscar en DLSSG_TO_FSR3_DIR
+            custom_path = os.path.join(DLSSG_TO_FSR3_DIR, folder_name)
+            if os.path.exists(custom_path):
+                return custom_path
+        
         # La versión viene en formato "dlssg-to-fsr3_X.X.X"
         if selected_version.startswith("dlssg-to-fsr3_"):
             nukem_path = os.path.join(DLSSG_TO_FSR3_DIR, selected_version)
@@ -3018,6 +3064,52 @@ Licencia: Open Source
             "Carpeta configurada",
             f"Se usará la carpeta personalizada:\n{folder}"
         )
+    
+    def select_custom_nukem_folder(self):
+        """Permite seleccionar una carpeta personalizada de dlssg-to-fsr3."""
+        from tkinter import filedialog
+        
+        folder = filedialog.askdirectory(
+            title="Seleccionar carpeta de dlssg-to-fsr3 personalizada",
+            initialdir=MOD_SOURCE_DIR if os.path.exists(MOD_SOURCE_DIR) else None
+        )
+        
+        if not folder:
+            return
+        
+        # Verificar que tenga archivos .dll (validación básica)
+        dll_files = [f for f in os.listdir(folder) if f.endswith('.dll')]
+        
+        if not dll_files:
+            messagebox.showwarning(
+                "Carpeta inválida",
+                "La carpeta seleccionada no contiene archivos .dll de dlssg-to-fsr3"
+            )
+            return
+        
+        # Guardar en configuración
+        self.config["custom_nukem_folder"] = folder
+        save_config(self.config)
+        
+        # Actualizar combo
+        folder_name = os.path.basename(folder)
+        current_values = list(self.nukem_version_combo.cget("values"))
+        if folder_name not in current_values:
+            current_values.append(f"[Custom] {folder_name}")
+            self.nukem_version_combo.configure(values=current_values)
+        
+        self.nukem_version_var.set(f"[Custom] {folder_name}")
+        
+        messagebox.showinfo(
+            "Carpeta configurada",
+            f"Se usará la carpeta personalizada para dlssg-to-fsr3:\n{folder}"
+        )
+    
+    def open_nexus_mods(self):
+        """Abre el enlace de Nexus Mods para dlssg-to-fsr3."""
+        import webbrowser
+        webbrowser.open("https://www.nexusmods.com/site/mods/738")
+        self.log("🔗 Abriendo Nexus Mods en el navegador...")
         
     def manage_scan_folders(self):
         """Gestiona carpetas personalizadas de escaneo."""
