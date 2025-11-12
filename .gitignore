@@ -92,7 +92,6 @@ fix_load_config.py
 update_gaming_mode_config.py
 run_test_skip_admin.py
 ICON_USAGE_EXAMPLE.py
-run.py
 run.bat
 fsr_injector.py
 take-screenshots.ps1
