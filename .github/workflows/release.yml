@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -44,7 +47,7 @@ jobs:
             --assume-yes-for-downloads `
             --output-dir=dist `
             --output-filename="Gestor OptiScaler V2.1.exe" `
-            src/main.py
+            run.py
 
       - name: Generate SHA256 checksum
         shell: pwsh

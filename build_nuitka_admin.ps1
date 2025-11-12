@@ -26,7 +26,7 @@ if (-not (Test-Path -Path "dist")) {
   --assume-yes-for-downloads `
   --output-dir=dist `
   --output-filename="Gestor OptiScaler V2.1.exe" `
-  src/main.py
+  run.py
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed with exit code $LASTEXITCODE" -ForegroundColor Red
