@@ -2,5 +2,6 @@
 
 __all__ = [
     'mod_downloader',
-    'game_config'
+    'game_config',
+    'welcome_tutorial'
 ]

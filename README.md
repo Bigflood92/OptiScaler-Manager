@@ -168,8 +168,9 @@ OptiScaler-Manager/
 │   │   ├── config_manager.py  # Gestión de configuración
 │   │   └── utils.py       # Utilidades comunes
 │   ├── gui/               # Interfaz gráfica
-│   │   ├── legacy_app.py  # GUI original migrada
-│   │   └── legacy_adapter.py  # Adaptador de compatibilidad
+│   │   ├── gaming_app.py  # Interfaz principal de la aplicación
+│   │   ├── components/    # Componentes reutilizables (modales, popups)
+│   │   └── widgets/       # Widgets personalizados
 │   └── config/            # Configuración y constantes
 │       └── settings.py
 ├── Config Optiscaler Gestor/  # Configuración de usuario

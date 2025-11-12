@@ -1,6 +1,5 @@
 """
-Gaming Mode App - Interfaz Gaming completa y limpia
-Replica EXACTAMENTE la interfaz Gaming de legacy_app.py pero sin dependencias legacy.
+Gaming Mode App - Interfaz principal de la aplicación.
 
 Estructura:
 - Sidebar izquierdo con 4 iconos (Config, Auto, Manual, Ajustes)
@@ -26,7 +25,8 @@ from ..core.installer import inject_fsr_mod, uninstall_fsr_mod, install_combined
 from ..core.utils import detect_gpu_vendor, should_use_dual_mod
 from ..core.github import GitHubClient
 from ..utils.logging import LogManager
-from ..config.paths import MOD_SOURCE_DIR, OPTISCALER_DIR, DLSSG_TO_FSR3_DIR, SEVEN_ZIP_PATH
+from ..config.paths import MOD_SOURCE_DIR, OPTISCALER_DIR, DLSSG_TO_FSR3_DIR, SEVEN_ZIP_PATH, APP_DIR
+from .components.windows.welcome_tutorial import WelcomeTutorial, should_show_tutorial
 
 # Constantes
 APP_TITLE = "GESTOR AUTOMATIZADO DE OPTISCALER V2.0"
@@ -145,6 +145,9 @@ class GamingApp(ctk.CTk):
         
         # Protocolo cierre
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        # Mostrar tutorial de bienvenida si es la primera vez
+        self.after(500, self.show_welcome_if_needed)
     
     def load_icons(self):
         """Carga todos los iconos de la aplicación."""
@@ -2822,6 +2825,17 @@ Licencia: Open Source
         except Exception as e:
             self.log('ERROR', f"Error al abrir URL: {e}")
             messagebox.showerror("Error", f"No se pudo abrir el enlace:\n{url}")
+    
+    def show_welcome_if_needed(self):
+        """Muestra el tutorial de bienvenida si es la primera vez."""
+        config_path = APP_DIR / "injector_config.json"
+        if should_show_tutorial(config_path):
+            self.show_welcome_tutorial()
+    
+    def show_welcome_tutorial(self):
+        """Muestra la ventana de tutorial de bienvenida."""
+        config_path = APP_DIR / "injector_config.json"
+        WelcomeTutorial(self, config_path)
         
     def on_closing(self):
         """Maneja el cierre de la aplicación."""

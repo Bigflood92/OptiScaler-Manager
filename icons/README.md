@@ -51,7 +51,7 @@ Los iconos personalizados se activan automáticamente si:
 2. PIL/Pillow está instalado
 3. Los archivos PNG existen con los nombres correctos
 
-Para forzar el uso de emojis incluso si hay iconos, edita `src/gui/legacy_app.py`:
+Para forzar el uso de emojis incluso si hay iconos, edita `src/gui/gaming_app.py`:
 ```python
 self.icons = get_icon_manager(use_custom_icons=False)  # False = solo emojis
 ```
