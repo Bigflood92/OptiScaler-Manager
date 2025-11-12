@@ -117,6 +117,8 @@ class GamingApp(ctk.CTk):
         self.dll_name_var = ctk.StringVar(value=self.config.get("last_spoof_name", "dxgi.dll"))
         self.fps_limit_var = ctk.IntVar(value=self.config.get("fps_limit", 0))
         self.sharpness_var = ctk.DoubleVar(value=self.config.get("sharpness", 0.5))
+        self.overlay_var = ctk.StringVar(value=self.config.get("overlay", "Desactivado"))
+        self.mb_var = ctk.StringVar(value=self.config.get("motion_blur", "Activado"))
         
         # Cargar iconos
         self.load_icons()

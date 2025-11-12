@@ -312,12 +312,21 @@ Controles útiles:
 def should_show_tutorial(config_path: Path) -> bool:
     """Verifica si se debe mostrar el tutorial."""
     try:
+        print(f"[Tutorial] Verificando config en: {config_path}")
+        print(f"[Tutorial] ¿Archivo existe?: {config_path.exists()}")
+        
         if not config_path.exists():
+            print("[Tutorial] Config no existe, mostrando tutorial")
             return True
         
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
         
-        return config.get('show_welcome_tutorial', True)
-    except:
+        show_value = config.get('show_welcome_tutorial', True)
+        print(f"[Tutorial] show_welcome_tutorial = {show_value}")
+        return show_value
+    except Exception as e:
+        print(f"[Tutorial] Error al leer config: {e}")
+        import traceback
+        traceback.print_exc()
         return True
