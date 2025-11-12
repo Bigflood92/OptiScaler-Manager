@@ -101,6 +101,13 @@ SETUP_INSTRUCTIONS.md
 # Build artifacts (keep dist/ for releases when needed)
 version_info.txt.bak
 
+# Nuitka/PyInstaller local builds (do not commit)
+run.build/
+run.dist/
+run.onefile-build/
+build_nuitka/
+dist_nuitka/
+
 # Temporary files
 *.tmp
 *.bak
@@ -114,7 +121,8 @@ dist/
 *.msi
 
 # PyInstaller generated files
-version_info.txt
+# Permit version_info.txt to be tracked as project metadata
+# (se usa para versionado del ejecutable en Windows)
 
 # User configuration files
 injector_config.json
