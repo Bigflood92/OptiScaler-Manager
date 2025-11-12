@@ -21,7 +21,7 @@ Write-Host "Compilando con Nuitka (esto tardará unos minutos)..." -ForegroundCo
 python -m nuitka --onefile --nofollow-import-to=tkinter.test --include-data-dir=icons=icons `
   --output-dir=dist_nuitka --remove-output --standalone --windows-console-mode=disable `
   --enable-plugin=tk-inter --company-name="OptiScaler" --product-name="OptiScaler Manager" `
-  --file-version=2.0.0.0 --product-version=2.0.0 `
+  --file-version=2.2.0.0 --product-version=2.2.0 `
   --include-package=src --include-package-data=src src/main.py
 
 if ($LASTEXITCODE -ne 0) { exit 1 }

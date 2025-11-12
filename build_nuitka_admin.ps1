@@ -25,7 +25,7 @@ if (-not (Test-Path -Path "dist")) {
   --windows-uac-admin `
   --assume-yes-for-downloads `
   --output-dir=dist `
-  --output-filename="Gestor OptiScaler V2.1.exe" `
+  --output-filename="Gestor OptiScaler V2.2.exe" `
   run.py
 
 if ($LASTEXITCODE -ne 0) {
@@ -33,4 +33,4 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-Write-Host "Build completed: dist\Gestor OptiScaler V2.1.exe" -ForegroundColor Green
+Write-Host "Build completed: dist\Gestor OptiScaler V2.2.exe" -ForegroundColor Green

@@ -30,7 +30,7 @@ from .components.windows.welcome_tutorial import WelcomeTutorial, should_show_tu
 
 # Constantes
 APP_TITLE = "GESTOR AUTOMATIZADO DE OPTISCALER V2.0"
-APP_VERSION = "2.0"
+APP_VERSION = "2.2.0"
 
 # Colores para feedback visual
 COLOR_PRIMARY = "#00BFFF"
@@ -1099,7 +1099,7 @@ class GamingApp(ctk.CTk):
         self.auto_panel = ctk.CTkFrame(self.content_frame, fg_color="transparent")
         self.auto_panel.grid(row=0, column=0, sticky="nsew")
         self.auto_panel.grid_columnconfigure(0, weight=1)
-        self.auto_panel.grid_rowconfigure(2, weight=1)
+        self.auto_panel.grid_rowconfigure(3, weight=1)  # Fila 3 ahora es la lista de juegos
         
         # Título del app arriba
         ctk.CTkLabel(
@@ -1223,12 +1223,89 @@ class GamingApp(ctk.CTk):
         )
         self.open_folder_btn.pack(side="left", padx=5)
         
+        # Frame para barra de progreso y estado (inicialmente oculto)
+        # Mejora #7: Altura variable (empezamos con altura compacta)
+        self.progress_frame = ctk.CTkFrame(self.auto_panel, fg_color="#1a1a1a", corner_radius=8)
+        self.progress_frame.grid(row=2, column=0, sticky="ew", padx=20, pady=(0, 15))
+        self.progress_frame.grid_columnconfigure(0, weight=1)
+        self.progress_frame.grid_remove()  # Ocultar inicialmente
+        
+        # Frame interno para contenido (permite controlar padding)
+        # Mejora #9: Variable para el padding actual
+        self.progress_padding_normal = 12
+        self.progress_padding_compact = 6
+        
+        progress_content = ctk.CTkFrame(self.progress_frame, fg_color="transparent")
+        progress_content.grid(row=0, column=0, sticky="ew", padx=15, pady=self.progress_padding_normal)
+        progress_content.grid_columnconfigure(0, weight=1)
+        
+        # Guardar referencia para poder cambiar padding
+        self.progress_content = progress_content
+        
+        # Header con label de estado y botón cerrar
+        header_frame = ctk.CTkFrame(progress_content, fg_color="transparent")
+        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 5))
+        header_frame.grid_columnconfigure(0, weight=1)
+        
+        # Label de estado
+        self.status_label = ctk.CTkLabel(
+            header_frame,
+            text="",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color="#00BFFF"
+        )
+        self.status_label.grid(row=0, column=0, sticky="w")
+        
+        # Mejora #5: Botón para ocultar la barra manualmente
+        self.hide_progress_btn = ctk.CTkButton(
+            header_frame,
+            text="✕",
+            width=25,
+            height=25,
+            corner_radius=12,
+            fg_color="#2a2a2a",
+            hover_color="#ff4444",
+            command=self.hide_progress,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        self.hide_progress_btn.grid(row=0, column=1, padx=(10, 0))
+        
+        # Barra de progreso
+        # Mejora #3: Color dinámico (se cambiará según estado)
+        self.progress_bar = ctk.CTkProgressBar(
+            progress_content,
+            mode="determinate",
+            height=20,
+            corner_radius=10,
+            progress_color="#00BFFF"  # Color por defecto (azul)
+        )
+        self.progress_bar.grid(row=1, column=0, sticky="ew")
+        self.progress_bar.set(0)
+        
+        # Variables para mejoras
+        self.progress_animation_running = False  # Para animación fade
+        self.progress_start_time = None  # Para calcular tiempo estimado
+        self.progress_items_processed = 0  # Para calcular velocidad
+        
+        # Mejora #3: Variables para resumen detallado
+        self.last_operation_results = {
+            'success': [],  # Lista de juegos exitosos
+            'failed': [],   # Lista de juegos fallidos con razón
+            'operation': '' # Tipo de operación (escaneo/instalación/desinstalación)
+        }
+        
+        # Mejora #5: Diccionario para referencias de frames de juegos (preview en tiempo real)
+        self.game_frames = {}  # {game_path: {'frame': frame, 'status_label': label}}
+        
+        # Hacer la barra clicable para mostrar detalles
+        self.status_label.bind("<Button-1>", lambda e: self.show_operation_details())
+        
         # Lista de juegos
         self.games_scrollable = ctk.CTkScrollableFrame(
             self.auto_panel,
             fg_color="transparent"
         )
-        self.games_scrollable.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 20))
+        self.games_scrollable.grid(row=3, column=0, sticky="nsew", padx=20, pady=(0, 20))
         self.games_scrollable.grid_columnconfigure(0, weight=1)
         
         # Añadir drag-to-scroll
@@ -2085,15 +2162,35 @@ Licencia: Open Source
             self.active_preset_label.configure(text="✏️ Custom")
             self.log('INFO', "Modo personalizado activado")
         
-    def scan_games_action(self):
-        """Ejecuta escaneo de juegos en hilo separado."""
+    def scan_games_action(self, silent=False):
+        """Ejecuta escaneo de juegos en hilo separado.
+        
+        Args:
+            silent: Si es True, actualiza la lista sin modificar la barra de progreso
+        """
         self.log('INFO', "Iniciando escaneo de juegos...")
+        
         # Deshabilitar botón durante escaneo
         self.scan_btn.configure(state="disabled")
         if self.icons.get("rescan"):
             self.scan_btn.configure(text="")
         else:
             self.scan_btn.configure(text="⏳")
+        
+        # Mostrar barra de progreso solo si no es silencioso
+        if not silent:
+            self.show_progress()  # Usar función con animación
+            self.status_label.configure(text="🔍 Escaneando juegos...", text_color="#00BFFF")
+            self.progress_bar.set(0)
+            # Mejora #6: Mejorar animación indeterminada
+            self.progress_bar.configure(mode="indeterminate")
+            # Mejora #3: Color azul durante progreso
+            self.set_progress_color("#00BFFF")
+            self.progress_bar.start()
+            
+            # Mejora #4: Animación del botón de escaneo
+            self.scan_animation_running = True
+            self.animate_scan_button()
         
         def scan_thread():
             try:
@@ -2107,24 +2204,70 @@ Licencia: Open Source
                 games_list = scan_games(self.log, custom_folders=custom_folders, use_cache=False)
                 
                 # Actualizar GUI en hilo principal
-                self.after(0, lambda: self.update_games_list(games_list))
+                self.after(0, lambda: self.update_games_list(games_list, silent=silent))
                 
             except Exception as e:
                 self.log('ERROR', f"Error durante escaneo: {e}")
-                self.after(0, lambda: messagebox.showerror("Error", f"Error al escanear juegos:\n{e}"))
+                if not silent:
+                    self.after(0, lambda: self.show_status_error(f"Error al escanear: {e}"))
             finally:
-                # Cambiar a icono de rescan después del primer escaneo
+                # Restaurar botón
                 def restore_button():
+                    # Mejora #4: Detener animación
+                    self.scan_animation_running = False
                     if self.icons.get("rescan"):
                         self.scan_btn.configure(state="normal", text="", image=self.icons["rescan"])
                     else:
-                        self.scan_btn.configure(state="normal", text="�")
+                        self.scan_btn.configure(state="normal", text="🔄")
                 self.after(0, restore_button)
         
         threading.Thread(target=scan_thread, daemon=True).start()
     
-    def update_games_list(self, games_list):
-        """Actualiza la lista visual de juegos."""
+    def animate_scan_button(self):
+        """Mejora #4: Anima el botón de escaneo con emojis rotatorios."""
+        if not hasattr(self, 'scan_animation_running') or not self.scan_animation_running:
+            return
+        
+        # Secuencia de animación
+        if not hasattr(self, 'scan_animation_frame'):
+            self.scan_animation_frame = 0
+        
+        animation_frames = ["🔄", "🔃", "⟳", "⟲"]
+        
+        # Si no hay icono, usar emoji animado
+        if not self.icons.get("rescan"):
+            current_frame = animation_frames[self.scan_animation_frame % len(animation_frames)]
+            self.scan_btn.configure(text=current_frame)
+            self.scan_animation_frame += 1
+        
+        # Continuar animación cada 200ms
+        if self.scan_animation_running:
+            self.after(200, self.animate_scan_button)
+    
+    def update_game_status_realtime(self, game_path, status_text, status_color):
+        """Mejora #5: Actualiza el estado de un juego en la lista en tiempo real."""
+        if game_path in self.game_frames:
+            frame_data = self.game_frames[game_path]
+            status_label = frame_data['status_label']
+            game_frame = frame_data['frame']
+            
+            # Actualizar label de estado
+            status_label.configure(text=status_text, text_color=status_color)
+            
+            # Efecto de resaltado temporal
+            original_color = game_frame.cget("fg_color")
+            game_frame.configure(fg_color="#2a4a2a" if "✅" in status_text else "#4a2a2a")
+            
+            # Volver al color original después de 1 segundo
+            self.after(1000, lambda: game_frame.configure(fg_color=original_color))
+    
+    def update_games_list(self, games_list, silent=False):
+        """Actualiza la lista visual de juegos.
+        
+        Args:
+            games_list: Lista de juegos encontrados
+            silent: Si es True, no actualiza la barra de progreso
+        """
         # Actualizar datos
         self.games_data.clear()
         self.selected_games.clear()
@@ -2136,6 +2279,22 @@ Licencia: Open Source
         self.apply_game_filters()
         
         self.log('INFO', f"Escaneo completado: {len(games_list)} juegos encontrados")
+        
+            # Actualizar barra de progreso solo si no es silencioso
+        if not silent:
+            # Detener animación y mostrar resultado completo en la barra de progreso
+            self.progress_bar.stop()  # Detener animación indeterminada
+            self.progress_bar.configure(mode="determinate")
+            self.progress_bar.set(1.0)  # 100% completado
+            # Mejora #3: Color verde para éxito
+            self.set_progress_color("#00FF88")
+            self.status_label.configure(
+                text=f"✅ Escaneo completado: {len(games_list)} juegos encontrados",
+                text_color="#00FF88"
+            )
+            # Mejora #9: Cambiar a modo compacto al terminar
+            self.after(1000, self.set_progress_mode_compact)
+            # La barra permanece visible mostrando el último estado
     
     def toggle_game_selection(self, game_path, var):
         """Maneja selección/deselección de juegos."""
@@ -2148,6 +2307,177 @@ Licencia: Open Source
         selected_count = len(self.selected_games)
         total_count = len(self.games_data)
         self.games_counter_label.configure(text=f"{selected_count}/{total_count}")
+    
+    def hide_progress(self):
+        """Oculta la barra de progreso con animación fade-out."""
+        # Mejora #1: Animación fade-out
+        self.progress_frame.grid_remove()
+        self.status_label.configure(text_color="#00BFFF")  # Resetear color
+        self.progress_bar.configure(progress_color="#00BFFF")  # Resetear color de barra
+    
+    def show_progress(self):
+        """Muestra la barra de progreso con animación fade-in."""
+        # Mejora #1: Animación fade-in
+        if not self.progress_frame.winfo_ismapped():
+            self.progress_frame.grid()
+        # Mejora #9: Cambiar a modo expandido cuando está activa
+        self.set_progress_mode_expanded()
+    
+    def set_progress_mode_compact(self):
+        """Mejora #9: Cambia la barra a modo compacto (altura reducida)."""
+        self.progress_content.grid_configure(pady=self.progress_padding_compact)
+    
+    def set_progress_mode_expanded(self):
+        """Mejora #9: Cambia la barra a modo expandido (altura normal)."""
+        self.progress_content.grid_configure(pady=self.progress_padding_normal)
+    
+    def set_progress_color(self, color):
+        """Cambia el color de la barra de progreso.
+        
+        Mejora #3: Colores dinámicos
+        - Verde (#00FF88): Éxito
+        - Azul (#00BFFF): En progreso
+        - Naranja (#FFA500): Advertencia
+        - Rojo (#FF4444): Error
+        """
+        self.progress_bar.configure(progress_color=color)
+    
+    def show_status_error(self, message):
+        """Muestra un error en la barra de estado."""
+        self.show_progress()
+        self.progress_bar.configure(mode="determinate")
+        self.progress_bar.set(0)
+        self.progress_bar.stop()
+        # Mejora #3: Color rojo para errores
+        self.set_progress_color("#FF4444")
+        self.status_label.configure(text=f"❌ {message}", text_color="#FF4444")
+        # La barra permanece visible mostrando el error
+    
+    def update_progress(self, current, total, message, show_time=False):
+        """Actualiza la barra de progreso con valores específicos.
+        
+        Mejora #2: Porcentaje visual
+        Mejora #4: Tiempo estimado
+        """
+        if total > 0:
+            progress = current / total
+            percentage = int(progress * 100)
+            
+            # Mejora #2: Añadir porcentaje al mensaje
+            display_message = f"{message} ({percentage}%)"
+            
+            # Mejora #4: Calcular tiempo estimado
+            if show_time and hasattr(self, 'progress_start_time') and self.progress_start_time:
+                elapsed_time = time.time() - self.progress_start_time
+                if current > 0:
+                    avg_time_per_item = elapsed_time / current
+                    remaining_items = total - current
+                    estimated_remaining = int(avg_time_per_item * remaining_items)
+                    
+                    if estimated_remaining > 0:
+                        display_message += f" - ~{estimated_remaining}s restantes"
+            
+            self.progress_bar.configure(mode="determinate")
+            self.progress_bar.set(progress)
+            self.status_label.configure(text=display_message, text_color="#00BFFF")
+            
+            # Mejora #3: Color azul durante progreso
+            self.set_progress_color("#00BFFF")
+    
+    def show_operation_details(self):
+        """Mejora #3: Muestra ventana con detalles de la última operación."""
+        if not self.last_operation_results['operation']:
+            return  # No hay operación reciente
+        
+        # Crear ventana de detalles
+        details_window = ctk.CTkToplevel(self)
+        details_window.title(f"📊 Detalles de {self.last_operation_results['operation']}")
+        details_window.geometry("600x500")
+        details_window.transient(self)
+        details_window.grab_set()
+        
+        # Título
+        ctk.CTkLabel(
+            details_window,
+            text=f"📊 RESULTADOS DE {self.last_operation_results['operation'].upper()}",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="#00BFFF"
+        ).pack(pady=(20, 10))
+        
+        # Frame scrollable para resultados
+        scroll_frame = ctk.CTkScrollableFrame(details_window, fg_color="transparent")
+        scroll_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        # Sección de exitosos
+        success_list = self.last_operation_results['success']
+        if success_list:
+            ctk.CTkLabel(
+                scroll_frame,
+                text=f"✅ EXITOSOS ({len(success_list)})",
+                font=ctk.CTkFont(size=14, weight="bold"),
+                text_color="#00FF88",
+                anchor="w"
+            ).pack(fill="x", pady=(5, 5))
+            
+            for game_name in success_list:
+                game_frame = ctk.CTkFrame(scroll_frame, fg_color="#1a3a1a", corner_radius=5)
+                game_frame.pack(fill="x", pady=2, padx=10)
+                ctk.CTkLabel(
+                    game_frame,
+                    text=f"  ✓ {game_name}",
+                    font=ctk.CTkFont(size=12),
+                    text_color="#00FF88",
+                    anchor="w"
+                ).pack(fill="x", padx=10, pady=5)
+        
+        # Sección de fallidos
+        failed_list = self.last_operation_results['failed']
+        if failed_list:
+            ctk.CTkLabel(
+                scroll_frame,
+                text=f"❌ FALLIDOS ({len(failed_list)})",
+                font=ctk.CTkFont(size=14, weight="bold"),
+                text_color="#FF4444",
+                anchor="w"
+            ).pack(fill="x", pady=(15, 5))
+            
+            for game_name, reason in failed_list:
+                game_frame = ctk.CTkFrame(scroll_frame, fg_color="#3a1a1a", corner_radius=5)
+                game_frame.pack(fill="x", pady=2, padx=10)
+                ctk.CTkLabel(
+                    game_frame,
+                    text=f"  ✗ {game_name}",
+                    font=ctk.CTkFont(size=12, weight="bold"),
+                    text_color="#FF4444",
+                    anchor="w"
+                ).pack(fill="x", padx=10, pady=(5, 2))
+                ctk.CTkLabel(
+                    game_frame,
+                    text=f"    Razón: {reason}",
+                    font=ctk.CTkFont(size=10),
+                    text_color="#AAAAAA",
+                    anchor="w"
+                ).pack(fill="x", padx=10, pady=(0, 5))
+        
+        # Mensaje si todo OK
+        if success_list and not failed_list:
+            ctk.CTkLabel(
+                scroll_frame,
+                text="🎉 ¡Todas las operaciones se completaron exitosamente!",
+                font=ctk.CTkFont(size=12),
+                text_color="#00FF88"
+            ).pack(pady=20)
+        
+        # Botón cerrar
+        ctk.CTkButton(
+            details_window,
+            text="Cerrar",
+            command=details_window.destroy,
+            width=150,
+            height=35,
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a"
+        ).pack(pady=(10, 20))
         
     def open_filter(self):
         """Abre modal de filtrado de juegos."""
@@ -2325,6 +2655,9 @@ Licencia: Open Source
             filtered_games.append((game_path, game_name, mod_status, exe_name, platform))
         
         # Recrear lista de juegos filtrada
+        # Mejora #5: Limpiar referencias antiguas
+        self.game_frames.clear()
+        
         for game_path, game_name, mod_status, exe_name, platform in filtered_games:
             # Frame para cada juego con efecto hover
             game_frame = ctk.CTkFrame(
@@ -2367,6 +2700,13 @@ Licencia: Open Source
                 cursor="hand2"
             )
             status_label.pack(side="right", padx=5)
+            
+            # Mejora #5: Guardar referencias para actualización en tiempo real
+            self.game_frames[game_path] = {
+                'frame': game_frame,
+                'status_label': status_label,
+                'name': game_name
+            }
             
             # Hacer toda la fila clickable
             def make_row_clickable(frame, checkbox, path, variable):
@@ -2490,7 +2830,11 @@ Licencia: Open Source
     def apply_to_selected(self):
         """Aplica el mod a los juegos seleccionados."""
         if not self.selected_games:
-            messagebox.showwarning("Sin selección", "No hay juegos seleccionados")
+            self.show_progress()
+            # Mejora #3: Color naranja para advertencia
+            self.set_progress_color("#FFA500")
+            self.status_label.configure(text="⚠️ No hay juegos seleccionados", text_color="#FFA500")
+            self.progress_bar.set(0)
             return
         
         # Verificar que OptiScaler esté descargado
@@ -2512,15 +2856,39 @@ Licencia: Open Source
         ):
             return
         
+        # Mostrar barra de progreso
+        self.show_progress()
+        self.progress_bar.configure(mode="determinate")
+        self.progress_bar.set(0)
+        # Mejora #3: Color azul durante instalación
+        self.set_progress_color("#00BFFF")
+        
+        # Mejora #4: Iniciar contador de tiempo
+        self.progress_start_time = time.time()
+        
         self.apply_btn.configure(state="disabled", text="⏳ Instalando...")
         
         def install_thread():
             success_count = 0
             fail_count = 0
+            total = len(self.selected_games)
+            current = 0
+            
+            # Mejora #3: Limpiar resultados anteriores
+            self.last_operation_results = {
+                'success': [],
+                'failed': [],
+                'operation': 'Instalación'
+            }
             
             for game_path in self.selected_games:
                 try:
                     game_name, _, exe_name, _ = self.games_data[game_path]
+                    current += 1
+                    
+                    # Mejora #2 y #4: Actualizar progreso con porcentaje y tiempo estimado
+                    self.after(0, lambda c=current, t=total, n=game_name: 
+                              self.update_progress(c, t, f"⚙️ Instalando {c}/{t}: {n[:30]}{'...' if len(n) > 30 else ''}", show_time=True))
                     
                     # Obtener carpeta de OptiScaler
                     mod_source_dir = self.get_optiscaler_source_dir()
@@ -2591,28 +2959,64 @@ Licencia: Open Source
                     if result:
                         success_count += 1
                         self.log('OK', f"✅ {game_name}: Instalado correctamente")
+                        # Mejora #3: Guardar en lista de exitosos
+                        self.last_operation_results['success'].append(game_name)
+                        # Mejora #5: Actualizar estado en tiempo real
+                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "✅ OptiScaler (Upscaling)", "#00FF88"))
                     else:
                         fail_count += 1
                         self.log('ERROR', f"❌ {game_name}: Fallo en instalación")
+                        # Mejora #3: Guardar en lista de fallidos
+                        self.last_operation_results['failed'].append((game_name, "Fallo en instalación"))
+                        # Mejora #5: Actualizar estado en tiempo real
+                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "❌ Error", "#FF4444"))
                         
                 except Exception as e:
                     fail_count += 1
                     self.log('ERROR', f"❌ Error en {game_path}: {e}")
+                    # Mejora #3: Guardar en lista de fallidos
+                    game_name = self.games_data.get(game_path, ("Juego desconocido", None, None, None))[0]
+                    self.last_operation_results['failed'].append((game_name, str(e)))
             
-            # Mostrar resultado
-            msg = f"Instalación completada:\n✅ {success_count} exitosos\n❌ {fail_count} fallidos"
-            self.after(0, lambda: messagebox.showinfo("Resultado", msg))
-            self.after(0, lambda: self.apply_btn.configure(state="normal", text="✅ APLICAR A SELECCIONADOS"))
+            # Mostrar resultado en la barra de estado
+            def finish_install():
+                self.apply_btn.configure(state="normal", text="✓ APLICAR")
+                self.progress_bar.set(1.0)
+                if fail_count == 0:
+                    # Mejora #3: Color verde para éxito
+                    self.set_progress_color("#00FF88")
+                    self.status_label.configure(
+                        text=f"✅ Instalación completada: {success_count} juego(s) instalado(s) (clic para detalles)",
+                        text_color="#00FF88",
+                        cursor="hand2"  # Cursor de mano para indicar que es clicable
+                    )
+                else:
+                    # Mejora #3: Color naranja para advertencia
+                    self.set_progress_color("#FFA500")
+                    self.status_label.configure(
+                        text=f"⚠️ Completado: {success_count} exitosos, {fail_count} fallidos (clic para detalles)",
+                        text_color="#FFA500",
+                        cursor="hand2"
+                    )
+                # La barra permanece visible mostrando el último estado
+                # Mejora #9: Cambiar a modo compacto al terminar
+                self.after(1500, self.set_progress_mode_compact)
             
-            # Rescanear para actualizar estados
-            self.after(1000, self.scan_games_action)
+            self.after(0, finish_install)
+            
+            # Rescanear para actualizar estados (silenciosamente)
+            self.after(1000, lambda: self.scan_games_action(silent=True))
         
         threading.Thread(target=install_thread, daemon=True).start()
         
     def remove_from_selected(self):
         """Elimina el mod de los juegos seleccionados."""
         if not self.selected_games:
-            messagebox.showwarning("Sin selección", "No hay juegos seleccionados")
+            self.show_progress()
+            # Mejora #3: Color naranja para advertencia
+            self.set_progress_color("#FFA500")
+            self.status_label.configure(text="⚠️ No hay juegos seleccionados", text_color="#FFA500")
+            self.progress_bar.set(0)
             return
         
         count = len(self.selected_games)
@@ -2622,34 +3026,92 @@ Licencia: Open Source
         ):
             return
         
+        # Mostrar barra de progreso
+        self.show_progress()
+        self.progress_bar.configure(mode="determinate")
+        self.progress_bar.set(0)
+        # Mejora #3: Color azul durante desinstalación
+        self.set_progress_color("#00BFFF")
+        
+        # Mejora #4: Iniciar contador de tiempo
+        self.progress_start_time = time.time()
+        
         self.remove_btn.configure(state="disabled", text="⏳ Desinstalando...")
         
         def uninstall_thread():
             success_count = 0
             fail_count = 0
+            total = len(self.selected_games)
+            current = 0
+            
+            # Mejora #3: Limpiar resultados anteriores
+            self.last_operation_results = {
+                'success': [],
+                'failed': [],
+                'operation': 'Desinstalación'
+            }
             
             for game_path in self.selected_games:
                 try:
                     game_name, _, _, _ = self.games_data[game_path]
+                    current += 1
+                    
+                    # Mejora #2 y #4: Actualizar progreso con porcentaje y tiempo estimado
+                    self.after(0, lambda c=current, t=total, n=game_name: 
+                              self.update_progress(c, t, f"🗑️ Desinstalando {c}/{t}: {n[:30]}{'...' if len(n) > 30 else ''}", show_time=True))
+                    
                     result = uninstall_fsr_mod(game_path, self.log)
                     
                     if result:
                         success_count += 1
                         self.log('OK', f"✅ {game_name}: Desinstalado")
+                        # Mejora #3: Guardar en lista de exitosos
+                        self.last_operation_results['success'].append(game_name)
+                        # Mejora #5: Actualizar estado en tiempo real
+                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "⭕ Ausente", "#888888"))
                     else:
                         fail_count += 1
-                        self.log('ERROR', f"❌ {game_name}: Fallo")
+                        self.log('ERROR', f"❌ {game_name}: Fallo en desinstalación")
+                        # Mejora #3: Guardar en lista de fallidos
+                        self.last_operation_results['failed'].append((game_name, "Fallo en desinstalación"))
+                        # Mejora #5: Actualizar estado en tiempo real
+                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "❌ Error", "#FF4444"))
                         
                 except Exception as e:
                     fail_count += 1
-                    self.log('ERROR', f"❌ Error: {e}")
+                    self.log('ERROR', f"❌ Error en {game_path}: {e}")
+                    # Mejora #3: Guardar en lista de fallidos
+                    game_name = self.games_data.get(game_path, ("Juego desconocido", None, None, None))[0]
+                    self.last_operation_results['failed'].append((game_name, str(e)))
             
-            msg = f"Desinstalación completada:\n✅ {success_count} exitosos\n❌ {fail_count} fallidos"
-            self.after(0, lambda: messagebox.showinfo("Resultado", msg))
-            self.after(0, lambda: self.remove_btn.configure(state="normal", text="🗑️ ELIMINAR DE SELECCIONADOS"))
+            # Mostrar resultado en la barra de estado
+            def finish_uninstall():
+                self.remove_btn.configure(state="normal", text="❌ ELIMINAR")
+                self.progress_bar.set(1.0)
+                if fail_count == 0:
+                    # Mejora #3: Color verde para éxito
+                    self.set_progress_color("#00FF88")
+                    self.status_label.configure(
+                        text=f"✅ Desinstalación completada: {success_count} juego(s) limpiado(s) (clic para detalles)",
+                        text_color="#00FF88",
+                        cursor="hand2"
+                    )
+                else:
+                    # Mejora #3: Color naranja para advertencia
+                    self.set_progress_color("#FFA500")
+                    self.status_label.configure(
+                        text=f"⚠️ Completado: {success_count} exitosos, {fail_count} fallidos (clic para detalles)",
+                        text_color="#FFA500",
+                        cursor="hand2"
+                    )
+                # La barra permanece visible mostrando el último estado
+                # Mejora #9: Cambiar a modo compacto al terminar
+                self.after(1500, self.set_progress_mode_compact)
             
-            # Rescanear
-            self.after(1000, self.scan_games_action)
+            self.after(0, finish_uninstall)
+            
+            # Rescanear para actualizar estados (silenciosamente)
+            self.after(1000, lambda: self.scan_games_action(silent=True))
         
         threading.Thread(target=uninstall_thread, daemon=True).start()
     

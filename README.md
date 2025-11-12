@@ -1,6 +1,6 @@
 # 🎮 OptiScaler Manager
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![Python](https://img.shields.io/badge/python-3.12-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-orange)
@@ -52,14 +52,16 @@
 - **Iconos centralizados**: Diseño consistente con iconos PNG personalizados
 - **Drag-to-scroll**: Navegación fluida en listas largas de juegos
 - **Panel de ayuda integrado**: Muestra todos los controles disponibles (teclado/gamepad)
+- **Sistema de progreso avanzado**: Barra animada con porcentajes, tiempo estimado y resumen detallado
 - **Interfaz Gaming** (En desarrollo): Navegación optimizada para mandos Xbox/PlayStation
 
 ### 🎯 Gestión de Mods
 - **Detección automática** de juegos en Steam, Epic Games, Xbox Game Pass, GOG
-- **Instalación/desinstalación masiva** en juegos seleccionados
+- **Instalación/desinstalación masiva** con seguimiento en tiempo real
 - **Configuración individual** por juego
 - **Sistema de caché** para detección rápida de juegos
 - **Presets rápidos**: Default, Performance, Balanced, Quality, Custom
+- **Vista previa en vivo**: Resaltado visual de juegos mientras se procesan
 
 ### ⚙️ Configuración Avanzada
 - **GPU**: AMD/Intel o NVIDIA
@@ -84,7 +86,7 @@
 
 **[📦 Descargar última versión](https://github.com/Bigflood92/OptiScaler-Manager/releases/latest)**
 
-1. Descarga `Gestor OptiScaler V2.1.exe`
+1. Descarga `Gestor OptiScaler V2.2.exe`
 2. Doble clic (Windows solicitará permisos de administrador automáticamente)
 3. Se crearán las carpetas en `Config Optiscaler Gestor/` junto al .exe
 4. ¡Listo para usar!
@@ -124,17 +126,19 @@ python -m src.main
 
 ### Primera Ejecución
 
-1. Ejecuta `Gestor OptiScaler V2.1.exe` (solicitará permisos de administrador automáticamente)
+1. Ejecuta `Gestor OptiScaler V2.2.exe` (solicitará permisos de administrador automáticamente)
 2. Aparecerá un tutorial de bienvenida en el primer inicio
 3. Ve a **Ajustes de la App** → **Carpetas Personalizadas**
 4. Añade rutas donde tienes juegos instalados (ej: `D:\Juegos`)
-5. Pulsa **🔍 Escanear** para detectar juegos
+5. Pulsa **🔍 Escanear** para detectar juegos (con animación y progreso en tiempo real)
 
 ### Instalar Mod en Juegos
 
 1. En **Juegos Detectados**, marca los juegos deseados con checkbox
 2. Configura opciones en **Configuración del Mod** o usa un **Preset**
 3. Pulsa **✅ APLICAR A SELECCIONADOS**
+4. Observa el progreso en tiempo real con porcentaje, tiempo estimado y lista actualizada
+5. Al finalizar, haz clic en **"Ver detalles"** para ver el resumen completo
 
 ### Gestión de Versiones
 
@@ -201,7 +205,7 @@ pip install nuitka ordered-set zstandard
 # Build con elevación UAC automática
 ./build_nuitka_admin.ps1
 
-# El ejecutable queda en dist/Gestor OptiScaler V2.1.exe
+# El ejecutable queda en dist/Gestor OptiScaler V2.2.exe
 ```
 
 ### Alternativa: PyInstaller (obsoleto, no recomendado)

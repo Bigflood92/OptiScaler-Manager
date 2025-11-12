@@ -6,6 +6,72 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
+
+## [2.2.0] - 2025-11-12
+
+### Añadido
+- **🎯 Barra de progreso integrada mejorada** en panel de Detección Automática
+  - Reemplaza ventanas emergentes molestas con feedback visual continuo
+  - Aparece/desaparece dinámicamente según sea necesario
+  - Muestra el estado de la última operación permanentemente
+  
+- **📊 Indicadores de progreso avanzados**:
+  - Porcentaje visual durante operaciones: `"Instalando 2/5 (40%)"`
+  - Tiempo estimado restante basado en velocidad real: `"~15s restantes"`
+  - Truncado inteligente de nombres largos (30 caracteres)
+  
+- **🌈 Colores dinámicos según estado**:
+  - 🔵 Azul (#00BFFF): Operación en progreso
+  - 🟢 Verde (#00FF88): Completado exitosamente
+  - 🟠 Naranja (#FFA500): Advertencias o errores parciales
+  - 🔴 Rojo (#FF4444): Errores críticos
+  
+- **📋 Resumen detallado expandible**:
+  - Clic en la barra completada abre ventana modal con detalles
+  - Lista de juegos exitosos con fondo verde
+  - Lista de juegos fallidos con razón del error y fondo rojo
+  - Cursor cambia a "mano" para indicar que es clicable
+  
+- **🎬 Preview en tiempo real**:
+  - Estado del juego se actualiza EN LA LISTA mientras se procesa
+  - Efecto de resaltado temporal (1 segundo) al completar
+  - No espera al escaneo final para mostrar cambios
+  
+- **🔄 Animación del botón de escaneo**:
+  - Emojis rotatorios mientras escanea: 🔄 → 🔃 → ⟳ → ⟲
+  - Animación cada 200ms con detención automática
+  
+- **📏 Modo compacto dinámico**:
+  - Barra expandida (12px padding) durante operaciones
+  - Barra compacta (6px padding) 1.5s después de completar
+  - Transición suave automática para ahorrar espacio
+  
+- **✕ Botón para ocultar manualmente**:
+  - Pequeño botón "X" en esquina superior derecha
+  - Color rojo al pasar el mouse
+  - Control total del usuario sobre el espacio visual
+
+### Cambiado
+- **Eliminadas ventanas emergentes** (messageboxes) durante operaciones:
+  - ~~Error de escaneo~~ → Mensaje en barra roja
+  - ~~Resultado de instalación~~ → Mensaje en barra verde/naranja
+  - ~~Resultado de desinstalación~~ → Mensaje en barra verde/naranja
+  - **Mantenidos**: Diálogos de confirmación (askyesno)
+  
+- **Escaneo silencioso** después de instalar/desinstalar:
+  - Actualiza lista en segundo plano sin modificar la barra
+  - Mantiene visible el mensaje de operación completada
+  
+- **Mejora de UX general**:
+  - Feedback visual continuo sin interrupciones
+  - Información detallada en tiempo real
+  - Progreso visible con porcentajes exactos
+
+### Corregido
+- Barra de progreso quedaba parcialmente llena al terminar escaneo
+- Ventanas emergentes bloqueaban la interfaz durante operaciones largas
+- Falta de feedback visual durante procesamiento de múltiples juegos
+
 ## [2.1.0] - 2025-11-12
 
 ### Añadido
