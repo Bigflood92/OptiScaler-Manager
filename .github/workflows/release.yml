@@ -26,9 +26,14 @@ jobs:
         run: |
           pip install nuitka ordered-set zstandard
 
+      - name: Install MinGW64 (C compiler for Nuitka)
+        run: |
+          choco install mingw -y
+
       - name: Build (Nuitka onefile with UAC)
         shell: pwsh
         run: |
+          $env:Path = "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin;$env:Path"
           python -m nuitka `
             --standalone `
             --onefile `
