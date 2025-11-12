@@ -282,20 +282,31 @@ Controles útiles:
     def save_preference(self):
         """Guarda la preferencia de no mostrar el tutorial."""
         try:
+            # Cargar config existente
             if self.config_path.exists():
                 with open(self.config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
                 config = {}
             
+            # Actualizar preferencia
             config['show_welcome_tutorial'] = False
             
+            # Asegurar que el directorio existe
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Guardar con flush explícito
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
+                f.flush()  # Forzar escritura inmediata
+                
+            print(f"✓ Preferencia guardada en: {self.config_path}")
+            print(f"  show_welcome_tutorial = {config.get('show_welcome_tutorial')}")
                 
         except Exception as e:
             print(f"Error guardando preferencia de tutorial: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 def should_show_tutorial(config_path: Path) -> bool:

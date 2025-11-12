@@ -1192,6 +1192,17 @@ class GamingApp(ctk.CTk):
         )
         self.remove_btn.pack(side="left", padx=5)
         
+        self.open_folder_btn = ctk.CTkButton(
+            btn_actions,
+            text="📂 ABRIR CARPETA",
+            command=self.open_selected_folders,
+            fg_color="#1e5a8e",
+            hover_color="#2a6ba8",
+            height=44,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        self.open_folder_btn.pack(side="left", padx=5)
+        
         # Lista de juegos
         self.games_scrollable = ctk.CTkScrollableFrame(
             self.auto_panel,
@@ -2376,6 +2387,42 @@ Licencia: Open Source
                             return True
         
         return False
+    
+    def get_optiscaler_source_dir(self):
+        """Obtiene la carpeta de OptiScaler según la versión seleccionada.
+        
+        Returns:
+            str|None: Ruta a la carpeta del mod o None si no se encuentra
+        """
+        import glob
+        
+        selected_version = self.optiscaler_version_var.get()
+        
+        # Si es versión custom
+        if selected_version.startswith("[Custom]"):
+            folder_name = selected_version.replace("[Custom] ", "")
+            custom_path = os.path.join(OPTISCALER_DIR, folder_name)
+            if os.path.exists(custom_path):
+                return custom_path
+        
+        # Buscar por nombre de versión
+        patterns = [
+            os.path.join(OPTISCALER_DIR, f"*{selected_version}*"),
+            os.path.join(OPTISCALER_DIR, f"OptiScaler_{selected_version}"),
+            os.path.join(OPTISCALER_DIR, f"OptiScaler*{selected_version}*")
+        ]
+        
+        for pattern in patterns:
+            matches = glob.glob(pattern)
+            if matches and os.path.isdir(matches[0]):
+                return matches[0]
+        
+        # Si no se encuentra, usar la primera disponible
+        all_optiscaler = glob.glob(os.path.join(OPTISCALER_DIR, "OptiScaler*"))
+        if all_optiscaler:
+            return all_optiscaler[0]
+        
+        return None
         
     def apply_to_selected(self):
         """Aplica el mod a los juegos seleccionados."""
@@ -2412,6 +2459,13 @@ Licencia: Open Source
                 try:
                     game_name, _, exe_name, _ = self.games_data[game_path]
                     
+                    # Obtener carpeta de OptiScaler
+                    mod_source_dir = self.get_optiscaler_source_dir()
+                    if not mod_source_dir:
+                        fail_count += 1
+                        self.log('ERROR', f"❌ {game_name}: No se encontró la carpeta de OptiScaler")
+                        continue
+                    
                     # Usar dual-mod si GPU es AMD/Intel (detección automática)
                     if self.use_dual_mod:
                         result = install_combined_mods(
@@ -2419,10 +2473,28 @@ Licencia: Open Source
                             log_func=self.log
                         )
                     else:
+                        # Obtener configuraciones del GUI
+                        gpu_choice = self.gpu_var.get()
+                        fg_mode = self.fg_mode_var.get()
+                        upscaler = self.upscaler_var.get()
+                        upscale_mode = self.upscale_mode_var.get()
+                        dll_name = self.dll_name_var.get()
+                        sharpness = float(self.sharpness_var.get())
+                        overlay = self.overlay_var.get() == "Activado"
+                        mb = self.mb_var.get() == "Activado"
+                        
                         result = inject_fsr_mod(
-                            game_target_dir=game_path,
-                            config=self.config,
-                            log_func=self.log
+                            mod_source_dir=mod_source_dir,
+                            target_dir=game_path,
+                            log_func=self.log,
+                            spoof_dll_name=dll_name,
+                            gpu_choice=gpu_choice,
+                            fg_mode_selected=fg_mode,
+                            upscaler_selected=upscaler,
+                            upscale_mode_selected=upscale_mode,
+                            sharpness_selected=sharpness,
+                            overlay_selected=overlay,
+                            mb_selected=mb
                         )
                     
                     if result:
@@ -2489,6 +2561,29 @@ Licencia: Open Source
             self.after(1000, self.scan_games_action)
         
         threading.Thread(target=uninstall_thread, daemon=True).start()
+    
+    def open_selected_folders(self):
+        """Abre las carpetas de los juegos seleccionados en el explorador."""
+        if not self.selected_games:
+            messagebox.showwarning("Sin selección", "No hay juegos seleccionados")
+            return
+        
+        import subprocess
+        opened_count = 0
+        
+        for game_path in self.selected_games:
+            try:
+                if os.path.exists(game_path):
+                    # Abrir explorador de Windows en la carpeta
+                    subprocess.Popen(f'explorer "{game_path}"')
+                    opened_count += 1
+                else:
+                    self.log('WARN', f"⚠️ Carpeta no encontrada: {game_path}")
+            except Exception as e:
+                self.log('ERROR', f"❌ Error abriendo {game_path}: {e}")
+        
+        if opened_count > 0:
+            self.log('OK', f"✅ {opened_count} carpeta(s) abierta(s)")
         
     def browse_folder(self):
         """Selecciona carpeta de juego manualmente."""
@@ -2528,6 +2623,12 @@ Licencia: Open Source
         
         def install_thread():
             try:
+                # Obtener carpeta de OptiScaler
+                mod_source_dir = self.get_optiscaler_source_dir()
+                if not mod_source_dir:
+                    self.after(0, lambda: messagebox.showerror("Error", "No se encontró la carpeta de OptiScaler"))
+                    return
+                
                 # Usar dual-mod si GPU es AMD/Intel (detección automática)
                 if self.use_dual_mod:
                     result = install_combined_mods(
@@ -2535,10 +2636,28 @@ Licencia: Open Source
                         log_func=self.log
                     )
                 else:
+                    # Obtener configuraciones del GUI
+                    gpu_choice = self.gpu_var.get()
+                    fg_mode = self.fg_mode_var.get()
+                    upscaler = self.upscaler_var.get()
+                    upscale_mode = self.upscale_mode_var.get()
+                    dll_name = self.dll_name_var.get()
+                    sharpness = float(self.sharpness_var.get())
+                    overlay = self.overlay_var.get() == "Activado"
+                    mb = self.mb_var.get() == "Activado"
+                    
                     result = inject_fsr_mod(
-                        game_target_dir=folder,
-                        config=self.config,
-                        log_func=self.log
+                        mod_source_dir=mod_source_dir,
+                        target_dir=folder,
+                        log_func=self.log,
+                        spoof_dll_name=dll_name,
+                        gpu_choice=gpu_choice,
+                        fg_mode_selected=fg_mode,
+                        upscaler_selected=upscaler,
+                        upscale_mode_selected=upscale_mode,
+                        sharpness_selected=sharpness,
+                        overlay_selected=overlay,
+                        mb_selected=mb
                     )
                 
                 if result:
@@ -2810,7 +2929,33 @@ Licencia: Open Source
         
     def save_log(self):
         """Guarda el log en un archivo."""
-        messagebox.showinfo("Guardar Log", "Guardar log en desarrollo")
+        from tkinter import filedialog
+        import shutil
+        
+        try:
+            # Obtener el archivo de log actual del LogManager
+            current_log_file = self.log_manager.logger.handlers[0].baseFilename
+            
+            # Sugerir nombre de archivo con timestamp
+            from datetime import datetime
+            default_name = f"gestor_optiscaler_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            
+            # Abrir diálogo para guardar
+            save_path = filedialog.asksaveasfilename(
+                title="Guardar Log",
+                defaultextension=".txt",
+                initialfile=default_name,
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+            )
+            
+            if save_path:
+                # Copiar el archivo de log
+                shutil.copy2(current_log_file, save_path)
+                messagebox.showinfo("Éxito", f"Log guardado en:\n{save_path}")
+                self.log('OK', f"Log guardado en: {save_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al guardar el log:\n{e}")
+            self.log('ERROR', f"Error al guardar log: {e}")
     
     def open_url(self, url):
         """Abre una URL en el navegador predeterminado.
