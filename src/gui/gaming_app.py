@@ -2423,6 +2423,45 @@ Licencia: Open Source
             return all_optiscaler[0]
         
         return None
+    
+    def get_nukem_source_dir(self):
+        """Obtiene la carpeta de dlssg-to-fsr3 según la versión seleccionada.
+        
+        Returns:
+            str|None: Ruta a la carpeta del mod o None si no se encuentra
+        """
+        import glob
+        
+        selected_version = self.nukem_version_var.get()
+        
+        # Si no hay versiones descargadas
+        if selected_version == "Sin versiones descargadas":
+            return None
+        
+        # La versión viene en formato "dlssg-to-fsr3_X.X.X"
+        if selected_version.startswith("dlssg-to-fsr3_"):
+            nukem_path = os.path.join(DLSSG_TO_FSR3_DIR, selected_version)
+            if os.path.exists(nukem_path):
+                return nukem_path
+        
+        # Buscar por patrón
+        patterns = [
+            os.path.join(DLSSG_TO_FSR3_DIR, f"*{selected_version}*"),
+            os.path.join(DLSSG_TO_FSR3_DIR, f"dlssg-to-fsr3_{selected_version}"),
+            os.path.join(DLSSG_TO_FSR3_DIR, f"dlssg-to-fsr3*{selected_version}*")
+        ]
+        
+        for pattern in patterns:
+            matches = glob.glob(pattern)
+            if matches and os.path.isdir(matches[0]):
+                return matches[0]
+        
+        # Si no se encuentra, usar la primera disponible
+        all_nukem = glob.glob(os.path.join(DLSSG_TO_FSR3_DIR, "dlssg-to-fsr3_*"))
+        if all_nukem:
+            return all_nukem[0]
+        
+        return None
         
     def apply_to_selected(self):
         """Aplica el mod a los juegos seleccionados."""
@@ -2468,9 +2507,37 @@ Licencia: Open Source
                     
                     # Usar dual-mod si GPU es AMD/Intel (detección automática)
                     if self.use_dual_mod:
+                        # Obtener carpeta de Nukem/dlssg-to-fsr3
+                        nukem_source_dir = self.get_nukem_source_dir()
+                        if not nukem_source_dir:
+                            fail_count += 1
+                            self.log('ERROR', f"❌ {game_name}: No se encontró dlssg-to-fsr3. Descárgalo desde Ajustes.")
+                            continue
+                        
+                        # Obtener configuraciones del GUI
+                        gpu_choice = self.gpu_var.get()
+                        fg_mode = self.fg_mode_var.get()
+                        upscaler = self.upscaler_var.get()
+                        upscale_mode = self.upscale_mode_var.get()
+                        dll_name = self.dll_name_var.get()
+                        sharpness = float(self.sharpness_var.get())
+                        overlay = self.overlay_var.get() == "Activado"
+                        mb = self.mb_var.get() == "Activado"
+                        
                         result = install_combined_mods(
-                            game_target_dir=game_path,
-                            log_func=self.log
+                            optiscaler_source_dir=mod_source_dir,
+                            nukem_source_dir=nukem_source_dir,
+                            target_dir=game_path,
+                            log_func=self.log,
+                            spoof_dll_name=dll_name,
+                            gpu_choice=gpu_choice,
+                            fg_mode_selected=fg_mode,
+                            upscaler_selected=upscaler,
+                            upscale_mode_selected=upscale_mode,
+                            sharpness_selected=sharpness,
+                            overlay_selected=overlay,
+                            mb_selected=mb,
+                            install_nukem=True
                         )
                     else:
                         # Obtener configuraciones del GUI
@@ -2631,9 +2698,36 @@ Licencia: Open Source
                 
                 # Usar dual-mod si GPU es AMD/Intel (detección automática)
                 if self.use_dual_mod:
+                    # Obtener carpeta de Nukem/dlssg-to-fsr3
+                    nukem_source_dir = self.get_nukem_source_dir()
+                    if not nukem_source_dir:
+                        self.after(0, lambda: messagebox.showerror("Error", "No se encontró dlssg-to-fsr3.\nDescárgalo desde el panel de Ajustes."))
+                        return
+                    
+                    # Obtener configuraciones del GUI
+                    gpu_choice = self.gpu_var.get()
+                    fg_mode = self.fg_mode_var.get()
+                    upscaler = self.upscaler_var.get()
+                    upscale_mode = self.upscale_mode_var.get()
+                    dll_name = self.dll_name_var.get()
+                    sharpness = float(self.sharpness_var.get())
+                    overlay = self.overlay_var.get() == "Activado"
+                    mb = self.mb_var.get() == "Activado"
+                    
                     result = install_combined_mods(
-                        game_target_dir=folder,
-                        log_func=self.log
+                        optiscaler_source_dir=mod_source_dir,
+                        nukem_source_dir=nukem_source_dir,
+                        target_dir=folder,
+                        log_func=self.log,
+                        spoof_dll_name=dll_name,
+                        gpu_choice=gpu_choice,
+                        fg_mode_selected=fg_mode,
+                        upscaler_selected=upscaler,
+                        upscale_mode_selected=upscale_mode,
+                        sharpness_selected=sharpness,
+                        overlay_selected=overlay,
+                        mb_selected=mb,
+                        install_nukem=True
                     )
                 else:
                     # Obtener configuraciones del GUI

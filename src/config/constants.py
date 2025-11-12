@@ -55,11 +55,21 @@ MOD_CHECK_FILES_NUKEM = ['dlssg_to_fsr3_amd_is_better.dll', 'nvngx.dll']
 MOD_CHECK_FILES = MOD_CHECK_FILES_OPTISCALER + MOD_CHECK_FILES_NUKEM
 
 TARGET_MOD_FILES = [
-    'dlssg_to_fsr3_amd_is_better.dll', 'version.dll', 'nvngx_dlss.dll', 'fsr3_config.json',
+    # dlssg-to-fsr3 (Nukem) files
+    'dlssg_to_fsr3_amd_is_better.dll', 'dlssg_to_fsr3.ini',
+    # OptiScaler files
+    'version.dll', 'nvngx_dlss.dll', 'fsr3_config.json',
     'OptiScaler.dll', 'OptiScaler.ini', 'OptiScaler.log',
+    # AMD FidelityFX libraries
     'amd_fidelityfx_framegeneration_dx12.dll', 'amd_fidelityfx_upscaler_dx12.dll',
-    'amd_fidelityfx_vk.dll', 'amd_fidelityfx_dx12.dll', 'libxess.dll', 'libxess_dx11.dll',
-    'nvngx.dll', 'libxess_fg.dll', 'libxell.dll', 'fakenvapi.dll', 'fakenvapi.ini',
+    'amd_fidelityfx_vk.dll', 'amd_fidelityfx_dx12.dll',
+    # XeSS libraries
+    'libxess.dll', 'libxess_dx11.dll', 'libxess_fg.dll', 'libxell.dll',
+    # Shared NVNGX wrapper
+    'nvngx.dll',
+    # Fake NVAPI
+    'fakenvapi.dll', 'fakenvapi.ini',
+    # DLL spoofing files (will be cleaned if they match backup patterns)
     'dxgi.dll', 'd3d12.dll', 'winmm.dll', 'dinput8.dll', 'dbghelp.dll', 'wininet.dll', 'winhttp.dll'
 ]
 
