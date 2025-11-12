@@ -316,10 +316,12 @@ Controles útiles:
             # Asegurar que el directorio existe
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
             
-            # Guardar con flush explícito
+            # Guardar con flush y fsync explícito
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
-                f.flush()  # Forzar escritura inmediata
+                f.flush()  # Forzar escritura al buffer
+                import os
+                os.fsync(f.fileno())  # Forzar escritura al disco
                 
             print(f"✓ Preferencia guardada en: {self.config_path}")
             print(f"  show_welcome_tutorial = {config.get('show_welcome_tutorial')}")

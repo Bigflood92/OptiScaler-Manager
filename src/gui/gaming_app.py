@@ -794,11 +794,28 @@ class GamingApp(ctk.CTk):
         presets_frame = ctk.CTkFrame(self.config_options_frame, fg_color="#1a1a1a", corner_radius=8)
         presets_frame.pack(fill="x", pady=10)
         
+        # Contenedor del título y preset activo
+        title_container = ctk.CTkFrame(presets_frame, fg_color="transparent")
+        title_container.pack(fill="x", padx=15, pady=(10, 5))
+        
         ctk.CTkLabel(
-            presets_frame,
+            title_container,
             text="⚡ PRESETS RÁPIDOS",
             font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
-        ).pack(anchor="w", padx=15, pady=(10, 5))
+        ).pack(side="left", anchor="w")
+        
+        # Indicador de preset activo (esquina superior derecha)
+        self.active_preset_label = ctk.CTkLabel(
+            title_container,
+            text="Default",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#00AAFF",
+            fg_color="#2a2a2a",
+            corner_radius=5,
+            padx=10,
+            pady=4
+        )
+        self.active_preset_label.pack(side="right", anchor="e")
         
         # Botones de presets en una fila
         presets_btn_frame = ctk.CTkFrame(presets_frame, fg_color="transparent")
@@ -1198,8 +1215,8 @@ class GamingApp(ctk.CTk):
             btn_actions,
             text="📂 ABRIR CARPETA",
             command=self.open_selected_folders,
-            fg_color="#1e5a8e",
-            hover_color="#2a6ba8",
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
             height=44,
             font=ctk.CTkFont(size=14, weight="bold")
         )
@@ -2053,10 +2070,19 @@ Licencia: Open Source
             self.on_sharpness_changed(config["sharpness"])
             self.on_fps_changed(config["fps_limit"])
             
-            self.log('INFO', f"Preset '{preset}' aplicado")
-            messagebox.showinfo("Preset Aplicado", f"Configuración '{preset.capitalize()}' cargada con éxito")
+            # Actualizar indicador de preset activo
+            preset_names = {
+                "default": "Default",
+                "performance": "⚡ Performance",
+                "balanced": "⚖️ Balanced",
+                "quality": "💎 Quality"
+            }
+            self.active_preset_label.configure(text=preset_names.get(preset, "Custom"))
+            
+            self.log('INFO', f"✓ Preset '{preset}' aplicado")
         elif preset == "custom":
-            messagebox.showinfo("Modo Custom", "Modo personalizado activado. Ajusta manualmente cada opción.")
+            self.active_preset_label.configure(text="✏️ Custom")
+            self.log('INFO', "Modo personalizado activado")
         
     def scan_games_action(self):
         """Ejecuta escaneo de juegos en hilo separado."""
@@ -2120,7 +2146,7 @@ Licencia: Open Source
         # Actualizar contador formato X/Y
         selected_count = len(self.selected_games)
         total_count = len(self.games_data)
-        self.games_counter_label.configure(text=f"📊 {selected_count}/{total_count}")
+        self.games_counter_label.configure(text=f"{selected_count}/{total_count}")
         
     def open_filter(self):
         """Abre modal de filtrado de juegos."""
@@ -2366,7 +2392,7 @@ Licencia: Open Source
         # Actualizar contador
         filtered_count = len(filtered_games)
         selected_in_filtered = len([g for g in filtered_games if g[0] in self.selected_games])
-        self.games_counter_label.configure(text=f"📊 {selected_in_filtered}/{filtered_count}")
+        self.games_counter_label.configure(text=f"{selected_in_filtered}/{filtered_count}")
         
         # Mensaje si no hay resultados
         if not filtered_games:
