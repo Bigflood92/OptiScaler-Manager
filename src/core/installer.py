@@ -838,10 +838,8 @@ def install_combined_mods(
         
         if not nukem_ok:
             log_func('ERROR', "Instalación de dlssg-to-fsr3 falló.")
-            log_func('WARN', "⚠️ INSTALACIÓN PARCIAL: OptiScaler instalado, pero dlssg-to-fsr3 falló.")
-            log_func('INFO', "El juego tendrá upscaling pero no frame generation.")
-            # Retornar True porque OptiScaler sí se instaló correctamente
-            return True
+            log_func('WARN', "OptiScaler está instalado, pero sin Frame Generation.")
+            return False
             
         log_func('INFO', "")
         log_func('OK', "=== INSTALACIÓN COMPLETA ===")
