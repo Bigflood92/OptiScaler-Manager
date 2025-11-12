@@ -93,10 +93,21 @@ update_gaming_mode_config.py
 run_test_skip_admin.py
 ICON_USAGE_EXAMPLE.py
 run.bat
+run.py
+run.ps1
 fsr_injector.py
 take-screenshots.ps1
 SETUP_INSTRUCTIONS.md
+DUAL_MOD_IMPLEMENTATION.md
+debug_paths.py
+test_paths.py
 7z.exe
+
+# Obsolete build scripts (use build_nuitka_admin.ps1)
+build-local.ps1
+build-nuitka.ps1
+bump-version.ps1
+cleanup-git-history.ps1
 
 # Build artifacts (keep dist/ for releases when needed)
 version_info.txt.bak
