@@ -4,7 +4,7 @@
 ![Python](https://img.shields.io/badge/python-3.12-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-orange)
-[![Build](https://github.com/Bigflood92/OptiScaler-Manager/actions/workflows/build.yml/badge.svg)](https://github.com/Bigflood92/OptiScaler-Manager/actions)
+[![Release](https://github.com/Bigflood92/OptiScaler-Manager/actions/workflows/release.yml/badge.svg)](https://github.com/Bigflood92/OptiScaler-Manager/actions)
 [![GitHub release](https://img.shields.io/github/v/release/Bigflood92/OptiScaler-Manager)](https://github.com/Bigflood92/OptiScaler-Manager/releases)
 [![GitHub stars](https://img.shields.io/github/stars/Bigflood92/OptiScaler-Manager?style=social)](https://github.com/Bigflood92/OptiScaler-Manager)
 

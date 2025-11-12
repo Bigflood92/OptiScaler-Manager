@@ -6,21 +6,30 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
-## [2.1.0] - 2025-11-11
+## [2.1.0] - 2025-11-12
 
 ### Añadido
 - Build nativo con Nuitka (onefile) para máxima compatibilidad
 - Ejecutable con elevación UAC automática (`--windows-uac-admin`)
 - Fallback de auto-elevación en código (relanza si no hay admin)
+- **Panel de ayuda integrado**: Muestra controles de gamepad/teclado al presionar botón "?"
+- **Iconos centralizados**: Sistema de gestión de iconos PNG consistente en toda la UI
+- **Drag-to-scroll**: Navegación fluida en listas largas arrastrando con el ratón
+- Detección de entorno Nuitka usando `NUITKA_ONEFILE_DIRECTORY`
 
 ### Cambiado
 - Centralización de rutas y logs usando `src/config/paths.py`
+- README actualizado con nuevas capturas de pantalla (5 imágenes)
 - README actualizado con instrucciones de compilación vía Nuitka
 - Nombre del artefacto de release: `Gestor Optiscaler V2.0 ADMIN.exe`
+- Interfaz simplificada (eliminada información de GPU en settings)
+- Iconos de botones de gamepad corregidos (Xbox/PlayStation)
 
 ### Corregido
+- Error de rutas en compilados Nuitka (configuración se creaba en `%TEMP%`)
 - Error de logging en compilado (uso de `self.log_dir`)
-- Crash silencioso en .exe compilado con PyInstaller (migración recomendada a Nuitka)
+- Crash silencioso en .exe compilado con PyInstaller (migración a Nuitka)
+- Iconos de gamepad mostrando teclas incorrectas
 
 
 ### Por añadir
