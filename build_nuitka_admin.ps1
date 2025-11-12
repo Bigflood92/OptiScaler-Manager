@@ -23,6 +23,7 @@ if (-not (Test-Path -Path "dist")) {
   --enable-plugin=tk-inter `
   --include-data-dir=icons=icons `
   --windows-uac-admin `
+  --assume-yes-for-downloads `
   --output-dir=dist `
   --output-filename="Gestor Optiscaler V2.0 ADMIN.exe" `
   src/main.py

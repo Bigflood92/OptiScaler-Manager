@@ -14,41 +14,45 @@
 
 ## 📸 Capturas de Pantalla
 
-### Interfaz Principal (Modo Clásico)
+### Interfaz Principal
 <div align="center">
   <img src=".github/images/main-interface.png" alt="Interfaz Principal" width="800"/>
-  <p><em>Vista principal con lista de juegos detectados y configuración de mods</em></p>
+  <p><em>Vista principal con lista de juegos detectados, navegación drag-to-scroll y controles centralizados</em></p>
 </div>
 
-### Modo Gaming (Navegación por Mando)
+### Panel de Ayuda (Controles)
 <div align="center">
-  <img src=".github/images/gaming-mode.png" alt="Modo Gaming" width="800"/>
-  <p><em>Interfaz optimizada para navegación con mando Xbox/PlayStation</em></p>
+  <img src=".github/images/help-panel.png" alt="Panel de Ayuda" width="800"/>
+  <p><em>Panel desplegable con todos los controles de gamepad y atajos de teclado</em></p>
 </div>
 
 ### Descarga de Mods
 <div align="center">
   <img src=".github/images/mod-downloader.png" alt="Descarga de Mods" width="600"/>
-  <p><em>Gestor de versiones de OptiScaler con descarga desde GitHub</em></p>
+  <p><em>Gestor de versiones de OptiScaler con descarga automática desde GitHub</em></p>
 </div>
 
 ### Configuración de Juego
 <div align="center">
   <img src=".github/images/game-config.png" alt="Configuración de Juego" width="600"/>
-  <p><em>Configuración individual por juego con presets disponibles</em></p>
+  <p><em>Configuración individual por juego con presets y opciones avanzadas</em></p>
+</div>
+
+### Configuración General
+<div align="center">
+  <img src=".github/images/settings.png" alt="Configuración" width="800"/>
+  <p><em>Ajustes de la aplicación, carpetas personalizadas y opciones avanzadas</em></p>
 </div>
 
 ---
 
 ## ✨ Características
 
-### 🎨 Interfaz Dual
-- **Interfaz Clásica**: Vista tradicional de pestañas para configuración detallada
-- **Interfaz Gaming**: Diseño optimizado para navegación con mando (En proceso)(Xbox/PlayStation)
-  - Navegación completa con D-Pad y botones
-  - Indicadores visuales de foco (bordes de colores)
-  - Panel lateral de navegación
-  - Soporte táctil en dispositivos compatibles
+### 🎨 Interfaz Moderna
+- **Iconos centralizados**: Diseño consistente con iconos PNG personalizados
+- **Drag-to-scroll**: Navegación fluida en listas largas de juegos
+- **Panel de ayuda integrado**: Muestra todos los controles disponibles (teclado/gamepad)
+- **Interfaz Gaming** (En desarrollo): Navegación optimizada para mandos Xbox/PlayStation
 
 ### 🎯 Gestión de Mods
 - **Detección automática** de juegos en Steam, Epic Games, Xbox Game Pass, GOG
@@ -137,23 +141,6 @@ python -m src.main
 2. Selecciona la versión de OptiScaler deseada
 3. Pulsa **Descargar y Seleccionar**
 4. La versión descargada se aplicará a futuros mods
-
-### Navegación con Mando
-
-#### Menú Lateral
-- **↑↓**: Cambiar entre secciones
-- **→**: Entrar al panel activo
-
-#### Panel de Configuración
-- **↑↓**: Navegar entre opciones
-- **←→**: Cambiar valores (Presets, GPU, Sharpness)
-- **A/Enter**: Activar desplegables y botones
-- **B/Esc**: Cancelar o volver al menú
-
-#### Panel de Juegos
-- **↑↓**: Navegar entre juegos
-- **A**: Seleccionar/deseleccionar juego
-- **Botón verde 🎮**: Cambiar a interfaz clásica
 
 ---
 
