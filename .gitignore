@@ -93,7 +93,7 @@ update_gaming_mode_config.py
 run_test_skip_admin.py
 ICON_USAGE_EXAMPLE.py
 run.bat
-run.py
+# run.py  # NEEDED FOR GITHUB ACTIONS BUILD - DO NOT IGNORE
 run.ps1
 fsr_injector.py
 take-screenshots.ps1
