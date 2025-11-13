@@ -7,6 +7,51 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [2.2.1] - 2025-11-13
+
+### Corregido
+- **[CRÍTICO] 🔴 Estados contradictorios en instalaciones de mod**
+  - La lista mostraba "instalado" pero la barra de progreso mostraba "falló"
+  - Causa: `update_game_status_realtime()` re-detectaba el estado del disco después de errores
+  - Solución: Añadido parámetro `force` para preservar mensajes de error
+  - Instalaciones exitosas usan `force=False` (re-detecta versión), errores usan `force=True` (preserva mensaje)
+  
+- **[CRÍTICO] 🔴 Falsos positivos de "instalación incompleta"**
+  - Juegos con OptiScaler correctamente instalado mostraban "❌ Instalación incompleta"
+  - Causa: `check_installation_complete()` buscaba `OptiScaler.dll` que se renombra a `dxgi.dll`
+  - Solución: Modificada detección para buscar tanto DLL original como variantes renombradas
+  - Ahora busca: `OptiScaler.dll`, `dxgi.dll`, `nvngx.dll`, `d3d11.dll`, `d3d12.dll`, `winmm.dll`, `version.dll`
+  
+- **[ALTO] 🎮 Crash del monitor de gamepad en consolas portátiles**
+  - Error "main thread is not in main loop" al iniciar en ROG Ally, Steam Deck
+  - Movida inicialización de pygame a callback `after(500ms)` para ejecutar después de `mainloop()`
+  - 100% estabilidad en dispositivos con gamepad integrado
+  
+- **[ALTO] 🎯 Detección incorrecta de ejecutables en 3 juegos**
+  - Hogwarts Legacy, Lords of the Fallen, DRAGON BALL Sparking detectaban `CrashReportClient.exe`
+  - Implementada prioridad por patrones de nombre conocidos (UE5 `-WinGDK-Shipping.exe`, `-Win64-Shipping.exe`)
+  - Ahora busca ejecutables reales antes de recurrir a lista negra
+  - 0% de falsos positivos en tests con 67 juegos
+  
+- **[MEDIO] ⚡ Performance lenta en escaneo de juegos grandes**
+  - Forza Horizon 5 (120GB) tardaba 1.5s → ahora ~0.5s (66% más rápido)
+  - Limitada profundidad recursiva a 4 niveles (suficiente para encontrar todos los .exe)
+  - Total scan time reducido de ~15s a ~5s (67 juegos)
+  
+- **[BAJO] 🛡️ Race condition potencial al spam botón escaneo**
+  - Añadido flag `_scan_in_progress` con early return
+  - Previene crash si usuario presiona "Escanear" múltiples veces rápidamente
+
+### Mejorado
+- **🔍 Detalles de instalación mejorados**
+  - Popup de detalles ahora muestra secciones organizadas: Core, Adicionales, Runtime, DLSSG-to-FSR3
+  - Diagnóstico detallado con estado de cada componente
+  - Mejor visibilidad de qué archivos/carpetas están instalados
+
+### Documentación
+- Añadido análisis completo de bugs en `docs/development/bugfix-v2.2.0-rog-ally.md`
+- Incluye causa raíz, solución técnica y guías de testing
+
 ## [2.2.0] - 2025-11-12
 
 ### Añadido

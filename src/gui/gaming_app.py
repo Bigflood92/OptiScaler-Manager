@@ -12,6 +12,7 @@ Estructura:
 
 import os
 import sys
+from pathlib import Path
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import threading
@@ -22,6 +23,7 @@ import time
 from ..core.scanner import scan_games, invalidate_scan_cache
 from ..core.config_manager import load_config, save_config
 from ..core.installer import inject_fsr_mod, uninstall_fsr_mod, install_combined_mods
+from ..core.mod_detector import compute_game_mod_status, get_version_badge_info
 from ..core.utils import detect_gpu_vendor, should_use_dual_mod
 from ..core.github import GitHubClient
 from ..utils.logging import LogManager
@@ -119,7 +121,7 @@ class GamingApp(ctk.CTk):
         self.sharpness_var = ctk.DoubleVar(value=self.config.get("sharpness", 0.5))
         self.overlay_var = ctk.StringVar(value=self.config.get("overlay", "Desactivado"))
         self.mb_var = ctk.StringVar(value=self.config.get("motion_blur", "Activado"))
-        
+
         # Cargar iconos
         self.load_icons()
         
@@ -128,7 +130,9 @@ class GamingApp(ctk.CTk):
         self.gamepad = None
         self.gamepad_thread = None
         self.gamepad_running = False
-        self.init_gamepad()
+        # BUGFIX: Mover init_gamepad a after() para evitar "main thread is not in main loop"
+        # Error ocurre porque pygame.event.pump() se llama antes que mainloop() arranque
+        self.after(500, self.init_gamepad)
         
         # Grid configuration
         self.grid_rowconfigure(0, weight=1)
@@ -150,6 +154,10 @@ class GamingApp(ctk.CTk):
         
         # Mostrar tutorial de bienvenida si es la primera vez
         self.after(500, self.show_welcome_if_needed)
+
+    # ==================================================================================
+    # ICONOS Y RECURSOS
+    # ==================================================================================
     
     def load_icons(self):
         """Carga todos los iconos de la aplicación."""
@@ -247,85 +255,213 @@ class GamingApp(ctk.CTk):
             self.process_gamepad_input()
     
     def process_gamepad_input(self):
-        """Procesa inputs del gamepad."""
+        """Procesa inputs del gamepad con acceso seguro y throttling de errores."""
         if not self.gamepad_connected or not self.gamepad:
             return
-        
+
         try:
             pygame.event.pump()
-            
-            # === NAVEGACIÓN CON D-PAD / STICK ===
-            # D-Pad arriba o stick arriba
-            if self.gamepad.get_hat(0)[1] == 1 or self.gamepad.get_axis(1) < -0.5:
+
+            # Helpers seguros (evita excepciones en dispositivos con menos botones/ejes)
+            def safe_btn(idx):
+                try:
+                    return idx < self.gamepad.get_numbuttons() and self.gamepad.get_button(idx)
+                except Exception as e:
+                    raise e
+            def safe_axis(idx):
+                try:
+                    return idx < self.gamepad.get_numaxes() and self.gamepad.get_axis(idx)
+                except Exception as e:
+                    raise e
+
+            # Navegación
+            if self.gamepad.get_hat(0)[1] == 1 or safe_axis(1) < -0.5:
                 self.navigate_focus('up')
-            # D-Pad abajo o stick abajo
-            elif self.gamepad.get_hat(0)[1] == -1 or self.gamepad.get_axis(1) > 0.5:
+            elif self.gamepad.get_hat(0)[1] == -1 or safe_axis(1) > 0.5:
                 self.navigate_focus('down')
-            # D-Pad izquierda o stick izquierda
-            elif self.gamepad.get_hat(0)[0] == -1 or self.gamepad.get_axis(0) < -0.5:
+            elif self.gamepad.get_hat(0)[0] == -1 or safe_axis(0) < -0.5:
                 self.navigate_focus('left')
-            # D-Pad derecha o stick derecha
-            elif self.gamepad.get_hat(0)[0] == 1 or self.gamepad.get_axis(0) > 0.5:
+            elif self.gamepad.get_hat(0)[0] == 1 or safe_axis(0) > 0.5:
                 self.navigate_focus('right')
-            
-            # === BOTONES DE ACCIÓN ===
-            # Botón A (0) - Confirmar/Seleccionar
-            if self.gamepad.get_button(0):
-                self.gamepad_button_press('A')
-                time.sleep(0.2)  # Debounce
-            
-            # Botón B (1) - Cancelar/Volver
-            if self.gamepad.get_button(1):
-                self.gamepad_button_press('B')
-                time.sleep(0.2)
-            
-            # Botón X (2) - Config rápida
-            if self.gamepad.get_button(2):
-                self.gamepad_button_press('X')
-                time.sleep(0.2)
-            
-            # Botón Y (3) - Filtro
-            if self.gamepad.get_button(3):
-                self.gamepad_button_press('Y')
-                time.sleep(0.2)
-            
-            # === BUMPERS - CAMBIAR PESTAÑAS ===
-            # LB (4) - Pestaña anterior
-            if self.gamepad.get_button(4):
-                self.navigate_tabs(-1)
-                time.sleep(0.3)
-            
-            # RB (5) - Pestaña siguiente
-            if self.gamepad.get_button(5):
-                self.navigate_tabs(1)
-                time.sleep(0.3)
-            
-            # === TRIGGERS - SCROLL RÁPIDO ===
-            # LT (eje 2) - Scroll arriba
-            if self.gamepad.get_axis(2) > 0.5:
+
+            # Botones acción
+            if safe_btn(0):
+                self.gamepad_button_press('A'); time.sleep(0.15)
+            if safe_btn(1):
+                self.gamepad_button_press('B'); time.sleep(0.2)
+            if safe_btn(2):
+                self.gamepad_button_press('X'); time.sleep(0.2)
+            if safe_btn(3):
+                self.gamepad_button_press('Y'); time.sleep(0.2)
+
+            # Bumpers
+            if safe_btn(4):
+                self.navigate_tabs(-1); time.sleep(0.3)
+            if safe_btn(5):
+                self.navigate_tabs(1); time.sleep(0.3)
+
+            # Triggers (scroll)
+            ax2 = safe_axis(2)
+            if ax2 and ax2 > 0.5:
                 self.quick_scroll(-200)
-            
-            # RT (eje 5) - Scroll abajo
-            if self.gamepad.get_axis(5) > 0.5:
+            ax5 = safe_axis(5)
+            if ax5 and ax5 > 0.5:
                 self.quick_scroll(200)
-            
-            # === BOTONES ESPECIALES ===
-            # Start (7) - Aplicar cambios
-            if self.gamepad.get_button(7):
-                self.gamepad_button_press('START')
-                time.sleep(0.3)
-            
-            # Select/Back (6) - Ayuda
-            if self.gamepad.get_button(6):
-                self.show_panel('help')
-                time.sleep(0.3)
-            
+
+            # Especiales
+            if safe_btn(7):
+                self.gamepad_button_press('START'); time.sleep(0.3)
+            if safe_btn(6):
+                self.show_panel('help'); time.sleep(0.3)
+
         except Exception as e:
-            self.log('ERROR', f"Error procesando gamepad: {e}")
-        
-        # Continuar loop si gamepad sigue conectado
+            msg = str(e)
+            if 'Invalid joystick button' in msg:
+                if not getattr(self, '_gamepad_disabled_invalid', False):
+                    self._gamepad_disabled_invalid = True
+                    self.log('WARNING', 'Gamepad no compatible (botones fuera de rango). Lectura desactivada.')
+                self.gamepad_connected = False
+                return
+            now = time.time()
+            if not hasattr(self, '_last_gamepad_err_ts'):
+                self._last_gamepad_err_ts = 0
+            if now - self._last_gamepad_err_ts > 2:
+                self._last_gamepad_err_ts = now
+                self.log('ERROR', f"Error procesando gamepad: {e}")
+
         if self.gamepad_connected:
-            self.after(50, self.process_gamepad_input)  # 20 FPS polling
+            self.after(50, self.process_gamepad_input)
+
+    def show_installation_details(self, game_path: str, game_name: str, status_text: str):
+        """Muestra detalles de archivos del mod en un juego."""
+        # Analizar archivos instalados
+        details = []
+        details.append(f"📁 Juego: {game_name}")
+        details.append(f"📂 Ruta: {game_path}")
+        details.append(f"📊 Estado: {status_text}")
+        details.append("")
+        details.append("═" * 60)
+        details.append("🔍 ARCHIVOS CORE DE OPTISCALER:")
+        details.append("═" * 60)
+        
+        # Archivos core requeridos
+        core_files = ['OptiScaler.dll', 'OptiScaler.ini']
+        all_core_found = True
+        
+        for file in core_files:
+            file_path = os.path.join(game_path, file)
+            if os.path.exists(file_path):
+                try:
+                    size = os.path.getsize(file_path) / 1024  # KB
+                    details.append(f"  ✅ {file} ({size:.1f} KB)")
+                except:
+                    details.append(f"  ✅ {file}")
+            else:
+                details.append(f"  ❌ {file} - NO ENCONTRADO")
+                all_core_found = False
+        
+        # Archivos adicionales de OptiScaler
+        details.append("")
+        details.append("═" * 60)
+        details.append("🔍 ARCHIVOS ADICIONALES DE OPTISCALER:")
+        details.append("═" * 60)
+        
+        additional_files = [
+            'dxgi.dll', 'd3d11.dll', 'd3d12.dll', 'winmm.dll',
+            'amd_fidelityfx_dx12.dll', 'amd_fidelityfx_vk.dll',
+            'amd_fidelityfx_upscaler_dx12.dll', 'amd_fidelityfx_framegeneration_dx12.dll',
+            'libxess.dll', 'libxess_dx11.dll', 'nvngx.dll'
+        ]
+        
+        found_additional = []
+        for file in additional_files:
+            file_path = os.path.join(game_path, file)
+            if os.path.exists(file_path):
+                try:
+                    size = os.path.getsize(file_path) / 1024
+                    found_additional.append(f"  ✅ {file} ({size:.1f} KB)")
+                except:
+                    found_additional.append(f"  ✅ {file}")
+        
+        if found_additional:
+            details.extend(found_additional)
+        else:
+            details.append("  ℹ️ Ninguno encontrado")
+        
+        # Verificar carpetas
+        details.append("")
+        details.append("═" * 60)
+        details.append("🔍 CARPETAS DE RUNTIME:")
+        details.append("═" * 60)
+        
+        runtime_dirs = ['D3D12_Optiscaler', 'nvngx_dlss', 'DlssOverrides']
+        found_runtime = False
+        
+        for dir_name in runtime_dirs:
+            dir_path = os.path.join(game_path, dir_name)
+            if os.path.exists(dir_path) and os.path.isdir(dir_path):
+                try:
+                    file_count = len([f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))])
+                    details.append(f"  ✅ {dir_name}/ ({file_count} archivos)")
+                    found_runtime = True
+                except:
+                    details.append(f"  ✅ {dir_name}/")
+                    found_runtime = True
+        
+        if not found_runtime:
+            details.append("  ⚠️ No se encontraron carpetas de runtime")
+            details.append("     (Puede ser normal en versiones antiguas de OptiScaler)")
+            
+        # Verificar dlssg-to-fsr3
+        details.append("")
+        details.append("═" * 60)
+        details.append("🔍 DLSSG-TO-FSR3 (FRAME GENERATION):")
+        details.append("═" * 60)
+        
+        nukem_files = [
+            'dlssg_to_fsr3_amd_is_better.dll',
+            'dlssg_to_fsr3.ini'
+        ]
+        
+        found_nukem = []
+        for file in nukem_files:
+            file_path = os.path.join(game_path, file)
+            if os.path.exists(file_path):
+                try:
+                    size = os.path.getsize(file_path) / 1024
+                    found_nukem.append(f"  ✅ {file} ({size:.1f} KB)")
+                except:
+                    found_nukem.append(f"  ✅ {file}")
+        
+        if found_nukem:
+            details.extend(found_nukem)
+        else:
+            details.append("  ℹ️ No instalado (solo upscaling activo)")
+        
+        # Diagnóstico final
+        details.append("")
+        details.append("═" * 60)
+        details.append("📋 DIAGNÓSTICO:")
+        details.append("═" * 60)
+        
+        if all_core_found:
+            details.append("  ✅ Archivos core: COMPLETO")
+        else:
+            details.append("  ❌ Archivos core: INCOMPLETO")
+        
+        if found_runtime or found_additional:
+            details.append("  ✅ Archivos adicionales: Encontrados")
+        else:
+            details.append("  ⚠️ Archivos adicionales: No encontrados")
+        
+        if found_nukem:
+            details.append("  ✅ Frame Generation: Instalado")
+        else:
+            details.append("  ℹ️ Frame Generation: No instalado")
+        
+        # Mostrar en messagebox
+        details_text = "\n".join(details)
+        messagebox.showinfo("Detalles de Instalación", details_text)
     
     def gamepad_button_press(self, button):
         """Maneja presión de botones del gamepad."""
@@ -594,6 +730,26 @@ class GamingApp(ctk.CTk):
         Args:
             scrollable_frame: CTkScrollableFrame al que añadir drag scroll
         """
+        # BUGFIX: Acceso robusto al canvas interno de CTkScrollableFrame
+        try:
+            # Intentar obtener el canvas interno (puede variar entre versiones de customtkinter)
+            if hasattr(scrollable_frame, '_parent_canvas'):
+                canvas = scrollable_frame._parent_canvas
+            elif hasattr(scrollable_frame, 'canvas'):
+                canvas = scrollable_frame.canvas
+            else:
+                # Buscar canvas como hijo directo
+                for child in scrollable_frame.winfo_children():
+                    if isinstance(child, ctk.CTkCanvas) or 'canvas' in str(type(child)).lower():
+                        canvas = child
+                        break
+                else:
+                    self.log('WARNING', "No se pudo activar drag-to-scroll: canvas no encontrado")
+                    return
+        except Exception as e:
+            self.log('WARNING', f"No se pudo configurar drag-to-scroll: {e}")
+            return
+        
         # Variables para tracking del drag
         drag_data = {"y": 0, "scrolling": False}
         
@@ -602,7 +758,10 @@ class GamingApp(ctk.CTk):
             drag_data["y"] = event.y
             drag_data["scrolling"] = False
             # Cambiar cursor
-            scrollable_frame._parent_canvas.configure(cursor="hand2")
+            try:
+                canvas.configure(cursor="hand2")
+            except:
+                pass
         
         def on_mouse_drag(event):
             """Maneja el movimiento durante drag."""
@@ -616,24 +775,30 @@ class GamingApp(ctk.CTk):
                 delta = drag_data["y"] - event.y
                 drag_data["y"] = event.y
                 
-                # Obtener canvas interno del scrollable frame
-                canvas = scrollable_frame._parent_canvas
-                
                 # Scroll suavizado
                 scroll_amount = delta / 3  # Ajustar sensibilidad
-                canvas.yview_scroll(int(scroll_amount), "units")
+                try:
+                    canvas.yview_scroll(int(scroll_amount), "units")
+                except:
+                    pass
         
         def on_mouse_release(event):
             """Finaliza el drag."""
             drag_data["scrolling"] = False
             # Restaurar cursor
-            scrollable_frame._parent_canvas.configure(cursor="")
+            try:
+                canvas.configure(cursor="")
+            except:
+                pass
         
         # Bind eventos al canvas interno
-        canvas = scrollable_frame._parent_canvas
-        canvas.bind("<Button-1>", on_mouse_press)
-        canvas.bind("<B1-Motion>", on_mouse_drag)
-        canvas.bind("<ButtonRelease-1>", on_mouse_release)
+        try:
+            canvas.bind("<Button-1>", on_mouse_press)
+            canvas.bind("<B1-Motion>", on_mouse_drag)
+            canvas.bind("<ButtonRelease-1>", on_mouse_release)
+            self.log('INFO', "Drag-to-scroll configurado correctamente")
+        except Exception as e:
+            self.log('WARNING', f"Error al bindear eventos drag-to-scroll: {e}")
     
     # ==================================================================================
     # CREACIÓN DE UI
@@ -759,6 +924,9 @@ class GamingApp(ctk.CTk):
         # Scrollable content
         config_scroll = ctk.CTkScrollableFrame(self.config_panel, fg_color="transparent")
         config_scroll.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        # Habilitar drag-to-scroll en el panel de configuración
+        self.setup_drag_scroll(config_scroll)
         
         # Frame para mensaje "No hay mod instalado"
         self.config_no_mod_frame = ctk.CTkFrame(config_scroll, fg_color="#1a1a1a", corner_radius=8)
@@ -1610,7 +1778,7 @@ class GamingApp(ctk.CTk):
             dropdown_fg_color="#2a2a2a"
         )
         self.optiscaler_version_combo.pack(side="left", fill="x", expand=True)
-        
+
         # Botón de carpeta personalizada
         ctk.CTkButton(
             mod_frame,
@@ -2168,7 +2336,13 @@ Licencia: Open Source
         Args:
             silent: Si es True, actualiza la lista sin modificar la barra de progreso
         """
+        # BUGFIX: Protección contra race condition si se presiona botón durante scan
+        if hasattr(self, '_scan_in_progress') and self._scan_in_progress:
+            self.log('WARNING', "⏳ Escaneo ya en progreso, espera a que termine")
+            return
+            
         self.log('INFO', "Iniciando escaneo de juegos...")
+        self._scan_in_progress = True
         
         # Deshabilitar botón durante escaneo
         self.scan_btn.configure(state="disabled")
@@ -2215,6 +2389,7 @@ Licencia: Open Source
                 def restore_button():
                     # Mejora #4: Detener animación
                     self.scan_animation_running = False
+                    self._scan_in_progress = False  # BUGFIX: Liberar flag de progreso
                     if self.icons.get("rescan"):
                         self.scan_btn.configure(state="normal", text="", image=self.icons["rescan"])
                     else:
@@ -2244,12 +2419,28 @@ Licencia: Open Source
         if self.scan_animation_running:
             self.after(200, self.animate_scan_button)
     
-    def update_game_status_realtime(self, game_path, status_text, status_color):
-        """Mejora #5: Actualiza el estado de un juego en la lista en tiempo real."""
+    def update_game_status_realtime(self, game_path, status_text, status_color, force=False):
+        """Mejora #5: Actualiza el estado de un juego en la lista en tiempo real.
+        
+        Args:
+            game_path: Ruta del juego
+            status_text: Texto del estado a mostrar
+            status_color: Color del texto
+            force: Si True, no re-detecta el estado, usa los valores pasados
+        """
         if game_path in self.game_frames:
             frame_data = self.game_frames[game_path]
             status_label = frame_data['status_label']
             game_frame = frame_data['frame']
+            
+            # Re-computar badge actualizado con detector SOLO si no es forzado
+            if not force:
+                try:
+                    badge_info = get_version_badge_info(game_path, OPTISCALER_DIR)
+                    status_text = badge_info['badge_text']
+                    status_color = badge_info['badge_color']
+                except Exception:
+                    pass  # Usar valores pasados como fallback
             
             # Actualizar label de estado
             status_label.configure(text=status_text, text_color=status_color)
@@ -2689,11 +2880,20 @@ Licencia: Open Source
             )
             name_label.pack(side="left", fill="x", expand=True, padx=5)
             
-            # Estado del mod
-            status_color = "#00ff00" if "✅" in mod_status else "#888888"
+            # Estado del mod - mejorado con detección de versión
+            try:
+                from pathlib import Path
+                badge_info = get_version_badge_info(game_path, OPTISCALER_DIR)
+                mod_status_text = badge_info['badge_text']
+                status_color = badge_info['badge_color']
+            except Exception:
+                # Fallback al método anterior si falla detección
+                status_color = "#00ff00" if "✅" in mod_status else "#888888"
+                mod_status_text = mod_status
+            
             status_label = ctk.CTkLabel(
                 game_frame,
-                text=mod_status,
+                text=mod_status_text,
                 text_color=status_color,
                 font=ctk.CTkFont(size=FONT_SMALL),
                 anchor="e",
@@ -2701,49 +2901,31 @@ Licencia: Open Source
             )
             status_label.pack(side="right", padx=5)
             
+            # FEATURE: Click en estado muestra detalles de instalación
+            # Capturamos variables como argumentos por defecto para evitar que todos los
+            # handlers apunten al último juego (late binding en closures dentro de loops)
+            def show_mod_details(event=None, _p=game_path, _n=game_name, _s=mod_status_text):
+                try:
+                    self.show_installation_details(_p, _n, _s)
+                except Exception as e:
+                    self.log('ERROR', f"Error mostrando detalles: {e}")
+                    messagebox.showerror("Error", f"No se pudieron cargar los detalles:\n{e}")
+            
+            status_label.bind("<Button-1>", show_mod_details)
+            # Agregar efecto hover
+            def on_enter(e, label=status_label):
+                label.configure(font=ctk.CTkFont(size=FONT_SMALL, underline=True))
+            def on_leave(e, label=status_label):
+                label.configure(font=ctk.CTkFont(size=FONT_SMALL, underline=False))
+            status_label.bind("<Enter>", on_enter)
+            status_label.bind("<Leave>", on_leave)
+            
             # Mejora #5: Guardar referencias para actualización en tiempo real
             self.game_frames[game_path] = {
                 'frame': game_frame,
                 'status_label': status_label,
                 'name': game_name
             }
-            
-            # Hacer toda la fila clickable
-            def make_row_clickable(frame, checkbox, path, variable):
-                def on_row_click(e):
-                    variable.set(not variable.get())
-                    self.toggle_game_selection(path, variable)
-                
-                def on_enter(e):
-                    frame.configure(fg_color="#2a2a2a")
-                
-                def on_leave(e):
-                    frame.configure(fg_color="#1a1a1a")
-                
-                frame.bind("<Button-1>", on_row_click)
-                frame.bind("<Enter>", on_enter)
-                frame.bind("<Leave>", on_leave)
-                
-                for child in frame.winfo_children():
-                    if child != checkbox:
-                        child.bind("<Button-1>", on_row_click)
-            
-            make_row_clickable(game_frame, check, game_path, var)
-        
-        # Actualizar contador
-        filtered_count = len(filtered_games)
-        selected_in_filtered = len([g for g in filtered_games if g[0] in self.selected_games])
-        self.games_counter_label.configure(text=f"{selected_in_filtered}/{filtered_count}")
-        
-        # Mensaje si no hay resultados
-        if not filtered_games:
-            no_results = ctk.CTkLabel(
-                self.games_scrollable,
-                text="❌ No se encontraron juegos con los filtros aplicados",
-                font=ctk.CTkFont(size=FONT_NORMAL),
-                text_color="#888888"
-            )
-            no_results.pack(pady=50)
     
     def check_optiscaler_available(self):
         """Verifica si OptiScaler está descargado.
@@ -2897,8 +3079,11 @@ Licencia: Open Source
                         self.log('ERROR', f"❌ {game_name}: No se encontró la carpeta de OptiScaler")
                         continue
                     
-                    # Usar dual-mod si GPU es AMD/Intel (detección automática)
-                    if self.use_dual_mod:
+                    # BUGFIX: Verificar si realmente necesita Nukem (solo si fg_mode == "FSR-FG (Nukem's DLSSG)")
+                    fg_mode = self.fg_mode_var.get()
+                    needs_nukem = fg_mode == "FSR-FG (Nukem's DLSSG)"
+                    
+                    if needs_nukem:
                         # Obtener carpeta de Nukem/dlssg-to-fsr3
                         nukem_source_dir = self.get_nukem_source_dir()
                         if not nukem_source_dir:
@@ -2908,7 +3093,6 @@ Licencia: Open Source
                         
                         # Obtener configuraciones del GUI
                         gpu_choice = self.gpu_var.get()
-                        fg_mode = self.fg_mode_var.get()
                         upscaler = self.upscaler_var.get()
                         upscale_mode = self.upscale_mode_var.get()
                         dll_name = self.dll_name_var.get()
@@ -2961,15 +3145,15 @@ Licencia: Open Source
                         self.log('OK', f"✅ {game_name}: Instalado correctamente")
                         # Mejora #3: Guardar en lista de exitosos
                         self.last_operation_results['success'].append(game_name)
-                        # Mejora #5: Actualizar estado en tiempo real
-                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "✅ OptiScaler (Upscaling)", "#00FF88"))
+                        # Mejora #5: Actualizar estado en tiempo real (re-detectar)
+                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "✅ OptiScaler (Upscaling)", "#00FF88", force=False))
                     else:
                         fail_count += 1
                         self.log('ERROR', f"❌ {game_name}: Fallo en instalación")
                         # Mejora #3: Guardar en lista de fallidos
                         self.last_operation_results['failed'].append((game_name, "Fallo en instalación"))
-                        # Mejora #5: Actualizar estado en tiempo real
-                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "❌ Error", "#FF4444"))
+                        # Mejora #5: Actualizar estado en tiempo real (forzar error, no re-detectar)
+                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "❌ Fallo", "#FF4444", force=True))
                         
                 except Exception as e:
                     fail_count += 1
@@ -2977,6 +3161,8 @@ Licencia: Open Source
                     # Mejora #3: Guardar en lista de fallidos
                     game_name = self.games_data.get(game_path, ("Juego desconocido", None, None, None))[0]
                     self.last_operation_results['failed'].append((game_name, str(e)))
+                    # Actualizar UI con error (forzar, no re-detectar)
+                    self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "❌ Error", "#FF4444", force=True))
             
             # Mostrar resultado en la barra de estado
             def finish_install():
@@ -3067,15 +3253,15 @@ Licencia: Open Source
                         self.log('OK', f"✅ {game_name}: Desinstalado")
                         # Mejora #3: Guardar en lista de exitosos
                         self.last_operation_results['success'].append(game_name)
-                        # Mejora #5: Actualizar estado en tiempo real
-                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "⭕ Ausente", "#888888"))
+                        # Mejora #5: Actualizar estado en tiempo real (re-detectar)
+                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "⭕ Ausente", "#888888", force=False))
                     else:
                         fail_count += 1
                         self.log('ERROR', f"❌ {game_name}: Fallo en desinstalación")
                         # Mejora #3: Guardar en lista de fallidos
                         self.last_operation_results['failed'].append((game_name, "Fallo en desinstalación"))
-                        # Mejora #5: Actualizar estado en tiempo real
-                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "❌ Error", "#FF4444"))
+                        # Mejora #5: Actualizar estado en tiempo real (forzar error)
+                        self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "❌ Error desinst.", "#FF4444", force=True))
                         
                 except Exception as e:
                     fail_count += 1
@@ -3083,6 +3269,8 @@ Licencia: Open Source
                     # Mejora #3: Guardar en lista de fallidos
                     game_name = self.games_data.get(game_path, ("Juego desconocido", None, None, None))[0]
                     self.last_operation_results['failed'].append((game_name, str(e)))
+                    # Actualizar UI con error (forzar)
+                    self.after(0, lambda p=game_path: self.update_game_status_realtime(p, "❌ Error", "#FF4444", force=True))
             
             # Mostrar resultado en la barra de estado
             def finish_uninstall():
@@ -3182,8 +3370,11 @@ Licencia: Open Source
                     self.after(0, lambda: messagebox.showerror("Error", "No se encontró la carpeta de OptiScaler"))
                     return
                 
-                # Usar dual-mod si GPU es AMD/Intel (detección automática)
-                if self.use_dual_mod:
+                # BUGFIX: Verificar si realmente necesita Nukem (solo si fg_mode == "FSR-FG (Nukem's DLSSG)")
+                fg_mode = self.fg_mode_var.get()
+                needs_nukem = fg_mode == "FSR-FG (Nukem's DLSSG)"
+                
+                if needs_nukem:
                     # Obtener carpeta de Nukem/dlssg-to-fsr3
                     nukem_source_dir = self.get_nukem_source_dir()
                     if not nukem_source_dir:
@@ -3192,7 +3383,6 @@ Licencia: Open Source
                     
                     # Obtener configuraciones del GUI
                     gpu_choice = self.gpu_var.get()
-                    fg_mode = self.fg_mode_var.get()
                     upscaler = self.upscaler_var.get()
                     upscale_mode = self.upscale_mode_var.get()
                     dll_name = self.dll_name_var.get()
@@ -3421,6 +3611,10 @@ Licencia: Open Source
             self.log('INFO', 'Selectores de versión actualizados')
         except Exception as e:
             self.log('ERROR', f'Error al actualizar selectores de versión: {e}')
+
+    def refresh_optiscaler_versions(self):
+        """Alias más semántico usado tras una actualización para refrescar combos."""
+        self.update_version_combos()
     
     def update_config_visibility(self):
         """Actualiza la visibilidad de las opciones de configuración según si hay mod instalado."""
