@@ -37,6 +37,7 @@ jobs:
         shell: pwsh
         run: |
           $env:Path = "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin;$env:Path"
+          $version = "${{ github.ref_name }}".Replace('v', '')
           python -m nuitka `
             --standalone `
             --onefile `
@@ -46,23 +47,24 @@ jobs:
             --windows-uac-admin `
             --assume-yes-for-downloads `
             --output-dir=dist `
-            --output-filename="Gestor OptiScaler V2.1.exe" `
+            --output-filename="Gestor.OptiScaler.V$version.exe" `
             run.py
 
       - name: Generate SHA256 checksum
         shell: pwsh
         run: |
-          $exePath = "dist/Gestor OptiScaler V2.1.exe"
+          $version = "${{ github.ref_name }}".Replace('v', '')
+          $exePath = "dist/Gestor.OptiScaler.V$version.exe"
           $hash = (Get-FileHash -Algorithm SHA256 $exePath).Hash
-          Set-Content -Path "dist/Gestor_OptiScaler_V2.1.exe.sha256" -Value $hash
+          Set-Content -Path "dist/Gestor.OptiScaler.V$version.exe.sha256" -Value $hash
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            dist/Gestor OptiScaler V2.1.exe
-            dist/Gestor_OptiScaler_V2.1.exe.sha256
+            dist/Gestor.OptiScaler.V*.exe
+            dist/Gestor.OptiScaler.V*.exe.sha256
           body: |
             OptiScaler Manager ${{ github.ref_name }}
 
