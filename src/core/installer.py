@@ -10,6 +10,7 @@ import subprocess
 import platform
 import urllib.request
 import configparser
+from datetime import datetime
 
 from typing import Tuple
 
@@ -35,6 +36,60 @@ try:
     REQUESTS_AVAILABLE = True
 except Exception:
     REQUESTS_AVAILABLE = False
+
+
+# -----------------------------
+# Version tracking helpers
+# -----------------------------
+def _read_global_optiscaler_version():
+    """Lee version.json global en OPTISCALER_DIR si existe."""
+    try:
+        vfile = os.path.join(OPTISCALER_DIR, 'version.json')
+        if os.path.exists(vfile):
+            import json
+            with open(vfile, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return None
+
+
+def _infer_version_from_source(source_dir: str) -> str | None:
+    """Intenta inferir la versión a partir del nombre de carpeta OptiScaler_<ver>."""
+    try:
+        base = os.path.basename(source_dir.rstrip('/\\'))
+        if base.lower().startswith('optiscaler_'):
+            return base.split('_', 1)[-1]
+    except Exception:
+        pass
+    return None
+
+
+def _write_game_version_json(target_dir: str, source_dir: str, log_func) -> None:
+    """Escribe version.json en la carpeta del juego con metadatos de instalación."""
+    data = {
+        'source': 'OptiScaler',
+        'installed_at': datetime.now().isoformat(timespec='seconds')
+    }
+    global_meta = _read_global_optiscaler_version() or {}
+    if 'version' in global_meta:
+        data['version'] = global_meta.get('version')
+        data['tag'] = global_meta.get('tag')
+        data['source_url'] = global_meta.get('source_url')
+        data['source_folder'] = global_meta.get('folder')
+    else:
+        # Fallback a inferir desde carpeta de origen
+        ver = _infer_version_from_source(source_dir)
+        if ver:
+            data['version'] = ver
+            data['tag'] = f"v{ver}"
+    try:
+        with open(os.path.join(target_dir, 'version.json'), 'w', encoding='utf-8') as f:
+            import json
+            json.dump(data, f, indent=2)
+        log_func('INFO', f"Metadatos de versión escritos en {os.path.basename(target_dir)}")
+    except Exception as e:
+        log_func('WARN', f"No se pudo escribir version.json en el juego: {e}")
 
 
 def _map_upscaler_to_api(upscaler_code, api):
@@ -508,6 +563,11 @@ def inject_fsr_mod(mod_source_dir: str, target_dir: str, log_func, spoof_dll_nam
         log_func('INFO', f"2. CONFIG. INI: Compruebe OptiScaler.ini para Dxgi, FrameGeneration, etc.")
         log_func('INFO', "-------------------------------------------------------")
         log_func('OK', f"Inyección completa y configurada. Total de archivos copiados: {copied_files}")
+        # Escribir version.json por juego (tracking)
+        try:
+            _write_game_version_json(target_dir, source_dir, log_func)
+        except Exception:
+            pass
         return True
     except PermissionError:
         log_func('ERROR', "ACCESO DENEGADO. Asegúrese de que el juego o su launcher están CERRADOS.")
@@ -602,6 +662,15 @@ def uninstall_fsr_mod(target_dir: str, log_func):
                     log_func('INFO', f"  -> Eliminado archivo genérico/reg: {filename}")
                 except Exception as e_rem_gen:
                     log_func('ERROR', f"Error al eliminar {filename}: {e_rem_gen}")
+        # Intentar eliminar version.json de tracking si existe
+        try:
+            vfile = os.path.join(target_dir, 'version.json')
+            if os.path.exists(vfile):
+                os.remove(vfile)
+                log_func('INFO', "  -> Eliminado version.json (tracking)")
+        except Exception:
+            pass
+
         if removed_files > 0 or removed_dirs > 0:
             log_func('OK', f"Desinstalación completada. Se eliminaron {removed_files} archivos y {removed_dirs} carpetas.")
             return True, found_backups
@@ -851,6 +920,12 @@ def install_combined_mods(
         log_func('OK', "=== INSTALACIÓN BÁSICA COMPLETA ===")
         log_func('OK', "✅ OptiScaler: Upscaling habilitado")
         log_func('INFO', "💡 Para Frame Generation en AMD/Intel, activa 'Modo AMD/Handheld'")
+
+    # Escribir version.json por juego tras instalación combinada
+    try:
+        _write_game_version_json(target_dir, optiscaler_source_dir, log_func)
+    except Exception:
+        pass
         
     return True
 

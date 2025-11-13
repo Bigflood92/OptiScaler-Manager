@@ -163,15 +163,22 @@ class GamingApp(ctk.CTk):
         """Carga todos los iconos de la aplicación."""
         self.icons = {}
         
-        # Desactivar iconos PNG en ejecutables compilados (problema con PyInstaller)
-        if getattr(sys, 'frozen', False):
-            self.log('INFO', "Ejecutando como .exe - usando solo emojis (sin iconos PNG)")
-            return
-        
-        # Solo cargar iconos PNG cuando se ejecuta como script Python
+        # Cargar iconos PNG (funciona tanto en script como en .exe)
         try:
             from PIL import Image
-            icons_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "icons")
+            
+            # Detectar ruta correcta según si estamos en ejecutable o script
+            if getattr(sys, 'frozen', False):
+                # Ejecutando en .exe compilado (PyInstaller o Nuitka)
+                if hasattr(sys, '_MEIPASS'):
+                    # PyInstaller
+                    icons_dir = os.path.join(sys._MEIPASS, "icons")
+                else:
+                    # Nuitka
+                    icons_dir = os.path.join(os.path.dirname(sys.executable), "icons")
+            else:
+                # Ejecutando como script Python
+                icons_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "icons")
             
             icon_files = {
                 "scan": "rescan.png",

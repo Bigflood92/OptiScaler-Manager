@@ -140,6 +140,13 @@ def get_best_exe_in_folder(folder_path: str, log_func) -> Tuple[str, int]:
 
 
 def find_executable_path(base_game_path: str, log_func) -> Tuple[str, str]:
+    """
+    OPTIMIZACIÓN: Limita profundidad de búsqueda para evitar timeouts en juegos grandes (Forza, COD).
+    Estrategia:
+    1. Subcarpetas conocidas (bin/, binaries/, etc)
+    2. Búsqueda recursiva limitada a 4 niveles de profundidad
+    3. Root folder como último recurso
+    """
     try:
         # 1. Direct subfolders
         for subfolder in COMMON_EXE_SUBFOLDERS_DIRECT:
@@ -150,22 +157,60 @@ def find_executable_path(base_game_path: str, log_func) -> Tuple[str, str]:
                     log_func('INFO', f"  -> Ruta inteligente (directa) encontrada: {potential_path} (Exe: {exe_name}, {size//(1024*1024)}MB)")
                     return potential_path, exe_name
 
-        # 2. Recursive patterns
+        # 2. BUGFIX: Búsqueda inteligente con profundidad limitada (4 niveles)
         log_func('INFO', f"  -> Buscando recursivamente ejecutables en: {base_game_path}")
+        
+        # Patrones conocidos de ejecutables de juego (mayor prioridad)
+        GAME_EXE_PATTERNS = [
+            '*-WinGDK-Shipping.exe',   # Unreal Engine Xbox/Windows Store
+            '*-Win64-Shipping.exe',    # Unreal Engine PC
+            '*-Win64.exe',             # Unreal Engine variants
+            '*Game.exe',               # Patrones comunes de juego
+            '*Main.exe',
+            '*.exe'                    # Genérico (último recurso)
+        ]
+        
         best_recursive_exe = None
         best_recursive_size = 0
         best_recursive_dir = None
-        for pattern in RECURSIVE_EXE_PATTERNS:
-            search_pattern = os.path.join(base_game_path, pattern)
-            found_exes_paths = glob.glob(search_pattern, recursive=True)
+        best_pattern_priority = 999  # Menor = mejor prioridad
+        
+        MAX_DEPTH = 4  # OPTIMIZACIÓN: Limitar recursión para evitar timeout en juegos masivos
+        
+        def limited_glob(base_path: str, pattern: str, max_depth: int):
+            """Búsqueda recursiva con profundidad limitada."""
+            results = []
+            base_depth = base_path.count(os.sep)
+            
+            for root, dirs, files in os.walk(base_path):
+                current_depth = root.count(os.sep) - base_depth
+                if current_depth > max_depth:
+                    dirs[:] = []  # No bajar más niveles
+                    continue
+                    
+                # Buscar archivos que coincidan con el patrón
+                for file in files:
+                    if file.lower().endswith('.exe'):
+                        # Aplicar patrón (simple matching)
+                        pattern_clean = pattern.replace('*', '').replace('.exe', '')
+                        if not pattern_clean or pattern_clean.lower() in file.lower():
+                            results.append(os.path.join(root, file))
+            return results
+        
+        for priority, pattern in enumerate(GAME_EXE_PATTERNS):
+            found_exes_paths = limited_glob(base_game_path, pattern, MAX_DEPTH)
+            
             for exe_path in found_exes_paths:
                 exe_name_lower = os.path.basename(exe_path).lower()
                 is_blacklisted = any(keyword in exe_name_lower for keyword in EXE_BLACKLIST_KEYWORDS)
                 if is_blacklisted:
                     continue
+                    
                 try:
                     size = os.path.getsize(exe_path)
-                    if size > best_recursive_size:
+                    # Priorizar por patrón, luego por tamaño
+                    if priority < best_pattern_priority or (priority == best_pattern_priority and size > best_recursive_size):
+                        best_pattern_priority = priority
                         best_recursive_size = size
                         best_recursive_exe = os.path.basename(exe_path)
                         best_recursive_dir = os.path.dirname(exe_path)

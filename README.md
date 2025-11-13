@@ -48,6 +48,14 @@
 
 ## ✨ Características
 
+### 🔄 Auto-Actualización (NUEVO v2.3.0)
+- **Chequeo automático** al iniciar la aplicación
+- **Notificaciones visuales** cuando hay nuevas versiones disponibles
+- **Actualización masiva** de OptiScaler en todos los juegos instalados
+- **Badges de versión** por juego (✅ Actualizado | ⚠️ Update disponible | ⚪ Sin mod)
+- **Historial de versiones** preservado automáticamente
+- Ver guía completa: [`docs/user-guide/auto-update-guide.md`](docs/user-guide/auto-update-guide.md)
+
 ### 🎨 Interfaz Moderna
 - **Iconos centralizados**: Diseño consistente con iconos PNG personalizados
 - **Drag-to-scroll**: Navegación fluida en listas largas de juegos
@@ -73,10 +81,12 @@
 - **Extras**: Overlay debug, Motion Blur
 
 ### 📦 Gestión de Versiones
+- **Auto-actualización inteligente** con detección de nuevas releases (v2.3.0+)
 - **Descarga automática** de versiones de OptiScaler desde GitHub
 - **Instalación directa** desde el gestor
 - **Caché de versiones** para trabajo offline
-- **Actualización automática** cada 24h
+- **Tracking por juego** con badges visuales de estado
+- **Comparación automática** de versiones instaladas vs disponibles
 
 ---
 
@@ -223,12 +233,24 @@ pyinstaller --noconfirm "Gestor optiscaler V2.0.spec"
 ### Ejecutar Tests
 
 ```powershell
+# Tests unitarios (si existen)
 pytest tests/
+
+# Test del auto-updater (seguro, NO modifica archivos)
+.\.venv312\Scripts\python.exe test_updater.py
+
+# Test de actualización real (CON confirmación)
+.\.venv312\Scripts\python.exe test_updater_real.py
 ```
 
 ---
 
 ## 🐛 Solución de Problemas
+
+### Auto-actualización no funciona
+1. Verifica tu conexión a internet
+2. Comprueba que no haya firewall bloqueando `api.github.com`
+3. Consulta la guía detallada: [`docs/user-guide/auto-update-guide.md`](docs/user-guide/auto-update-guide.md)
 
 ### No se detectan juegos
 1. Verifica que los juegos estén instalados en las rutas estándar

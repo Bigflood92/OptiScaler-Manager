@@ -21,11 +21,18 @@ if (-not (Test-Path -Path "dist")) {
   --onefile `
   --windows-console-mode=disable `
   --enable-plugin=tk-inter `
+  --include-package=src `
   --include-data-dir=icons=icons `
   --windows-uac-admin `
   --assume-yes-for-downloads `
+  --nofollow-import-to=more_itertools `
+  --nofollow-import-to=setuptools `
+  --nofollow-import-to=pkg_resources `
+  --nofollow-import-to=importlib_metadata `
+  --show-progress `
+  --show-memory `
   --output-dir=dist `
-  --output-filename="Gestor OptiScaler V2.2.exe" `
+  --output-filename="Gestor OptiScaler V2.2.1.exe" `
   run.py
 
 if ($LASTEXITCODE -ne 0) {

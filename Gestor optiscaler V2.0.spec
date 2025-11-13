@@ -2,8 +2,8 @@
 
 block_cipher = None
 
-# 1. Definir la lista de binarios (aquí va 7z.exe)
-binaries_list = [('7z.exe', '.')]
+# 1. Definir la lista de binarios (aquí va 7z.exe si existe)
+binaries_list = []
 
 # 2. Definir los archivos de datos (iconos)
 datas_list = [
@@ -24,11 +24,11 @@ datas_list = [
     ('icons/settings.png', 'icons')
 ]
 
-a = Analysis(['fsr_injector.py'],
+a = Analysis(['run.py'],
              pathex=[],
              binaries=binaries_list,
              datas=datas_list,
-             hiddenimports=[],
+             hiddenimports=['src', 'src.main', 'src.core', 'src.gui'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
@@ -43,7 +43,7 @@ exe = EXE(pyz,
           a.binaries,
           a.datas,
           [],
-          name='Gestor optiscaler V2.2',
+          name='Gestor OptiScaler V2.2.1',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
