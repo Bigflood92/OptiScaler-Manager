@@ -523,8 +523,13 @@ def inject_fsr_mod(mod_source_dir: str, target_dir: str, log_func, spoof_dll_nam
                     shutil.copytree(source_path, target_path)
                     log_func('INFO', f"  -> Copiando carpeta recursiva: {dir_name}")
                 except PermissionError:
-                    log_func('ERROR', f"ACCESO DENEGADO a la carpeta '{dir_name}'. Cierra el juego/launcher.")
-                    return False
+                    # En juegos de Xbox/Windows Store, es común que haya permisos restringidos
+                    # Las carpetas son opcionales, así que continuamos sin fallar
+                    log_func('WARN', f"⚠️ No se pudo copiar carpeta '{dir_name}' (permisos restringidos)")
+                    log_func('WARN', f"   El mod puede funcionar sin esta carpeta. Si hay problemas, ejecuta como admin.")
+                except Exception as e:
+                    log_func('WARN', f"⚠️ Error al copiar carpeta '{dir_name}': {e}")
+                    log_func('WARN', f"   Continuando con la instalación...")
         if copied_files == 0 and not os.path.exists(os.path.join(target_dir, 'OptiScaler.dll')):
              log_func('WARN', "No se encontraron archivos relevantes para copiar.")
              return False

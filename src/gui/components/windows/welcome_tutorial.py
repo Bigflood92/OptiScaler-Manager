@@ -7,6 +7,13 @@ import json
 from pathlib import Path
 
 
+# Importar versión de la app
+try:
+    from src.gui.gaming_app import APP_VERSION
+except ImportError:
+    APP_VERSION = "2.3.0"  # Fallback
+
+
 class WelcomeTutorial(ctk.CTkToplevel):
     """Ventana de tutorial/bienvenida para el primer inicio."""
     
@@ -38,7 +45,7 @@ class WelcomeTutorial(ctk.CTkToplevel):
         self.pages = [
             {
                 "title": "¡Bienvenido! 🎉",
-                "content": """OptiScaler Manager v2.1.0
+                "content": f"""OptiScaler Manager v{APP_VERSION}
 
 Gestor automatizado para inyectar FSR 3.1/4.0, XeSS y DLSS 
 en tus juegos favoritos.

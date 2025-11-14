@@ -1,3 +1,5 @@
+
+
 """
 Gaming Mode App - Interfaz principal de la aplicación.
 
@@ -29,10 +31,12 @@ from ..core.github import GitHubClient
 from ..utils.logging import LogManager
 from ..config.paths import MOD_SOURCE_DIR, OPTISCALER_DIR, DLSSG_TO_FSR3_DIR, SEVEN_ZIP_PATH, APP_DIR
 from .components.windows.welcome_tutorial import WelcomeTutorial, should_show_tutorial
+from .components.collapsible_section import CollapsibleSection
+from .components.wide_combobox import WideComboBox
 
 # Constantes
-APP_TITLE = "GESTOR AUTOMATIZADO DE OPTISCALER V2.0"
-APP_VERSION = "2.2.0"
+APP_VERSION = "2.3.0"
+APP_TITLE = f"GESTOR AUTOMATIZADO DE OPTISCALER V{APP_VERSION}"
 
 # Colores para feedback visual
 COLOR_PRIMARY = "#00BFFF"
@@ -54,13 +58,46 @@ FONT_TINY = 10           # Info muy pequeña
 
 
 class GamingApp(ctk.CTk):
+
+    def mark_preset_custom(self):
+        """Marca el preset activo como 'Custom' sin restaurar snapshot previo.
+        Se invoca en modificaciones manuales para no perder el cambio recién hecho."""
+        if getattr(self, '_suppress_custom', False):
+            return
+        # Resaltar botón Custom y quitar bordes de otros
+        if hasattr(self, 'preset_buttons'):
+            for key, btn in self.preset_buttons.items():
+                if key == 'custom':
+                    color, width = self.preset_borders.get('custom', ("#B0BEC5", 3))
+                    btn.configure(border_width=width, border_color=color)
+                else:
+                    btn.configure(border_width=0)
+        if hasattr(self, 'active_preset_label'):
+            self.active_preset_label.configure(text="✏️ Custom")
+
+    def update_custom_state(self):
+        """Guarda la configuración actual como estado del preset Custom si está activo."""
+        if getattr(self, '_suppress_custom', False):
+            return
+        if not hasattr(self, 'active_preset_label'):
+            return
+        if self.active_preset_label.cget('text') != '✏️ Custom':
+            return
+        self.custom_preset_state = {
+            'fg_mode': self.fg_mode_var.get(),
+            'upscale_mode': self.upscale_mode_var.get(),
+            'upscaler': self.upscaler_var.get(),
+            'sharpness': self.sharpness_var.get(),
+            'fps_limit': self.fps_limit_var.get(),
+            'dll_name': self.dll_name_var.get()
+        }
     """Aplicación Gaming Mode - Interfaz completa."""
     
     def __init__(self):
         super().__init__()
-        
+
         # Configuración ventana
-        self.title(f"GESTOR AUTOMATIZADO DE OPTISCALER V2.0")
+        self.title(APP_TITLE)
         self.geometry("1400x800")
         self.minsize(1000, 600)
         
@@ -72,8 +109,9 @@ class GamingApp(ctk.CTk):
         self.log_manager = LogManager()
         self.log = lambda level, msg: self.log_manager.log_to_ui(level, msg)
         
-        # Variable para tracking de widget enfocado
+        # Variables para navegación con gamepad
         self.current_focused_widget = None
+        self.focus_zone = 'sidebar'  # 'sidebar' o 'content'
         
         # Detectar GPU automáticamente
         self.gpu_vendor = detect_gpu_vendor()
@@ -93,6 +131,10 @@ class GamingApp(ctk.CTk):
         
         # Cargar configuración
         self.config = load_config()
+        
+        # Asegurar que exista la lista de carpetas personalizadas
+        if "custom_game_folders" not in self.config:
+            self.config["custom_game_folders"] = []
         
         # Variables
         self.games_data = {}  # {game_path: (name, status, exe, platform)}
@@ -121,6 +163,13 @@ class GamingApp(ctk.CTk):
         self.sharpness_var = ctk.DoubleVar(value=self.config.get("sharpness", 0.5))
         self.overlay_var = ctk.StringVar(value=self.config.get("overlay", "Desactivado"))
         self.mb_var = ctk.StringVar(value=self.config.get("motion_blur", "Activado"))
+        # Opciones avanzadas nuevas
+        self.native_aa_var = ctk.BooleanVar(value=self.config.get("use_native_aa", True))
+        self.mipmap_bias_var = ctk.DoubleVar(value=self.config.get("mipmap_bias", 0.0))
+        # Flag para suprimir cambio a Custom durante aplicación programática de presets
+        self._suppress_custom = False
+        # Estado persistente de configuración personalizada
+        self.custom_preset_state = {}
 
         # Cargar iconos
         self.load_icons()
@@ -151,6 +200,12 @@ class GamingApp(ctk.CTk):
         
         # Protocolo cierre
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        # Configurar navegación con teclado
+        self.setup_keyboard_navigation()
+        
+        # Establecer foco inicial en botón de auto-detección
+        self.after(100, self.set_initial_focus)
         
         # Mostrar tutorial de bienvenida si es la primera vez
         self.after(500, self.show_welcome_if_needed)
@@ -209,6 +264,51 @@ class GamingApp(ctk.CTk):
     # ==================================================================================
     # SISTEMA DE GAMEPAD
     # ==================================================================================
+    
+    def setup_keyboard_navigation(self):
+        """Configura navegación con teclado (mismo comportamiento que gamepad)."""
+        # Flechas de navegación
+        self.bind("<Up>", lambda e: self.on_keyboard_arrow('up'))
+        self.bind("<Down>", lambda e: self.on_keyboard_arrow('down'))
+        self.bind("<Left>", lambda e: self.on_keyboard_arrow('left'))
+        self.bind("<Right>", lambda e: self.on_keyboard_arrow('right'))
+        
+        # Enter = A (aceptar/activar)
+        self.bind("<Return>", lambda e: self.on_keyboard_button('enter'))
+        
+        # Escape = B (volver/cancelar)
+        self.bind("<Escape>", lambda e: self.on_keyboard_button('escape'))
+        
+        # Tab y Shift+Tab ya funcionan nativamente para navegación
+        # pero vamos a interceptarlos para respetar las zonas de foco
+        # (comentado para mantener comportamiento nativo de Tab por ahora)
+        
+        self.log('INFO', "Navegación con teclado configurada (Flechas, Enter, Esc)")
+    
+    def on_keyboard_arrow(self, direction):
+        """Maneja eventos de flechas del teclado.
+        
+        Args:
+            direction: 'up', 'down', 'left', 'right'
+        """
+        # Usar la misma lógica que gamepad
+        self.navigate_focus(direction)
+        return "break"  # Prevenir comportamiento por defecto
+    
+    def on_keyboard_button(self, button):
+        """Maneja eventos de botones especiales del teclado.
+        
+        Args:
+            button: 'enter' (A) o 'escape' (B)
+        """
+        if button == 'enter':
+            # Enter = A (aceptar/activar)
+            self.gamepad_button_press('A')
+        elif button == 'escape':
+            # Escape = B (volver/cancelar)
+            self.gamepad_button_press('B')
+        
+        return "break"  # Prevenir comportamiento por defecto
     
     def init_gamepad(self):
         """Inicializa pygame y comienza monitoreo de gamepad."""
@@ -352,20 +452,35 @@ class GamingApp(ctk.CTk):
         details.append("═" * 60)
         
         # Archivos core requeridos
-        core_files = ['OptiScaler.dll', 'OptiScaler.ini']
-        all_core_found = True
+        # OptiScaler.dll es renombrado a dxgi/d3d11/d3d12/winmm, así que verificamos las versiones renombradas
+        core_dll_names = ['dxgi.dll', 'd3d11.dll', 'd3d12.dll', 'winmm.dll']
+        core_dll_found = False
         
-        for file in core_files:
-            file_path = os.path.join(game_path, file)
+        for dll_name in core_dll_names:
+            file_path = os.path.join(game_path, dll_name)
             if os.path.exists(file_path):
                 try:
                     size = os.path.getsize(file_path) / 1024  # KB
-                    details.append(f"  ✅ {file} ({size:.1f} KB)")
+                    details.append(f"  ✅ {dll_name} ({size:.1f} KB)")
+                    core_dll_found = True
                 except:
-                    details.append(f"  ✅ {file}")
-            else:
-                details.append(f"  ❌ {file} - NO ENCONTRADO")
-                all_core_found = False
+                    details.append(f"  ✅ {dll_name}")
+                    core_dll_found = True
+        
+        if not core_dll_found:
+            details.append(f"  ❌ OptiScaler.dll - NO ENCONTRADO (debe estar renombrado como dxgi/d3d11/d3d12/winmm)")
+        
+        # Verificar OptiScaler.ini
+        ini_path = os.path.join(game_path, 'OptiScaler.ini')
+        if os.path.exists(ini_path):
+            try:
+                size = os.path.getsize(ini_path) / 1024  # KB
+                details.append(f"  ✅ OptiScaler.ini ({size:.1f} KB)")
+            except:
+                details.append(f"  ✅ OptiScaler.ini")
+        else:
+            details.append(f"  ❌ OptiScaler.ini - NO ENCONTRADO")
+            core_dll_found = False  # Si falta el .ini, el core está incompleto
         
         # Archivos adicionales de OptiScaler
         details.append("")
@@ -373,8 +488,8 @@ class GamingApp(ctk.CTk):
         details.append("🔍 ARCHIVOS ADICIONALES DE OPTISCALER:")
         details.append("═" * 60)
         
+        # No incluir las DLLs core (dxgi, d3d11, d3d12, winmm) aquí ya que se revisaron arriba
         additional_files = [
-            'dxgi.dll', 'd3d11.dll', 'd3d12.dll', 'winmm.dll',
             'amd_fidelityfx_dx12.dll', 'amd_fidelityfx_vk.dll',
             'amd_fidelityfx_upscaler_dx12.dll', 'amd_fidelityfx_framegeneration_dx12.dll',
             'libxess.dll', 'libxess_dx11.dll', 'nvngx.dll'
@@ -451,7 +566,7 @@ class GamingApp(ctk.CTk):
         details.append("📋 DIAGNÓSTICO:")
         details.append("═" * 60)
         
-        if all_core_found:
+        if core_dll_found:
             details.append("  ✅ Archivos core: COMPLETO")
         else:
             details.append("  ❌ Archivos core: INCOMPLETO")
@@ -473,20 +588,67 @@ class GamingApp(ctk.CTk):
     def gamepad_button_press(self, button):
         """Maneja presión de botones del gamepad."""
         if button == 'A':
-            # Activar widget enfocado
-            if self.current_focused_widget:
-                try:
-                    if isinstance(self.current_focused_widget, ctk.CTkButton):
-                        self.current_focused_widget.invoke()
-                    elif isinstance(self.current_focused_widget, ctk.CTkCheckBox):
-                        current = self.current_focused_widget.get()
-                        self.current_focused_widget.select() if not current else self.current_focused_widget.deselect()
-                except Exception as e:
-                    self.log('ERROR', f"Error al activar widget: {e}")
+            # Comportamiento contextual del botón A
+            if self.focus_zone == 'sidebar':
+                # Estamos en sidebar: A ejecuta el botón (abre el panel) Y entra al contenido
+                if self.current_focused_widget:
+                    try:
+                        # Invocar el botón del sidebar para abrir su panel
+                        if isinstance(self.current_focused_widget, ctk.CTkButton):
+                            self.current_focused_widget.invoke()
+                        
+                        # Luego entrar al panel central
+                        self.after(50, self.enter_content_panel)
+                    except Exception as e:
+                        self.log('ERROR', f"Error al activar botón sidebar: {e}")
+            elif self.focus_zone == 'content':
+                # Estamos en contenido: A activa el widget enfocado
+                if self.current_focused_widget:
+                    try:
+                        if isinstance(self.current_focused_widget, ctk.CTkButton):
+                            self.current_focused_widget.invoke()
+                        elif isinstance(self.current_focused_widget, ctk.CTkCheckBox):
+                            current = self.current_focused_widget.get()
+                            self.current_focused_widget.select() if not current else self.current_focused_widget.deselect()
+                        elif isinstance(self.current_focused_widget, ctk.CTkRadioButton):
+                            # Activar el radiobutton
+                            self.current_focused_widget.invoke()
+                        elif isinstance(self.current_focused_widget, ctk.CTkComboBox):
+                            # Abrir combobox estándar si expone método interno
+                            try:
+                                cb = self.current_focused_widget
+                                if hasattr(cb, '_open_dropdown_menu'):
+                                    cb._open_dropdown_menu()
+                                elif hasattr(cb, '_dropdown_callback'):
+                                    cb._dropdown_callback()
+                                else:
+                                    cb.focus_set()
+                            except Exception as e:
+                                self.log('ERROR', f"Error CTkComboBox A: {e}")
+                        elif isinstance(self.current_focused_widget, WideComboBox):
+                            # WideComboBox personalizado: abrir o seleccionar
+                            try:
+                                if self.current_focused_widget.is_open():
+                                    self.current_focused_widget.select_current()
+                                else:
+                                    self.current_focused_widget.open_dropdown()
+                            except Exception as e:
+                                self.log('ERROR', f"Error WideComboBox A: {e}")
+                    except Exception as e:
+                        self.log('ERROR', f"Error al activar widget: {e}")
         
         elif button == 'B':
-            # Volver/Cancelar - ir a panel auto
-            self.show_panel('auto')
+            # B: cerrar dropdown WideComboBox si está abierto, si no volver al sidebar
+            if self.focus_zone == 'content':
+                if isinstance(self.current_focused_widget, WideComboBox):
+                    try:
+                        if self.current_focused_widget.is_open():
+                            self.current_focused_widget.close_dropdown()
+                            return
+                    except Exception:
+                        pass
+                self.return_to_sidebar()
+            # Si ya estamos en sidebar, B no hace nada (o podría cerrar la app)
         
         elif button == 'X':
             # Config rápida - ir a panel config
@@ -500,18 +662,383 @@ class GamingApp(ctk.CTk):
             # Aplicar cambios
             self.apply_mod_to_selected()
     
+    def enter_content_panel(self):
+        """Entra del sidebar al panel central."""
+        try:
+            self.focus_zone = 'content'
+            
+            # Buscar primer widget enfocable en el panel activo
+            current_panel = None
+            if self.config_panel.winfo_ismapped():
+                current_panel = self.config_panel
+            elif self.auto_panel.winfo_ismapped():
+                current_panel = self.auto_panel
+            elif self.manual_panel.winfo_ismapped():
+                current_panel = self.manual_panel
+            elif self.settings_panel.winfo_ismapped():
+                current_panel = self.settings_panel
+            elif self.help_panel.winfo_ismapped():
+                current_panel = self.help_panel
+            
+            if current_panel:
+                # Buscar primer widget enfocable
+                first_widget = self.find_first_focusable_widget(current_panel)
+                if first_widget:
+                    self.safe_focus_widget(first_widget)
+                    self.log('INFO', f"Foco movido a panel central ({self.focus_zone})")
+        except Exception as e:
+            self.log('ERROR', f"Error al entrar al panel: {e}")
+    
+    def return_to_sidebar(self):
+        """Vuelve del panel central al sidebar."""
+        try:
+            self.focus_zone = 'sidebar'
+            
+            # Volver a enfocar el botón activo del sidebar
+            active_panel = None
+            if self.config_panel.winfo_ismapped():
+                active_panel = 'config'
+            elif self.auto_panel.winfo_ismapped():
+                active_panel = 'auto'
+            elif self.manual_panel.winfo_ismapped():
+                active_panel = 'manual'
+            elif self.settings_panel.winfo_ismapped():
+                active_panel = 'settings'
+            elif self.help_panel.winfo_ismapped():
+                active_panel = 'help'
+            
+            if active_panel and active_panel in self.nav_buttons:
+                self.safe_focus_widget(self.nav_buttons[active_panel])
+                self.log('INFO', f"Foco vuelto al sidebar ({self.focus_zone})")
+        except Exception as e:
+            self.log('ERROR', f"Error al volver al sidebar: {e}")
+    
+    def find_first_focusable_widget(self, parent):
+        """Encuentra el primer widget enfocable en un contenedor.
+        
+        Args:
+            parent: Widget padre donde buscar
+            
+        Returns:
+            Primer widget enfocable o None
+        """
+        # Tipos de widgets que aceptan foco (incluyendo WideComboBox)
+        focusable_types = (ctk.CTkButton, ctk.CTkCheckBox, ctk.CTkEntry,
+                           ctk.CTkComboBox, ctk.CTkSlider, ctk.CTkRadioButton, WideComboBox)
+        
+        def search_recursive(widget):
+            # Verificar si el widget actual es enfocable
+            if isinstance(widget, focusable_types):
+                return widget
+            
+            # Buscar en hijos
+            try:
+                for child in widget.winfo_children():
+                    result = search_recursive(child)
+                    if result:
+                        return result
+            except:
+                pass
+            
+            return None
+        
+        return search_recursive(parent)
+    
+    
     def navigate_focus(self, direction):
-        """Navega entre elementos enfocables con gamepad."""
-        # Generar evento Tab o Shift+Tab según dirección
-        if direction in ['down', 'right']:
-            # Simular Tab
-            self.event_generate('<Tab>')
-        elif direction in ['up', 'left']:
-            # Simular Shift+Tab
-            self.event_generate('<Shift-Tab>')
+        """Navega entre elementos enfocables con gamepad según zona actual."""
+        if self.focus_zone == 'sidebar':
+            # En sidebar: arriba/abajo navegan entre botones del sidebar
+            if direction in ['down', 'right']:
+                self._navigate_sidebar(1)
+            elif direction in ['up', 'left']:
+                self._navigate_sidebar(-1)
+        elif self.focus_zone == 'content':
+            # Interceptar navegación dentro de WideComboBox abierto
+            if isinstance(self.current_focused_widget, WideComboBox) and self.current_focused_widget.is_open():
+                if direction in ['up', 'down']:
+                    try:
+                        self.current_focused_widget.navigate_options(direction)
+                    except Exception as e:
+                        self.log('ERROR', f"Error navegando WideComboBox: {e}")
+                # Ignorar left/right mientras está abierto
+                return
+            # Verificar si estamos en un botón de preset
+            if self.current_focused_widget and hasattr(self, 'preset_buttons'):
+                if self.current_focused_widget in self.preset_buttons.values():
+                    # Navegación especial para presets: izquierda/derecha entre presets
+                    if direction in ['left', 'right']:
+                        self._navigate_presets_horizontal(direction)
+                        return
+                    elif direction in ['down', 'up']:
+                        # Arriba/abajo sale de los presets
+                        self._navigate_content(1 if direction == 'down' else -1)
+                        return
+            
+            # Verificar si estamos en el header del panel de auto-detección
+            if (self.auto_panel.winfo_ismapped() and 
+                self.current_focused_widget and 
+                self._is_auto_header_button(self.current_focused_widget)):
+                # Navegación especial para header de auto-detección
+                if direction in ['left', 'right']:
+                    self._navigate_auto_header_horizontal(direction)
+                    return
+                elif direction == 'down':
+                    # Abajo va al primer juego del listado
+                    self._focus_first_game()
+                    return
+                elif direction == 'up':
+                    # Arriba se queda en el header o va al anterior
+                    self._navigate_content(-1)
+                    return
+            
+            # Navegación normal en contenido
+            if direction in ['down', 'right']:
+                self._navigate_content(1)
+            elif direction in ['up', 'left']:
+                self._navigate_content(-1)
+    
+    def _navigate_sidebar(self, direction):
+        """Navega entre botones del sidebar.
+        
+        Args:
+            direction: 1 (abajo/siguiente) o -1 (arriba/anterior)
+        """
+        sidebar_buttons = ['config', 'auto', 'manual', 'settings', 'help']
+        
+        # Encontrar botón actual
+        current_idx = -1
+        if self.current_focused_widget:
+            for i, key in enumerate(sidebar_buttons):
+                if self.nav_buttons.get(key) == self.current_focused_widget:
+                    current_idx = i
+                    break
+        
+        # Si no hay widget enfocado, empezar desde el primero o último
+        if current_idx == -1:
+            current_idx = 0 if direction > 0 else len(sidebar_buttons) - 1
+        else:
+            # Calcular nuevo índice (cíclico)
+            current_idx = (current_idx + direction) % len(sidebar_buttons)
+        
+        # Enfocar nuevo botón
+        new_key = sidebar_buttons[current_idx]
+        if new_key in self.nav_buttons:
+            self.safe_focus_widget(self.nav_buttons[new_key])
+    
+    def _navigate_content(self, direction):
+        """Navega entre widgets enfocables del panel actual.
+        
+        Args:
+            direction: 1 (siguiente) o -1 (anterior)
+        """
+        # Obtener panel activo
+        current_panel = None
+        if self.config_panel.winfo_ismapped():
+            current_panel = self.config_panel
+        elif self.auto_panel.winfo_ismapped():
+            current_panel = self.auto_panel
+        elif self.manual_panel.winfo_ismapped():
+            current_panel = self.manual_panel
+        elif self.settings_panel.winfo_ismapped():
+            current_panel = self.settings_panel
+        elif self.help_panel.winfo_ismapped():
+            current_panel = self.help_panel
+        
+        if not current_panel:
+            return
+        
+        # Obtener lista de widgets enfocables en el panel
+        focusable_widgets = self._get_focusable_widgets(current_panel)
+        
+        if not focusable_widgets:
+            return
+        
+        # Encontrar índice actual
+        current_idx = -1
+        
+        # Si estamos en un preset, buscar cualquier preset en la lista
+        if self.current_focused_widget and hasattr(self, 'preset_buttons'):
+            if self.current_focused_widget in self.preset_buttons.values():
+                # Buscar cualquier preset en focusable_widgets (será el primero que encontramos)
+                for i, widget in enumerate(focusable_widgets):
+                    if widget in self.preset_buttons.values():
+                        current_idx = i
+                        break
+        
+        # Si no encontramos preset o no estamos en preset, buscar widget actual normalmente
+        if current_idx == -1 and self.current_focused_widget in focusable_widgets:
+            current_idx = focusable_widgets.index(self.current_focused_widget)
+        
+        # Calcular nuevo índice
+        if current_idx == -1:
+            new_idx = 0 if direction > 0 else len(focusable_widgets) - 1
+        else:
+            new_idx = current_idx + direction
+            # Limitar a los bordes (no cíclico en contenido)
+            if new_idx < 0:
+                new_idx = 0
+            elif new_idx >= len(focusable_widgets):
+                new_idx = len(focusable_widgets) - 1
+        
+        # Enfocar nuevo widget
+        if 0 <= new_idx < len(focusable_widgets):
+            self.safe_focus_widget(focusable_widgets[new_idx])
+    
+    def _get_focusable_widgets(self, parent):
+        """Obtiene lista ordenada de widgets enfocables en un contenedor.
+        
+        Args:
+            parent: Widget padre donde buscar
+            
+        Returns:
+            Lista de widgets enfocables en orden de aparición
+        """
+        # Añadir WideComboBox al conjunto de widgets enfocables
+        focusable_types = (ctk.CTkButton, ctk.CTkCheckBox, ctk.CTkEntry,
+                           ctk.CTkComboBox, ctk.CTkSlider, ctk.CTkRadioButton, WideComboBox)
+        focusable_widgets = []
+        preset_widgets_found = False
+
+        def collect_recursive(widget):
+            nonlocal preset_widgets_found
+            # Tratar WideComboBox como un control atómico: se enfoca él, no sus hijos
+            try:
+                if isinstance(widget, WideComboBox):
+                    if widget.winfo_ismapped():
+                        focusable_widgets.append(widget)
+                    return  # No descender a sus hijos (evita foco en botón flecha interno)
+            except Exception:
+                pass
+            # Si el widget es enfocable y está visible
+            if isinstance(widget, focusable_types):
+                try:
+                    if widget.winfo_ismapped():
+                        # Si es un botón de preset y ya agregamos uno, skip (solo agregar uno para toda la fila)
+                        if hasattr(self, 'preset_buttons') and widget in self.preset_buttons.values():
+                            if not preset_widgets_found:
+                                focusable_widgets.append(widget)
+                                preset_widgets_found = True
+                            return  # Saltar otros presets
+                        else:
+                            focusable_widgets.append(widget)
+                except Exception:
+                    pass
+            # Buscar en hijos recursivamente
+            try:
+                for child in widget.winfo_children():
+                    collect_recursive(child)
+            except Exception:
+                pass
+
+        collect_recursive(parent)
+        return focusable_widgets
+    
+    def _is_auto_header_button(self, widget):
+        """Verifica si el widget es un botón del header de auto-detección.
+        
+        Args:
+            widget: Widget a verificar
+            
+        Returns:
+            True si es un botón del header
+        """
+        header_buttons = []
+        if hasattr(self, 'scan_btn'):
+            header_buttons.append(self.scan_btn)
+        if hasattr(self, 'btn_filter'):
+            header_buttons.append(self.btn_filter)
+        if hasattr(self, 'apply_btn'):
+            header_buttons.append(self.apply_btn)
+        if hasattr(self, 'remove_btn'):
+            header_buttons.append(self.remove_btn)
+        if hasattr(self, 'open_folder_btn'):
+            header_buttons.append(self.open_folder_btn)
+        
+        return widget in header_buttons
+    
+    def _navigate_auto_header_horizontal(self, direction):
+        """Navega horizontalmente entre botones del header de auto-detección.
+        
+        Args:
+            direction: 'left' o 'right'
+        """
+        # Orden de botones en el header
+        header_buttons = []
+        if hasattr(self, 'scan_btn'):
+            header_buttons.append(self.scan_btn)
+        if hasattr(self, 'btn_filter'):
+            header_buttons.append(self.btn_filter)
+        if hasattr(self, 'apply_btn'):
+            header_buttons.append(self.apply_btn)
+        if hasattr(self, 'remove_btn'):
+            header_buttons.append(self.remove_btn)
+        if hasattr(self, 'open_folder_btn'):
+            header_buttons.append(self.open_folder_btn)
+        
+        if not header_buttons:
+            return
+        
+        # Encontrar índice actual
+        try:
+            current_idx = header_buttons.index(self.current_focused_widget)
+        except ValueError:
+            return
+        
+        # Calcular nuevo índice
+        if direction == 'right':
+            new_idx = (current_idx + 1) % len(header_buttons)
+        else:  # left
+            new_idx = (current_idx - 1) % len(header_buttons)
+        
+        # Mover foco
+        new_btn = header_buttons[new_idx]
+        self.safe_focus_widget(new_btn)
+    
+    def _focus_first_game(self):
+        """Mueve el foco al primer juego del listado de detección automática."""
+        try:
+            if hasattr(self, 'games_scrollable'):
+                # Buscar primer checkbox de juego
+                for child in self.games_scrollable.winfo_children():
+                    if isinstance(child, ctk.CTkFrame):
+                        # Buscar checkbox dentro del frame
+                        for subchild in child.winfo_children():
+                            if isinstance(subchild, ctk.CTkCheckBox):
+                                self.safe_focus_widget(subchild)
+                                return
+        except Exception as e:
+            self.log('ERROR', f"Error al enfocar primer juego: {e}")
+    
+    def _navigate_presets_horizontal(self, direction):
+        """Navega horizontalmente entre botones de preset.
+        
+        Args:
+            direction: 'left' o 'right'
+        """
+        preset_order = ["default", "performance", "balanced", "quality", "custom"]
+        
+        # Encontrar preset actual
+        current_preset = None
+        for preset_name, btn in self.preset_buttons.items():
+            if btn == self.current_focused_widget:
+                current_preset = preset_name
+                break
+        
+        if current_preset:
+            current_idx = preset_order.index(current_preset)
+            
+            if direction == 'right':
+                new_idx = (current_idx + 1) % len(preset_order)
+            else:  # left
+                new_idx = (current_idx - 1) % len(preset_order)
+            
+            new_preset = preset_order[new_idx]
+            new_btn = self.preset_buttons[new_preset]
+            self.safe_focus_widget(new_btn)
     
     def navigate_tabs(self, direction):
-        """Navega entre pestañas con bumpers."""
+        """Navega entre pestañas con bumpers (LB/RB) - funciona desde cualquier zona."""
         panels = ['config', 'auto', 'manual', 'settings', 'help']
         current = None
         
@@ -531,6 +1058,11 @@ class GamingApp(ctk.CTk):
             idx = panels.index(current)
             new_idx = (idx + direction) % len(panels)
             self.show_panel(panels[new_idx])
+            
+            # Después de cambiar pestaña, volver al sidebar
+            self.focus_zone = 'sidebar'
+            if panels[new_idx] in self.nav_buttons:
+                self.safe_focus_widget(self.nav_buttons[panels[new_idx]])
     
     def quick_scroll(self, delta):
         """Scroll rápido con triggers."""
@@ -635,6 +1167,10 @@ class GamingApp(ctk.CTk):
         Args:
             widget: Widget al que añadir indicador
         """
+        try:
+            from .components.wide_combobox import WideComboBox
+        except Exception:
+            WideComboBox = None
         def on_focus_in(e):
             self.current_focused_widget = widget
             if hasattr(widget, 'configure'):
@@ -646,6 +1182,13 @@ class GamingApp(ctk.CTk):
             self.auto_scroll_to_widget(widget)
         
         def on_focus_out(e):
+            # No quitar el borde si es un WideComboBox con dropdown abierto
+            if WideComboBox is not None and isinstance(widget, WideComboBox):
+                try:
+                    if widget.is_open():
+                        return "break"
+                except Exception:
+                    pass
             if hasattr(widget, 'configure'):
                 try:
                     widget.configure(border_width=0)
@@ -669,39 +1212,117 @@ class GamingApp(ctk.CTk):
             if self.auto_panel.winfo_ismapped() and hasattr(self, 'games_scrollable'):
                 scrollable = self.games_scrollable
             elif self.config_panel.winfo_ismapped():
-                # Buscar scrollable frame en config panel
-                for child in self.config_panel.winfo_children():
-                    if isinstance(child, ctk.CTkScrollableFrame):
-                        scrollable = child
-                        break
+                # Buscar scrollable frame en config panel (recursivamente)
+                def find_scrollable(parent):
+                    for child in parent.winfo_children():
+                        if isinstance(child, ctk.CTkScrollableFrame):
+                            return child
+                        # Buscar recursivamente
+                        result = find_scrollable(child)
+                        if result:
+                            return result
+                    return None
+                scrollable = find_scrollable(self.config_panel)
             elif self.settings_panel.winfo_ismapped():
-                for child in self.settings_panel.winfo_children():
-                    if isinstance(child, ctk.CTkScrollableFrame):
-                        scrollable = child
-                        break
+                def find_scrollable(parent):
+                    for child in parent.winfo_children():
+                        if isinstance(child, ctk.CTkScrollableFrame):
+                            return child
+                        result = find_scrollable(child)
+                        if result:
+                            return result
+                    return None
+                scrollable = find_scrollable(self.settings_panel)
             elif self.help_panel.winfo_ismapped():
-                for child in self.help_panel.winfo_children():
-                    if isinstance(child, ctk.CTkScrollableFrame):
-                        scrollable = child
-                        break
+                def find_scrollable(parent):
+                    for child in parent.winfo_children():
+                        if isinstance(child, ctk.CTkScrollableFrame):
+                            return child
+                        result = find_scrollable(child)
+                        if result:
+                            return result
+                    return None
+                scrollable = find_scrollable(self.help_panel)
             
             if not scrollable:
+                print("[AUTOSCROLL] ❌ No se encontró scrollable frame")
+                self.log('DEBUG', "No se encontró scrollable frame")
                 return
             
-            # Obtener canvas y posiciones
-            canvas = scrollable._parent_canvas
+            print(f"[AUTOSCROLL] ✓ Scrollable encontrado: {type(scrollable).__name__}")
             
-            # Obtener coordenadas del widget en el canvas
-            widget_y = widget.winfo_y()
-            widget_height = widget.winfo_height()
+            # Obtener canvas - acceso robusto
+            canvas = None
+            try:
+                if hasattr(scrollable, '_parent_canvas'):
+                    canvas = scrollable._parent_canvas
+                elif hasattr(scrollable, 'canvas'):
+                    canvas = scrollable.canvas
+                else:
+                    # Buscar canvas entre los hijos
+                    for child in scrollable.winfo_children():
+                        if isinstance(child, ctk.CTkCanvas) or 'canvas' in str(type(child)).lower():
+                            canvas = child
+                            break
+            except Exception:
+                pass
+            
+            if not canvas:
+                print("[AUTOSCROLL] ❌ No se pudo obtener el canvas del scrollable")
+                self.log('DEBUG', "No se pudo obtener el canvas del scrollable")
+                return
+            
+            # Forzar actualización de geometría
+            try:
+                widget.update_idletasks()
+                scrollable.update_idletasks()
+                canvas.update_idletasks()
+            except Exception:
+                pass
+            
+            # Calcular posición absoluta del widget
+            # Usar winfo_rooty para obtener posición absoluta en pantalla
+            try:
+                widget_abs_y = widget.winfo_rooty()
+                scrollable_abs_y = scrollable.winfo_rooty()
+                widget_y = widget_abs_y - scrollable_abs_y
+                widget_height = widget.winfo_height()
+                
+                print(f"[AUTOSCROLL] Widget absolute Y: {widget_abs_y}, Scrollable absolute Y: {scrollable_abs_y}, Relative Y: {widget_y}")
+                self.log('DEBUG', f"Widget absolute Y: {widget_abs_y}, Scrollable absolute Y: {scrollable_abs_y}, Relative Y: {widget_y}")
+            except Exception as e:
+                print(f"[AUTOSCROLL] Error calculando posición absoluta: {e}")
+                self.log('DEBUG', f"Error calculando posición absoluta: {e}")
+                # Fallback al método antiguo
+                widget_y = 0
+                widget_height = widget.winfo_height()
+                
+                # Recorrer hacia arriba hasta llegar al scrollable frame
+                current = widget
+                while current and current != scrollable:
+                    try:
+                        widget_y += current.winfo_y()
+                        current = current.master
+                    except Exception:
+                        break
             
             # Obtener región visible del canvas
             canvas_height = canvas.winfo_height()
-            scroll_region = canvas.cget("scrollregion").split()
+            scroll_region_str = canvas.cget("scrollregion")
+            
+            if not scroll_region_str or scroll_region_str == "":
+                self.log('DEBUG', "Canvas scrollregion vacío")
+                return
+                
+            scroll_region = scroll_region_str.split()
             if len(scroll_region) < 4:
+                self.log('DEBUG', f"Canvas scrollregion inválido: {scroll_region}")
                 return
             
             total_height = float(scroll_region[3])
+            if total_height == 0:
+                self.log('DEBUG', "Total height es 0")
+                return
             
             # Obtener posición actual del scroll (0.0 a 1.0)
             view = canvas.yview()
@@ -713,23 +1334,100 @@ class GamingApp(ctk.CTk):
             widget_bottom = widget_y + widget_height
             
             # Margen de seguridad (pixels)
-            margin = 50
+            margin = 100
+            
+            print(f"[AUTOSCROLL] Visible: {visible_top:.0f}-{visible_bottom:.0f}, Widget: {widget_top:.0f}-{widget_bottom:.0f}, Canvas H: {canvas_height}")
+            self.log('DEBUG', f"Visible: {visible_top:.0f}-{visible_bottom:.0f}, Widget: {widget_top:.0f}-{widget_bottom:.0f}, Canvas H: {canvas_height}")
             
             # Si widget está arriba de la vista visible
             if widget_top < visible_top + margin:
                 # Scroll hacia arriba
                 target_fraction = max(0, (widget_top - margin) / total_height)
                 canvas.yview_moveto(target_fraction)
+                print(f"[AUTOSCROLL] ⬆️ UP: widget_top={widget_top:.0f}, target={target_fraction:.2f}")
+                self.log('DEBUG', f"Auto-scroll UP: widget_top={widget_top:.0f}, target={target_fraction:.2f}")
             
             # Si widget está abajo de la vista visible
             elif widget_bottom > visible_bottom - margin:
-                # Scroll hacia abajo
-                target_fraction = min(1.0, (widget_bottom - canvas_height + margin) / total_height)
+                # Scroll hacia abajo para centrar el widget
+                target_fraction = max(0, min(1.0, (widget_top - margin) / total_height))
                 canvas.yview_moveto(target_fraction)
+                print(f"[AUTOSCROLL] ⬇️ DOWN: widget_bottom={widget_bottom:.0f}, target={target_fraction:.2f}")
+                self.log('DEBUG', f"Auto-scroll DOWN: widget_bottom={widget_bottom:.0f}, target={target_fraction:.2f}")
+            else:
+                print(f"[AUTOSCROLL] ✓ Widget ya está visible")
+                self.log('DEBUG', "Widget ya está visible, no se necesita scroll")
             
         except Exception as e:
+            self.log('DEBUG', f"Error en auto_scroll_to_widget: {e}")
             # Silenciar errores de auto-scroll para no interrumpir navegación
             pass
+    
+    def safe_focus_widget(self, widget):
+        """Establece el foco en un widget de manera segura (compatible con CustomTkinter).
+        
+        Args:
+            widget: Widget a enfocar
+        """
+        try:
+            try:
+                from .components.wide_combobox import WideComboBox
+            except Exception:
+                WideComboBox = None
+            # Remover efecto visual del widget anterior
+            if self.current_focused_widget and hasattr(self.current_focused_widget, 'configure'):
+                try:
+                    # Para botones, checkboxes, combos, etc.
+                    if WideComboBox is not None and isinstance(self.current_focused_widget, WideComboBox):
+                        # Si el dropdown sigue abierto, no quitar el borde
+                        try:
+                            if self.current_focused_widget.is_open():
+                                pass
+                            else:
+                                self.current_focused_widget.configure(border_width=0)
+                        except Exception:
+                            pass
+                    elif not isinstance(self.current_focused_widget, ctk.CTkRadioButton):
+                        self.current_focused_widget.configure(border_width=0)
+                    else:
+                        # Para radiobuttons, restaurar color de texto normal
+                        self.current_focused_widget.configure(text_color=("#DCE4EE", "#DCE4EE"))
+                except:
+                    pass
+            
+            # Establecer nuevo widget enfocado
+            self.current_focused_widget = widget
+            
+            # Aplicar efecto visual de foco
+            if hasattr(widget, 'configure'):
+                try:
+                    if isinstance(widget, ctk.CTkRadioButton):
+                        # Para radiobuttons, usar color de texto brillante como indicador
+                        widget.configure(text_color=COLOR_FOCUS)
+                    elif isinstance(widget, ctk.CTkComboBox):
+                        # Para combobox estándar: solo borde visual
+                        widget.configure(border_color=COLOR_FOCUS, border_width=2)
+                    else:
+                        # Para otros widgets, usar borde
+                        widget.configure(border_color=COLOR_FOCUS, border_width=2)
+                except:
+                    pass
+            
+            # Auto-scroll si es necesario
+            self.auto_scroll_to_widget(widget)
+        except Exception as e:
+            pass
+    
+    
+    def set_initial_focus(self):
+        """Establece el foco inicial en el botón de auto-detección del sidebar."""
+        try:
+            if hasattr(self, 'nav_buttons') and 'auto' in self.nav_buttons:
+                self.focus_zone = 'sidebar'
+                self.safe_focus_widget(self.nav_buttons['auto'])
+                self.log('INFO', "Foco inicial establecido en botón de auto-detección")
+        except Exception as e:
+            self.log('ERROR', f"Error al establecer foco inicial: {e}")
     
     def setup_drag_scroll(self, scrollable_frame):
         """Configura drag-to-scroll en un CTkScrollableFrame.
@@ -916,7 +1614,7 @@ class GamingApp(ctk.CTk):
         # Título del app arriba
         ctk.CTkLabel(
             self.config_panel,
-            text="GESTOR AUTOMATIZADO DE OPTISCALER V2.0",
+            text=APP_TITLE,
             font=ctk.CTkFont(size=FONT_TITLE, weight="bold"),
             text_color="#00BFFF"
         ).pack(pady=(15, 5))
@@ -928,12 +1626,14 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=FONT_TITLE, weight="bold")
         ).pack(pady=(5, 10))
         
-        # Scrollable content
+        # Scrollable content principal (contendrá secciones colapsables)
         config_scroll = ctk.CTkScrollableFrame(self.config_panel, fg_color="transparent")
         config_scroll.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        # Habilitar drag-to-scroll en el panel de configuración
         self.setup_drag_scroll(config_scroll)
+
+        # === Sección 1: Configuración Básica (agrupa lo ya existente) ===
+        self.basic_section = CollapsibleSection(config_scroll, title="🎮 Configuración Básica", collapsed=False)
+        # No empaquetar aún - update_config_visibility() lo hará según disponibilidad de mod
         
         # Frame para mensaje "No hay mod instalado"
         self.config_no_mod_frame = ctk.CTkFrame(config_scroll, fg_color="#1a1a1a", corner_radius=8)
@@ -962,8 +1662,9 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=FONT_NORMAL, weight="bold")
         ).pack(pady=(10, 20), padx=20, fill="x")
         
-        # Frame contenedor para todas las opciones (oculto si no hay mod)
-        self.config_options_frame = ctk.CTkFrame(config_scroll, fg_color="transparent")
+        # Frame contenedor para todas las opciones (oculto si no hay mod) ahora dentro del collapsible
+        self.config_options_frame = ctk.CTkFrame(self.basic_section.content_frame, fg_color="transparent")
+        self.config_options_frame.pack(fill="x")
         
         # === PRESETS RÁPIDOS ===
         presets_frame = ctk.CTkFrame(self.config_options_frame, fg_color="#1a1a1a", corner_radius=8)
@@ -996,6 +1697,14 @@ class GamingApp(ctk.CTk):
         presets_btn_frame = ctk.CTkFrame(presets_frame, fg_color="transparent")
         presets_btn_frame.pack(fill="x", padx=15, pady=(5, 10))
         
+        self.preset_buttons = {}
+        self.preset_borders = {
+            "default": ("#2196F3", 3),      # Azul
+            "performance": ("#FFD600", 3),  # Amarillo
+            "balanced": ("#00E676", 3),     # Verde
+            "quality": ("#AB47BC", 3),      # Violeta
+            "custom": ("#B0BEC5", 3)        # Gris
+        }
         preset_buttons = [
             ("⚪ Default", "default"),
             ("⚡ Performance", "performance"),
@@ -1003,7 +1712,6 @@ class GamingApp(ctk.CTk):
             ("💎 Quality", "quality"),
             ("✏️ Custom", "custom")
         ]
-        
         for text, preset in preset_buttons:
             btn = ctk.CTkButton(
                 presets_btn_frame,
@@ -1012,9 +1720,11 @@ class GamingApp(ctk.CTk):
                 fg_color="#3a3a3a",
                 hover_color="#4a4a4a",
                 height=40,
-                corner_radius=8
+                corner_radius=8,
+                border_width=0
             )
             btn.pack(side="left", padx=5, expand=True, fill="x")
+            self.preset_buttons[preset] = btn
         
         # === 0. TIPO DE GPU + INFO DETECTADA ===
         gpu_frame = ctk.CTkFrame(self.config_options_frame, fg_color="#1a1a1a", corner_radius=8)
@@ -1091,24 +1801,7 @@ class GamingApp(ctk.CTk):
         )
         self.gpu_radio_nvidia.pack(side="left", padx=10)
         
-        # === 1. DLL DE INYECCIÓN ===
-        dll_frame = ctk.CTkFrame(self.config_options_frame, fg_color="#1a1a1a", corner_radius=8)
-        dll_frame.pack(fill="x", pady=10)
-        
-        ctk.CTkLabel(
-            dll_frame,
-            text="DLL de Inyección:",
-            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
-        ).pack(anchor="w", padx=15, pady=(10, 5))
-        
-        self.dll_combo = ctk.CTkComboBox(
-            dll_frame,
-            variable=self.dll_name_var,
-            values=["dxgi.dll", "d3d11.dll", "d3d12.dll", "winmm.dll"],
-            font=ctk.CTkFont(size=FONT_NORMAL),
-            width=300
-        )
-        self.dll_combo.pack(padx=15, pady=(0, 10), fill="x")
+        # (DLL Injection movido a sección avanzada)
         
         # === 2. REESCALADOR (UPSCALER) ===
         upscaler_frame = ctk.CTkFrame(self.config_options_frame, fg_color="#1a1a1a", corner_radius=8)
@@ -1130,14 +1823,15 @@ class GamingApp(ctk.CTk):
             text_color="#888888"
         ).pack(side="left", padx=10)
         
-        self.upscaler_combo = ctk.CTkComboBox(
+        self.upscaler_combo = WideComboBox(
             upscaler_frame,
             variable=self.upscaler_var,
             values=["Automático", "FSR 3.1", "FSR 2.2", "XeSS", "DLSS"],
-            font=ctk.CTkFont(size=FONT_NORMAL),
-            width=300
+            width=300,
+            font=ctk.CTkFont(size=FONT_NORMAL)
         )
         self.upscaler_combo.pack(padx=15, pady=(0, 10), fill="x")
+        self.upscaler_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
         
         # === 3. MODO DE REESCALADO ===
         upscale_mode_frame = ctk.CTkFrame(self.config_options_frame, fg_color="#1a1a1a", corner_radius=8)
@@ -1159,14 +1853,15 @@ class GamingApp(ctk.CTk):
             text_color="#FFAA00"
         ).pack(side="left", padx=10)
         
-        self.upscale_mode_combo = ctk.CTkComboBox(
+        self.upscale_mode_combo = WideComboBox(
             upscale_mode_frame,
             variable=self.upscale_mode_var,
             values=["Automático", "Ultra Rendimiento", "Rendimiento", "Equilibrado", "Calidad", "Ultra Calidad"],
-            font=ctk.CTkFont(size=13),
-            width=300
+            width=300,
+            font=ctk.CTkFont(size=13)
         )
         self.upscale_mode_combo.pack(padx=15, pady=(0, 10), fill="x")
+        self.upscale_mode_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
         
         # === 4. FRAME GENERATION ===
         fg_frame = ctk.CTkFrame(self.config_options_frame, fg_color="#1a1a1a", corner_radius=8)
@@ -1189,14 +1884,15 @@ class GamingApp(ctk.CTk):
         ).pack(side="left", padx=10)
         
         # Crear combobox primero (con valores por defecto)
-        self.fg_combo = ctk.CTkComboBox(
+        self.fg_combo = WideComboBox(
             fg_frame,
             variable=self.fg_mode_var,
             values=["Desactivado", "OptiFG", "FSR-FG (Nukem's DLSSG)"],
-            font=ctk.CTkFont(size=FONT_NORMAL),
-            width=300
+            width=300,
+            font=ctk.CTkFont(size=FONT_NORMAL)
         )
         self.fg_combo.pack(padx=15, pady=(0, 10), fill="x")
+        self.fg_mode_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
         
         # Actualizar opciones según configuración (después de crear el combobox)
         self.update_fg_options()
@@ -1231,10 +1927,165 @@ class GamingApp(ctk.CTk):
             command=self.on_fps_changed
         )
         self.fps_slider.pack(padx=15, pady=(0, 10), fill="x")
+        self.fps_limit_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
         
         # === 6. SHARPNESS ===
         sharpness_frame = ctk.CTkFrame(self.config_options_frame, fg_color="#1a1a1a", corner_radius=8)
         sharpness_frame.pack(fill="x", pady=10)
+
+        # === Sección 2: Configuración Avanzada ===
+        self.advanced_section = CollapsibleSection(config_scroll, title="⚙️ Configuración Avanzada", collapsed=True)
+        # No empaquetar aún - update_config_visibility() lo hará
+
+        # === CONTENIDO REAL SECCIÓN AVANZADA ===
+        adv_wrap = ctk.CTkFrame(self.advanced_section.content_frame, fg_color="transparent")
+        adv_wrap.pack(fill="x")
+
+        # DLL Injection (movido aquí)
+        dll_frame = ctk.CTkFrame(adv_wrap, fg_color="#1a1a1a", corner_radius=8)
+        dll_frame.pack(fill="x", pady=8)
+        ctk.CTkLabel(
+            dll_frame,
+            text="🔧 DLL de Inyección",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+        ctk.CTkLabel(
+            dll_frame,
+            text="⚠️ Cambia solo si el juego no carga el mod con la opción por defecto.",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#FFAA00"
+        ).pack(anchor="w", padx=15, pady=(0, 5))
+        self.dll_combo = WideComboBox(
+            dll_frame,
+            variable=self.dll_name_var,
+            values=["dxgi.dll", "d3d11.dll", "d3d12.dll", "winmm.dll"],
+            width=300,
+            font=ctk.CTkFont(size=FONT_NORMAL)
+        )
+        self.dll_combo.pack(padx=15, pady=(0, 12), fill="x")
+        self.dll_name_var.trace_add('write', lambda *a: (self._on_advanced_changed()))
+
+        # Antialiasing control (Native AA vs OptiScaler)
+        aa_frame = ctk.CTkFrame(adv_wrap, fg_color="#1a1a1a", corner_radius=8)
+        aa_frame.pack(fill="x", pady=8)
+        ctk.CTkLabel(
+            aa_frame,
+            text="🎨 Antialiasing",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+        ctk.CTkLabel(
+            aa_frame,
+            text="Selecciona quién gestiona el AA (TAA/MSAA). Desactivar nativo puede reducir 'imagen plastificada'.",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#888888",
+            wraplength=850,
+            justify="left"
+        ).pack(anchor="w", padx=15, pady=(0, 8))
+        aa_opts = ctk.CTkFrame(aa_frame, fg_color="transparent")
+        aa_opts.pack(fill="x", padx=15, pady=(0, 10))
+        self.aa_native_radio = ctk.CTkRadioButton(
+            aa_opts,
+            text="Usar AA nativo del juego",
+            variable=self.native_aa_var,
+            value=True,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=self._on_advanced_changed
+        )
+        self.aa_native_radio.pack(side="left", padx=(0, 20))
+        self.aa_optiscaler_radio = ctk.CTkRadioButton(
+            aa_opts,
+            text="OptiScaler gestiona AA",
+            variable=self.native_aa_var,
+            value=False,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=self._on_advanced_changed
+        )
+        self.aa_optiscaler_radio.pack(side="left")
+
+        # Mipmap Bias control
+        mipmap_frame = ctk.CTkFrame(adv_wrap, fg_color="#1a1a1a", corner_radius=8)
+        mipmap_frame.pack(fill="x", pady=8)
+        ctk.CTkLabel(
+            mipmap_frame,
+            text="🖼️ Mipmap Bias (Nitidez Texturas)",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+        self.mipmap_label = ctk.CTkLabel(
+            mipmap_frame,
+            text=f"Valor actual: {self.mipmap_bias_var.get():.1f}",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#00BFFF"
+        )
+        self.mipmap_label.pack(anchor="w", padx=15)
+        ctk.CTkLabel(
+            mipmap_frame,
+            text="Valores negativos = más nitidez. Demasiado bajo puede causar shimmer/aliasing.",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#FFAA00"
+        ).pack(anchor="w", padx=15, pady=(0,5))
+        self.mipmap_slider = ctk.CTkSlider(
+            mipmap_frame,
+            from_=-2.0,
+            to=0.0,
+            number_of_steps=40,
+            variable=self.mipmap_bias_var,
+            command=self._on_mipmap_bias_changed
+        )
+        self.mipmap_slider.pack(padx=15, pady=(0, 10), fill="x")
+        self.mipmap_bias_var.trace_add('write', lambda *a: (self._on_advanced_changed()))
+
+        # Quality Overrides placeholder
+        qo_frame = ctk.CTkFrame(adv_wrap, fg_color="#1a1a1a", corner_radius=8)
+        qo_frame.pack(fill="x", pady=8)
+        ctk.CTkLabel(
+            qo_frame,
+            text="📐 Quality Overrides (Próximamente)",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+        ctk.CTkLabel(
+            qo_frame,
+            text="Podrás ajustar ratios internos para cada preset (Quality / Balanced / Performance / Ultra).",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#888888",
+            wraplength=850,
+            justify="left"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
+
+        # Btn restaurar valores por defecto avanzados
+        reset_adv = ctk.CTkButton(
+            adv_wrap,
+            text="🔄 Restaurar valores avanzados",
+            command=self._reset_advanced_defaults,
+            height=34,
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
+            font=ctk.CTkFont(size=FONT_SMALL, weight="bold")
+        )
+        reset_adv.pack(pady=(4, 10), padx=10, anchor="e")
+
+        # === Sección 3 (placeholder): HDR Settings ===
+        self.hdr_section = CollapsibleSection(config_scroll, title="🌈 HDR Settings", collapsed=True)
+        # No empaquetar aún - update_config_visibility() lo hará
+        ctk.CTkLabel(
+            self.hdr_section.content_frame,
+            text="(Próximamente) Auto HDR, NVIDIA Override, Luminancia máxima…",
+            font=ctk.CTkFont(size=FONT_SMALL),
+            text_color="#888888",
+            wraplength=900,
+            justify="left"
+        ).pack(padx=15, pady=10, anchor="w")
+
+        # === Sección 4 (placeholder): Debug y Logging ===
+        self.debug_section = CollapsibleSection(config_scroll, title="🐛 Debug y Logging", collapsed=True)
+        # No empaquetar aún - update_config_visibility() lo hará
+        ctk.CTkLabel(
+            self.debug_section.content_frame,
+            text="(Próximamente) Nivel de log, consola, carpeta de logs, overlay debug…",
+            font=ctk.CTkFont(size=FONT_SMALL),
+            text_color="#888888",
+            wraplength=900,
+            justify="left"
+        ).pack(padx=15, pady=10, anchor="w")
         
         sharpness_title_frame = ctk.CTkFrame(sharpness_frame, fg_color="transparent")
         sharpness_title_frame.pack(fill="x", padx=15, pady=(10, 5))
@@ -1262,8 +2113,64 @@ class GamingApp(ctk.CTk):
             command=self.on_sharpness_changed
         )
         self.sharpness_slider.pack(padx=15, pady=(0, 10), fill="x")
+        self.sharpness_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
+        
+        # Aplicar focus indicators a todos los widgets enfocables del panel de configuración
+        self._apply_focus_indicators_to_panel(self.config_panel)
         
         self.config_panel.grid_remove()  # Oculto inicialmente
+
+    # ==================================================================================
+    # ADVANCED SECTION HELPERS
+    # ==================================================================================
+    def _on_mipmap_bias_changed(self, value):
+        try:
+            self.mipmap_label.configure(text=f"Valor actual: {float(value):.1f}")
+        except Exception:
+            pass
+
+    def _on_advanced_changed(self):
+        # Actualizar config interna y persistir
+        try:
+            self.config['use_native_aa'] = bool(self.native_aa_var.get())
+            self.config['mipmap_bias'] = float(self.mipmap_bias_var.get())
+            self.config['last_spoof_name'] = self.dll_name_var.get()
+            save_config(self.config)
+        except Exception:
+            pass
+        # Marcar preset como custom y guardar snapshot
+        self.mark_preset_custom()
+        self.update_custom_state()
+
+    def _reset_advanced_defaults(self):
+        # Valores por defecto razonables
+        self.native_aa_var.set(True)
+        self.mipmap_bias_var.set(0.0)
+        self.dll_name_var.set('dxgi.dll')
+        self._on_advanced_changed()
+    
+    def _apply_focus_indicators_to_panel(self, panel):
+        """Aplica indicadores de foco a todos los widgets enfocables en un panel.
+        
+        Args:
+            panel: Panel donde buscar widgets enfocables
+        """
+        focusable_types = (ctk.CTkButton, ctk.CTkCheckBox, ctk.CTkEntry, 
+                          ctk.CTkComboBox, ctk.CTkSlider, ctk.CTkRadioButton)
+        
+        def apply_recursive(widget):
+            # Aplicar a widget actual si es enfocable
+            if isinstance(widget, focusable_types):
+                self.add_focus_indicator(widget)
+            
+            # Buscar en hijos recursivamente
+            try:
+                for child in widget.winfo_children():
+                    apply_recursive(child)
+            except:
+                pass
+        
+        apply_recursive(panel)
         
     # ==================================================================================
     # PANEL 2: DETECCIÓN AUTOMÁTICA
@@ -1279,7 +2186,7 @@ class GamingApp(ctk.CTk):
         # Título del app arriba
         ctk.CTkLabel(
             self.auto_panel,
-            text="GESTOR AUTOMATIZADO DE OPTISCALER V2.0",
+            text=APP_TITLE,
             font=ctk.CTkFont(size=18, weight="bold"),
             text_color="#00BFFF"
         ).grid(row=0, column=0, pady=(15, 5))
@@ -1496,6 +2403,9 @@ class GamingApp(ctk.CTk):
         )
         self.no_games_label.pack(pady=50)
         
+        # Aplicar focus indicators a todos los widgets enfocables del panel de auto-detección
+        self._apply_focus_indicators_to_panel(self.auto_panel)
+        
         self.auto_panel.grid_remove()  # Oculto inicialmente
         
     # ==================================================================================
@@ -1511,7 +2421,7 @@ class GamingApp(ctk.CTk):
         # Título del app arriba
         ctk.CTkLabel(
             self.manual_panel,
-            text="GESTOR AUTOMATIZADO DE OPTISCALER V2.0",
+            text=APP_TITLE,
             font=ctk.CTkFont(size=18, weight="bold"),
             text_color="#00BFFF"
         ).pack(pady=(15, 5))
@@ -1612,6 +2522,9 @@ class GamingApp(ctk.CTk):
         )
         self.manual_uninstall_btn.pack(side="left", padx=10)
         
+        # Aplicar focus indicators al panel manual
+        self._apply_focus_indicators_to_panel(self.manual_panel)
+        
         self.manual_panel.grid_remove()  # Oculto inicialmente
         
     # ==================================================================================
@@ -1626,7 +2539,7 @@ class GamingApp(ctk.CTk):
         # Título del app arriba
         ctk.CTkLabel(
             self.settings_panel,
-            text="GESTOR AUTOMATIZADO DE OPTISCALER V2.0",
+            text=APP_TITLE,
             font=ctk.CTkFont(size=FONT_TITLE, weight="bold"),
             text_color="#00BFFF"
         ).pack(pady=(15, 5))
@@ -1641,6 +2554,7 @@ class GamingApp(ctk.CTk):
         # Scrollable content
         settings_scroll = ctk.CTkScrollableFrame(self.settings_panel, fg_color="transparent")
         settings_scroll.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        self.setup_drag_scroll(settings_scroll)
         
         # === INFO GPU DETECTADA (ARRIBA DE TODO) ===
         gpu_info_frame = ctk.CTkFrame(settings_scroll, fg_color="#1a1a1a", corner_radius=8)
@@ -1686,6 +2600,7 @@ class GamingApp(ctk.CTk):
         ).pack(padx=15, pady=(0, 10), anchor="w")
         
         # === TEMA ===
+        # Tema Oscuro forzado (Claro está roto, se implementará en futuro)
         theme_frame = ctk.CTkFrame(settings_scroll, fg_color="#1a1a1a", corner_radius=8)
         theme_frame.pack(fill="x", pady=10)
         
@@ -1695,13 +2610,12 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
         ).pack(anchor="w", padx=15, pady=(10, 5))
         
-        ctk.CTkComboBox(
+        ctk.CTkLabel(
             theme_frame,
-            values=["Claro", "Oscuro", "Sistema"],
-            variable=self.theme_var,
-            command=self.on_theme_changed,
-            font=ctk.CTkFont(size=FONT_NORMAL)
-        ).pack(fill="x", padx=15, pady=(0, 10))
+            text="🌙 Modo Oscuro (activo)",
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            text_color="#00BFFF"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
         
         # === ESCALA ===
         scale_frame = ctk.CTkFrame(settings_scroll, fg_color="#1a1a1a", corner_radius=8)
@@ -1713,12 +2627,13 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
         ).pack(anchor="w", padx=15, pady=(10, 5))
         
-        ctk.CTkComboBox(
+        WideComboBox(
             scale_frame,
             values=["80%", "90%", "100%", "110%", "120%"],
             variable=self.scale_var,
-            command=self.on_scale_changed,
-            font=ctk.CTkFont(size=FONT_NORMAL)
+            width=300,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=lambda v: self.on_scale_changed()
         ).pack(fill="x", padx=15, pady=(0, 10))
         
         # === GESTIÓN DE MODS ===
@@ -1773,16 +2688,12 @@ class GamingApp(ctk.CTk):
         default_optiscaler = optiscaler_versions[0] if optiscaler_versions else "Sin versiones descargadas"
         
         self.optiscaler_version_var = ctk.StringVar(value=default_optiscaler)
-        self.optiscaler_version_combo = ctk.CTkComboBox(
+        self.optiscaler_version_combo = WideComboBox(
             version_frame,
             variable=self.optiscaler_version_var,
             values=optiscaler_versions,
-            state="readonly",
             width=250,
-            fg_color="#2a2a2a",
-            button_color="#3a3a3a",
-            button_hover_color="#4a4a4a",
-            dropdown_fg_color="#2a2a2a"
+            font=ctk.CTkFont(size=FONT_NORMAL)
         )
         self.optiscaler_version_combo.pack(side="left", fill="x", expand=True)
 
@@ -1925,6 +2836,9 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=13, weight="bold")
         ).pack(fill="x", padx=15, pady=(0, 10))
         
+        # Aplicar focus indicators al panel de ajustes
+        self._apply_focus_indicators_to_panel(self.settings_panel)
+        
         self.settings_panel.grid_remove()  # Oculto inicialmente
         
     # ==================================================================================
@@ -1941,7 +2855,7 @@ class GamingApp(ctk.CTk):
         # Título
         ctk.CTkLabel(
             self.help_panel,
-            text="GESTOR AUTOMATIZADO DE OPTISCALER V2.0",
+            text=APP_TITLE,
             font=ctk.CTkFont(size=FONT_TITLE, weight="bold"),
             text_color="#00BFFF"
         ).grid(row=0, column=0, pady=(15, 5))
@@ -1949,6 +2863,7 @@ class GamingApp(ctk.CTk):
         # Scrollable content
         help_scroll = ctk.CTkScrollableFrame(self.help_panel, fg_color="transparent")
         help_scroll.grid(row=1, column=0, sticky="nsew", padx=20, pady=10)
+        self.setup_drag_scroll(help_scroll)
         
         # === SECCIÓN: CONTROLES DE TECLADO ===
         keyboard_frame = ctk.CTkFrame(help_scroll, fg_color="#1a1a1a", corner_radius=8)
@@ -2074,6 +2989,12 @@ class GamingApp(ctk.CTk):
              "La configuración global se aplica a todos los juegos donde instales el mod."),
             ("¿Qué hago si el juego no arranca?", 
              "Prueba cambiar la DLL de inyección (dxgi.dll, d3d11.dll, d3d12.dll) o desinstala el mod."),
+            ("¿Cómo añado carpetas personalizadas para escanear?", 
+             "Ve a Ajustes → Gestionar Carpetas de Juegos. Puedes añadir cualquier carpeta con juegos."),
+            ("¿Funciona con juegos de Xbox/Windows Store?", 
+             "Sí, la app detecta automáticamente juegos de Xbox Game Pass y Windows Store."),
+            ("¿Qué son los WideComboBox con autoscroll?", 
+             "Menús desplegables optimizados para navegación con gamepad que hacen scroll automático."),
         ]
         
         for i, (question, answer) in enumerate(faqs):
@@ -2169,16 +3090,16 @@ class GamingApp(ctk.CTk):
             text_color=COLOR_PRIMARY
         ).pack(anchor="w", padx=15, pady=(15, 10))
         
-        about_text = """Gestor Automatizado de OptiScaler V2.0
+        about_text = f"""Gestor Automatizado de OptiScaler V{APP_VERSION}
         
 Aplicación para gestionar e instalar mods de upscaling en juegos de PC.
 
 🔧 Desarrollado para handheld PCs (Steam Deck, ROG Ally, Legion Go, etc.)
 📦 Integra OptiScaler (cdozdil) y dlssg-to-fsr3 (Nukem9)
 🎮 Soporte completo de gamepad y controles táctiles
-🚀 Escaneo automático de juegos en Steam, Epic Games y carpetas personalizadas
+🚀 Escaneo automático de juegos en Steam, Epic Games, Xbox y carpetas personalizadas
 
-Versión: 2.0
+Versión: {APP_VERSION}
 Licencia: Open Source
         """
         
@@ -2214,6 +3135,9 @@ Licencia: Open Source
             hover_color="#4a4a4a",
             font=ctk.CTkFont(size=FONT_NORMAL)
         ).pack(fill="x", padx=10, pady=5)
+        
+        # Aplicar focus indicators al panel de ayuda
+        self._apply_focus_indicators_to_panel(self.help_panel)
         
         self.help_panel.grid_remove()  # Oculto inicialmente
         
@@ -2255,6 +3179,12 @@ Licencia: Open Source
             
             # Resaltar botón activo
             self.highlight_active_nav(panel_name)
+            
+            # Mantener foco en sidebar al cambiar de panel (navegación lógica)
+            if hasattr(self, 'focus_zone'):
+                self.focus_zone = 'sidebar'
+                if panel_name in self.nav_buttons:
+                    self.safe_focus_widget(self.nav_buttons[panel_name])
             
     def show_config_panel(self):
         self.show_panel("config")
@@ -2311,18 +3241,28 @@ Licencia: Open Source
             }
         }
         
+        # Visual feedback: reset all, highlight only the active with its color
+        for key, btn in self.preset_buttons.items():
+            if key == preset:
+                color, width = self.preset_borders.get(key, ("#00BFFF", 3))
+                btn.configure(border_width=width, border_color=color)
+            else:
+                btn.configure(border_width=0)
+
         if preset in presets and preset != "custom":
+            # Suprimir cambio automático a Custom mientras actualizamos variables
+            self._suppress_custom = True
             config = presets[preset]
             self.fg_mode_var.set(config["fg_mode"])
             self.upscale_mode_var.set(config["upscale_mode"])
             self.upscaler_var.set(config["upscaler"])
             self.sharpness_var.set(config["sharpness"])
             self.fps_limit_var.set(config["fps_limit"])
-            
+
             # Actualizar labels
             self.on_sharpness_changed(config["sharpness"])
             self.on_fps_changed(config["fps_limit"])
-            
+
             # Actualizar indicador de preset activo
             preset_names = {
                 "default": "Default",
@@ -2331,11 +3271,23 @@ Licencia: Open Source
                 "quality": "💎 Quality"
             }
             self.active_preset_label.configure(text=preset_names.get(preset, "Custom"))
-            
+
             self.log('INFO', f"✓ Preset '{preset}' aplicado")
+            self._suppress_custom = False
         elif preset == "custom":
+            # Restaurar última configuración personalizada si existe
+            if getattr(self, 'custom_preset_state', None):
+                self._suppress_custom = True
+                state = self.custom_preset_state
+                if 'fg_mode' in state: self.fg_mode_var.set(state['fg_mode'])
+                if 'upscale_mode' in state: self.upscale_mode_var.set(state['upscale_mode'])
+                if 'upscaler' in state: self.upscaler_var.set(state['upscaler'])
+                if 'sharpness' in state: self.sharpness_var.set(state['sharpness']); self.on_sharpness_changed(state['sharpness'])
+                if 'fps_limit' in state: self.fps_limit_var.set(state['fps_limit']); self.on_fps_changed(state['fps_limit'])
+                if 'dll_name' in state: self.dll_name_var.set(state['dll_name'])
+                self._suppress_custom = False
             self.active_preset_label.configure(text="✏️ Custom")
-            self.log('INFO', "Modo personalizado activado")
+            self.log('INFO', "Modo personalizado activado (estado restaurado)")
         
     def scan_games_action(self, silent=False):
         """Ejecuta escaneo de juegos en hilo separado.
@@ -2711,12 +3663,12 @@ Licencia: Open Source
             font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
         ).pack(anchor="w", padx=15, pady=(10, 5))
         
-        platform_combo = ctk.CTkComboBox(
+        platform_combo = WideComboBox(
             platform_frame,
             variable=self.filter_platform,
-            values=["Todas", "Steam", "Epic Games", "Custom"],
-            font=ctk.CTkFont(size=FONT_NORMAL),
-            width=300
+            values=["Todas", "Steam", "Epic Games", "Xbox", "Custom"],
+            width=300,
+            font=ctk.CTkFont(size=FONT_NORMAL)
         )
         platform_combo.pack(padx=15, pady=(0, 10), fill="x")
         
@@ -2730,12 +3682,12 @@ Licencia: Open Source
             font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
         ).pack(anchor="w", padx=15, pady=(10, 5))
         
-        status_combo = ctk.CTkComboBox(
+        status_combo = WideComboBox(
             status_frame,
             variable=self.filter_mod_status,
             values=["Todos", "Instalado", "No instalado"],
-            font=ctk.CTkFont(size=FONT_NORMAL),
-            width=300
+            width=300,
+            font=ctk.CTkFont(size=FONT_NORMAL)
         )
         status_combo.pack(padx=15, pady=(0, 10), fill="x")
         
@@ -3629,12 +4581,26 @@ Licencia: Open Source
         has_optiscaler = self.check_optiscaler_available()
         
         if has_optiscaler:
-            # Mostrar opciones, ocultar mensaje
+            # Mostrar secciones colapsables, ocultar mensaje
             self.config_no_mod_frame.pack_forget()
-            self.config_options_frame.pack(fill="both", expand=True)
+            if hasattr(self, 'basic_section'):
+                self.basic_section.pack(fill="x", pady=5)
+            if hasattr(self, 'advanced_section'):
+                self.advanced_section.pack(fill="x", pady=5)
+            if hasattr(self, 'hdr_section'):
+                self.hdr_section.pack(fill="x", pady=5)
+            if hasattr(self, 'debug_section'):
+                self.debug_section.pack(fill="x", pady=5)
         else:
-            # Ocultar opciones, mostrar mensaje
-            self.config_options_frame.pack_forget()
+            # Ocultar todas las secciones, mostrar solo mensaje
+            if hasattr(self, 'basic_section'):
+                self.basic_section.pack_forget()
+            if hasattr(self, 'advanced_section'):
+                self.advanced_section.pack_forget()
+            if hasattr(self, 'hdr_section'):
+                self.hdr_section.pack_forget()
+            if hasattr(self, 'debug_section'):
+                self.debug_section.pack_forget()
             self.config_no_mod_frame.pack(fill="x", pady=20, padx=20)
     
     def select_custom_mod_folder(self):
@@ -3762,7 +4728,181 @@ Licencia: Open Source
         
     def manage_scan_folders(self):
         """Gestiona carpetas personalizadas de escaneo."""
-        messagebox.showinfo("Carpetas", "Gestión de carpetas personalizadas en desarrollo")
+        from tkinter import filedialog
+        
+        # Crear ventana modal
+        folder_window = ctk.CTkToplevel(self)
+        folder_window.title("📁 Gestionar Carpetas de Escaneo")
+        folder_window.geometry("700x500")
+        folder_window.resizable(False, False)
+        
+        # Centrar ventana
+        folder_window.transient(self)
+        folder_window.grab_set()
+        
+        # Título
+        ctk.CTkLabel(
+            folder_window,
+            text="📁 CARPETAS PERSONALIZADAS DE ESCANEO",
+            font=ctk.CTkFont(size=FONT_TITLE, weight="bold"),
+            text_color=COLOR_PRIMARY
+        ).pack(pady=(20, 10))
+        
+        # Descripción
+        ctk.CTkLabel(
+            folder_window,
+            text="Añade carpetas adicionales donde buscar juegos instalados.\nEstas carpetas se escanearán junto con Steam, Epic y Xbox.",
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            text_color="#AAAAAA"
+        ).pack(pady=(0, 15))
+        
+        # Frame principal
+        main_frame = ctk.CTkFrame(folder_window, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        # Lista de carpetas (scrollable)
+        list_frame = ctk.CTkFrame(main_frame, fg_color="#1a1a1a", corner_radius=8)
+        list_frame.pack(fill="both", expand=True, pady=(0, 10))
+        
+        ctk.CTkLabel(
+            list_frame,
+            text="Carpetas actuales:",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+        
+        # Scrollable frame para las carpetas
+        folders_scroll = ctk.CTkScrollableFrame(list_frame, fg_color="#2b2b2b", height=250)
+        folders_scroll.pack(fill="both", expand=True, padx=15, pady=(0, 10))
+        
+        # Obtener carpetas actuales del config
+        custom_folders = self.config.get("custom_game_folders", [])
+        
+        # Variable para trackear cambios
+        folders_modified = {"changed": False}
+        
+        def refresh_folder_list():
+            """Actualiza la lista visual de carpetas."""
+            # Limpiar lista
+            for widget in folders_scroll.winfo_children():
+                widget.destroy()
+            
+            # Mostrar carpetas
+            if not custom_folders:
+                ctk.CTkLabel(
+                    folders_scroll,
+                    text="📂 No hay carpetas personalizadas añadidas",
+                    font=ctk.CTkFont(size=FONT_NORMAL),
+                    text_color="#666666"
+                ).pack(pady=20)
+            else:
+                for i, folder_path in enumerate(custom_folders):
+                    folder_frame = ctk.CTkFrame(folders_scroll, fg_color="#1a1a1a", corner_radius=5)
+                    folder_frame.pack(fill="x", pady=3, padx=5)
+                    
+                    # Path
+                    path_label = ctk.CTkLabel(
+                        folder_frame,
+                        text=folder_path,
+                        anchor="w",
+                        font=ctk.CTkFont(size=FONT_NORMAL)
+                    )
+                    path_label.pack(side="left", fill="x", expand=True, padx=10, pady=8)
+                    
+                    # Botón eliminar
+                    del_btn = ctk.CTkButton(
+                        folder_frame,
+                        text="✕",
+                        width=40,
+                        height=30,
+                        fg_color=COLOR_SECONDARY,
+                        hover_color=COLOR_SECONDARY_HOVER,
+                        font=ctk.CTkFont(size=16, weight="bold"),
+                        command=lambda idx=i: remove_folder(idx)
+                    )
+                    del_btn.pack(side="right", padx=5)
+        
+        def add_folder():
+            """Abre diálogo para añadir carpeta."""
+            folder_path = filedialog.askdirectory(
+                title="Seleccionar carpeta de juegos",
+                initialdir=os.path.expanduser("~")
+            )
+            
+            if folder_path:
+                # Normalizar path
+                folder_path = os.path.normpath(folder_path)
+                
+                # Verificar que no esté duplicada
+                if folder_path in custom_folders:
+                    messagebox.showwarning("Carpeta duplicada", "Esta carpeta ya está en la lista")
+                    return
+                
+                # Añadir
+                custom_folders.append(folder_path)
+                folders_modified["changed"] = True
+                refresh_folder_list()
+                self.log('INFO', f"Carpeta añadida: {folder_path}")
+        
+        def remove_folder(index):
+            """Elimina una carpeta de la lista."""
+            if 0 <= index < len(custom_folders):
+                removed = custom_folders.pop(index)
+                folders_modified["changed"] = True
+                refresh_folder_list()
+                self.log('INFO', f"Carpeta eliminada: {removed}")
+        
+        def save_and_close():
+            """Guarda los cambios y cierra la ventana."""
+            if folders_modified["changed"]:
+                # Guardar en config
+                self.config["custom_game_folders"] = custom_folders
+                save_config(self.config)
+                self.log('OK', f"Carpetas guardadas: {len(custom_folders)} carpeta(s)")
+                messagebox.showinfo("Guardado", f"Se han guardado {len(custom_folders)} carpeta(s) personalizada(s).\n\nPresiona el botón de escaneo para buscar juegos en estas carpetas.")
+            folder_window.destroy()
+        
+        # Mostrar carpetas iniciales
+        refresh_folder_list()
+        
+        # Botones de acción
+        buttons_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        buttons_frame.pack(fill="x", pady=(10, 0))
+        
+        # Botón añadir
+        add_btn = ctk.CTkButton(
+            buttons_frame,
+            text="➕ Añadir Carpeta",
+            command=add_folder,
+            height=40,
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold")
+        )
+        add_btn.pack(side="left", padx=5, fill="x", expand=True)
+        
+        # Botón guardar
+        save_btn = ctk.CTkButton(
+            buttons_frame,
+            text="✓ Guardar y Cerrar",
+            command=save_and_close,
+            height=40,
+            fg_color=COLOR_PRIMARY,
+            hover_color=COLOR_PRIMARY_HOVER,
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold")
+        )
+        save_btn.pack(side="left", padx=5, fill="x", expand=True)
+        
+        # Botón cancelar
+        cancel_btn = ctk.CTkButton(
+            buttons_frame,
+            text="✕ Cancelar",
+            command=folder_window.destroy,
+            height=40,
+            fg_color=COLOR_SECONDARY,
+            hover_color=COLOR_SECONDARY_HOVER,
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold")
+        )
+        cancel_btn.pack(side="left", padx=5, fill="x", expand=True)
         
     def save_log(self):
         """Guarda el log en un archivo."""
@@ -4312,3 +5452,4 @@ class DownloadWindow(ctk.CTkToplevel):
 if __name__ == "__main__":
     app = GamingApp()
     app.mainloop()
+

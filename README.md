@@ -1,6 +1,6 @@
 # 🎮 OptiScaler Manager
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue)
+![Version](https://img.shields.io/badge/version-2.3.0-blue)
 ![Python](https://img.shields.io/badge/python-3.12-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-orange)
@@ -48,7 +48,30 @@
 
 ## ✨ Características
 
-### 🔄 Auto-Actualización (NUEVO v2.3.0)
+### 🎮 WideComboBox con Navegación Completa (NUEVO v2.3.0)
+- **Controles desplegables personalizados** optimizados para gamepad/teclado
+- **Autoscroll interno**: Los menús desplegables largos hacen scroll automático al navegar
+- **Foco visual mejorado**: Borde único y claro, indicador de opción activa
+- **Navegación intuitiva**: A/Enter para abrir/seleccionar, B/Esc para cerrar
+- **Ancho consistente**: El dropdown siempre coincide con el ancho del control
+
+### 📁 Carpetas Personalizadas (NUEVO v2.3.0)
+- **Gestión de carpetas de escaneo** desde Ajustes de la App
+- **Añadir/eliminar carpetas** con interfaz intuitiva
+- **Persistencia automática**: Las carpetas se guardan entre sesiones
+- **Integración completa**: Se escanean junto con Steam, Epic, Xbox
+
+### 🎯 Filtro de Xbox (NUEVO v2.3.0)
+- **Opción "Xbox"** en el filtro de plataformas
+- Filtra específicamente juegos de **Xbox Game Pass** y **Windows Store**
+- Complementa las opciones existentes: Steam, Epic Games, Custom
+
+### 🛡️ Instalación Mejorada para Xbox/Windows Store (v2.3.0)
+- **Instalación resistente a permisos**: Continúa aunque algunas carpetas opcionales fallen
+- **Advertencias en lugar de errores**: Los juegos de Xbox funcionan sin carpetas `D3D12_Optiscaler`, `DlssOverrides`, `Licenses`
+- **Mensajes claros**: Indica qué carpetas no se copiaron y por qué
+
+### 🔄 Auto-Actualización
 - **Chequeo automático** al iniciar la aplicación
 - **Notificaciones visuales** cuando hay nuevas versiones disponibles
 - **Actualización masiva** de OptiScaler en todos los juegos instalados
@@ -64,12 +87,13 @@
 - **Interfaz Gaming** (En desarrollo): Navegación optimizada para mandos Xbox/PlayStation
 
 ### 🎯 Gestión de Mods
-- **Detección automática** de juegos en Steam, Epic Games, Xbox Game Pass, GOG
+- **Detección automática** de juegos en Steam, Epic Games, Xbox Game Pass, GOG, **Carpetas Personalizadas**
 - **Instalación/desinstalación masiva** con seguimiento en tiempo real
 - **Configuración individual** por juego
 - **Sistema de caché** para detección rápida de juegos
 - **Presets rápidos**: Default, Performance, Balanced, Quality, Custom
 - **Vista previa en vivo**: Resaltado visual de juegos mientras se procesan
+- **Autoscroll inteligente**: Mantiene visible el widget enfocado con navegación por teclado/gamepad
 
 ### ⚙️ Configuración Avanzada
 - **GPU**: AMD/Intel o NVIDIA
@@ -96,7 +120,7 @@
 
 **[📦 Descargar última versión](https://github.com/Bigflood92/OptiScaler-Manager/releases/latest)**
 
-1. Descarga `Gestor OptiScaler V2.2.exe`
+1. Descarga `Gestor OptiScaler V2.3.exe`
 2. Doble clic (Windows solicitará permisos de administrador automáticamente)
 3. Se crearán las carpetas en `Config Optiscaler Gestor/` junto al .exe
 4. ¡Listo para usar!
@@ -136,11 +160,12 @@ python -m src.main
 
 ### Primera Ejecución
 
-1. Ejecuta `Gestor OptiScaler V2.2.exe` (solicitará permisos de administrador automáticamente)
+1. Ejecuta `Gestor OptiScaler V2.3.exe` (solicitará permisos de administrador automáticamente)
 2. Aparecerá un tutorial de bienvenida en el primer inicio
-3. Ve a **Ajustes de la App** → **Carpetas Personalizadas**
-4. Añade rutas donde tienes juegos instalados (ej: `D:\Juegos`)
+3. Ve a **Ajustes de la App** → **Gestionar Carpetas de Escaneo**
+4. Añade rutas donde tienes juegos instalados (ej: `D:\Juegos`, `C:\XboxGames`)
 5. Pulsa **🔍 Escanear** para detectar juegos (con animación y progreso en tiempo real)
+6. Usa el **filtro de plataforma** (Steam/Epic/Xbox/Custom) para refinar resultados
 
 ### Instalar Mod en Juegos
 
@@ -215,7 +240,7 @@ pip install nuitka ordered-set zstandard
 # Build con elevación UAC automática
 ./build_nuitka_admin.ps1
 
-# El ejecutable queda en dist/Gestor OptiScaler V2.2.exe
+# El ejecutable queda en dist/Gestor OptiScaler V2.3.exe
 ```
 
 ### Alternativa: PyInstaller (obsoleto, no recomendado)
@@ -254,8 +279,9 @@ pytest tests/
 
 ### No se detectan juegos
 1. Verifica que los juegos estén instalados en las rutas estándar
-2. Añade carpetas personalizadas en **Configuración de la App**
-3. Usa **Ruta Manual** para juegos específicos
+2. Añade carpetas personalizadas en **Ajustes de la App → Gestionar Carpetas de Escaneo**
+3. Usa el **filtro de plataforma** para reducir resultados
+4. Usa **Ruta Manual** para juegos específicos
 
 ### El mod no funciona en un juego
 1. Verifica que el juego sea compatible con DLSS/FSR

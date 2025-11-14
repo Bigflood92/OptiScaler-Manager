@@ -7,6 +7,141 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [2.3.0] - 2025-11-14
+
+### Añadido
+- **🎮 WideComboBox con Navegación Completa**
+  - Controles desplegables personalizados que reemplazan CTkComboBox estándar
+  - Autoscroll interno: Los menús largos hacen scroll automático al navegar
+  - Navegación unificada: A/Enter abre/selecciona, B/Esc cierra
+  - Foco visual mejorado: Borde único sin duplicación
+  - Indicador visual: Borde completo en opción activa del desplegable
+  - Ancho consistente: El dropdown siempre coincide con el control base
+  - Máximo 8 opciones visibles con scroll automático
+
+- **📁 Gestión de Carpetas Personalizadas**
+  - Nueva interfaz para añadir carpetas de escaneo personalizadas
+  - Persistencia: Las carpetas se guardan entre sesiones en `injector_config.json`
+  - Interfaz intuitiva: Botones añadir/eliminar con validación
+  - Detección de carpetas duplicadas automática
+  - Integración completa: Se escanean junto con Steam, Epic, Xbox
+
+- **🎯 Filtro de Xbox en Detección Automática**
+  - Opción "Xbox" añadida al filtro de plataformas
+  - Filtra específicamente juegos de Xbox Game Pass y Windows Store
+  - Complementa opciones existentes: Steam, Epic Games, Custom
+
+- **🖱️ Drag-to-Scroll Completo**
+  - Habilitado en Settings panel (faltaba)
+  - Habilitado en Help panel (faltaba)
+  - Configuración consistente en todos los paneles scrollables
+
+- **🔍 Autoscroll Inteligente de Ventana**
+  - Scroll automático del contenido al navegar con teclado/gamepad
+  - Detección recursiva del CTkScrollableFrame en cualquier nivel de jerarquía
+  - Margen adaptativo: Mantiene el widget enfocado visible con 100px de margen
+  - Búsqueda robusta de canvas con múltiples métodos de acceso
+  - Logs de diagnóstico con prefijo `[AUTOSCROLL]` para troubleshooting
+
+### Cambiado
+- **Títulos y Versiones**
+  - Versión actualizada de 2.2.0 a 2.3.0 en toda la aplicación
+  - Introducida constante `APP_VERSION = "2.3.0"`
+  - Introducida constante `APP_TITLE = f"GESTOR AUTOMATIZADO DE OPTISCALER V{APP_VERSION}"`
+  - Todos los títulos hardcoded ahora usan `APP_TITLE`
+  - About text usa f-string dinámico con `APP_VERSION`
+
+- **Documentación Actualizada**
+  - Panel de Ayuda: 3 nuevas FAQs sobre carpetas personalizadas, Xbox, WideComboBox
+  - Total 9 FAQs cubriendo todas las características de v2.3
+  - Controles de gamepad y teclado actualizados
+  - About text menciona soporte para Xbox y carpetas personalizadas
+
+### Corregido
+- **❌ Instalación en Juegos de Xbox/Windows Store**
+  - **ANTES**: Instalación fallaba completamente con "ACCESO DENEGADO" al copiar carpetas opcionales
+  - **AHORA**: Carpetas opcionales (`D3D12_Optiscaler`, `DlssOverrides`, `Licenses`) generan WARNING en lugar de ERROR
+  - La instalación continúa exitosamente incluso si carpetas opcionales fallan
+  - El mod funciona correctamente solo con archivos core (DLL + INI)
+  - Mensaje claro: "El mod puede funcionar sin esta carpeta. Si hay problemas, ejecuta como admin."
+
+- **📋 Detalles de Instalación Incorrectos**
+  - **ANTES**: Mostraba "OptiScaler.dll - NO ENCONTRADO" aunque el mod estaba instalado
+  - **AHORA**: Detecta correctamente las DLLs renombradas (`dxgi.dll`, `d3d11.dll`, `d3d12.dll`, `winmm.dll`)
+  - Si encuentra cualquier DLL renombrada + `OptiScaler.ini` → "Archivos core: COMPLETO"
+  - Eliminadas DLLs core de sección "Archivos adicionales" para evitar duplicación
+  - Mensaje mejorado si falta: "OptiScaler.dll - NO ENCONTRADO (debe estar renombrado...)"
+
+- **🔄 Limpieza de Código Legacy**
+  - Eliminado código de parches globales obsoletos para CTkComboBox
+  - Removidas funciones helper obsoletas: `_configure_combobox_dropdown_width`, etc.
+  - Código simplificado y más mantenible
+  - WideComboBox proporciona toda la funcionalidad necesaria
+
+### Técnico
+- **WideComboBox** (`src/gui/components/wide_combobox.py`):
+  - CTkFrame base con CTkToplevel para dropdown
+  - Scroll interno con CTkScrollableFrame (max 8 opciones visibles)
+  - Navegación con índice interno (`_current_index`)
+  - Método `_scroll_to_current()` para autoscroll del dropdown
+  - Prevención de recursión en `configure()`
+  - Focus ring en frame interno `_content` para evitar clipping
+  - Redirección de foco de hijos (label, arrow) al frame principal
+
+- **Gestión de Carpetas**:
+  - Config key: `custom_game_folders` (lista de strings)
+  - Inicialización automática como lista vacía si no existe
+  - Método `manage_scan_folders()` con UI completa
+  - Guardado automático en `save_config()`
+  - Paso al scanner via parámetro `custom_folders`
+
+- **Autoscroll de Ventana**:
+  - Función `auto_scroll_to_widget()` mejorada
+  - Búsqueda recursiva de `CTkScrollableFrame` con función interna `find_scrollable()`
+  - Cálculo de posición con `winfo_rooty()` (absoluta)
+  - Fallback a método de recorrido jerárquico
+  - Actualización forzada con `update_idletasks()`
+
+- **Instalador**:
+  - Líneas 518-534: PermissionError en carpetas opcionales cambiado de ERROR a WARNING
+  - Handler general de excepciones como fallback
+  - Instalación continúa en lugar de abortar
+
+### Estadísticas
+- **Archivos modificados**: 3
+  - `src/gui/gaming_app.py`
+  - `src/gui/components/wide_combobox.py`
+  - `src/core/installer.py`
+- **Líneas añadidas**: ~800
+- **Líneas eliminadas**: ~200
+- **Nuevas características**: 5
+- **Bugs corregidos**: 3
+- **FAQs añadidas**: 3
+
+## [2.3.0-dev-snapshot] - 2025-11-13
+
+### Añadido
+- Persistencia del preset **Custom**: snapshot automático de valores modificados (fg_mode, upscale_mode, upscaler, sharpness, fps_limit, dll_name).
+- Indicador visual mejorado de preset activo: bordes coloreados por tipo y etiqueta dinámica en esquina.
+
+### Cambiado
+- Lógica de trazas (`trace_add`) ahora separada: `mark_preset_custom` solo marca visualmente sin reinstanciar valores.
+- Se introduce `_suppress_custom` para evitar que cambios programáticos activen el modo Custom durante aplicación de presets predefinidos.
+
+### Corregido
+- Borde de "Custom" permanecía activo al seleccionar otro preset.
+- Activación indebida de "Custom" al aplicar un preset estándar (Performance, Balanced, Quality, Default).
+
+### Interno
+- Creación de backups locales: `backups/OptiScaler-Manager-full-<timestamp>.zip` y versión fuente reducida.
+- Tag Git anotado creado: `v2.3.0-dev-snapshot` como punto de restauración.
+- Preparación de base para próximos grupos colapsables en panel de configuración.
+
+### Próximo (plan)
+- Secciones colapsables para organización avanzada de parámetros.
+- Persistencia de snapshot Custom entre sesiones (guardar en config).
+- Utilidades de reset rápido para el estado Custom.
+
 ## [2.2.1] - 2025-11-13
 
 ### Corregido
@@ -220,7 +355,11 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-[No publicado]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.1.0...HEAD
+[No publicado]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.2.1...v2.3.0
+[2.3.0-dev-snapshot]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.2.1...v2.3.0-dev-snapshot
+[2.2.1]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.2.0...v2.2.1
+[2.2.0]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Bigflood92/OptiScaler-Manager/releases/tag/v2.0.0

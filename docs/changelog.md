@@ -7,6 +7,29 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [2.3.0-dev-snapshot] - 2025-11-13
+
+### Añadido
+- Persistencia inicial del preset Custom (snapshot en memoria de parámetros modificados).
+- Bordes coloreados para cada preset y etiqueta de estado activo.
+
+### Cambiado
+- Separada la lógica de marcado Custom para evitar sobrescritura de valores al editar.
+- Uso de `_suppress_custom` durante aplicación de presets estándar.
+
+### Corregido
+- Borde de "Custom" permanecía activo tras cambiar de preset.
+- Activación accidental de "Custom" al aplicar otros presets.
+
+### Interno
+- Backups locales generados (full y fuente).
+- Tag git `v2.3.0-dev-snapshot` creado para referencia de desarrollo.
+
+### Próximo
+- Secciones colapsables en panel de configuración.
+- Guardar snapshot Custom en archivo de configuración para persistencia entre sesiones.
+- Botón de reset rápido para Custom.
+
 ### Por añadir
 - Sistema de actualización automática de la aplicación
 - Soporte para más launchers (Ubisoft Connect, Battle.net)
@@ -77,6 +100,10 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 [No publicado]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.0.1...HEAD
+[2.3.0-dev-snapshot]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.2.1...v2.3.0-dev-snapshot
+[2.2.1]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.2.0...v2.2.1
+[2.2.0]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.1.0...v2.2.0
+[2.1.0]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/Bigflood92/OptiScaler-Manager/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Bigflood92/OptiScaler-Manager/releases/tag/v2.0.0
 [1.0.0]: https://github.com/Bigflood92/OptiScaler-Manager/releases/tag/v1.0.0
