@@ -35,7 +35,7 @@ from .components.collapsible_section import CollapsibleSection
 from .components.wide_combobox import WideComboBox
 
 # Constantes
-APP_VERSION = "2.3.0"
+APP_VERSION = "2.3.1"
 APP_TITLE = f"GESTOR AUTOMATIZADO DE OPTISCALER V{APP_VERSION}"
 
 # Colores para feedback visual
@@ -112,6 +112,7 @@ class GamingApp(ctk.CTk):
         # Variables para navegación con gamepad
         self.current_focused_widget = None
         self.focus_zone = 'sidebar'  # 'sidebar' o 'content'
+        self.slider_active = False  # True cuando un slider está siendo ajustado
         
         # Detectar GPU automáticamente
         self.gpu_vendor = detect_gpu_vendor()
@@ -441,6 +442,8 @@ class GamingApp(ctk.CTk):
 
     def show_installation_details(self, game_path: str, game_name: str, status_text: str):
         """Muestra detalles de archivos del mod en un juego."""
+        import configparser
+        
         # Analizar archivos instalados
         details = []
         details.append(f"📁 Juego: {game_name}")
@@ -472,7 +475,9 @@ class GamingApp(ctk.CTk):
         
         # Verificar OptiScaler.ini
         ini_path = os.path.join(game_path, 'OptiScaler.ini')
-        if os.path.exists(ini_path):
+        ini_exists = os.path.exists(ini_path)
+        
+        if ini_exists:
             try:
                 size = os.path.getsize(ini_path) / 1024  # KB
                 details.append(f"  ✅ OptiScaler.ini ({size:.1f} KB)")
@@ -481,6 +486,59 @@ class GamingApp(ctk.CTk):
         else:
             details.append(f"  ❌ OptiScaler.ini - NO ENCONTRADO")
             core_dll_found = False  # Si falta el .ini, el core está incompleto
+        
+        # ========== NUEVA SECCIÓN: CONFIGURACIÓN DEL INI ==========
+        if ini_exists:
+            details.append("")
+            details.append("═" * 60)
+            details.append("⚙️ CONFIGURACIÓN (OptiScaler.ini):")
+            details.append("═" * 60)
+            
+            try:
+                config = configparser.ConfigParser()
+                config.read(ini_path)
+                
+                # Frame Generation
+                fg_type = config.get('FrameGen', 'fgtype', fallback='auto').lower()
+                optifg_enabled = config.get('OptiFG', 'enabled', fallback='false').lower()
+                
+                if fg_type == 'optifg' and optifg_enabled == 'true':
+                    details.append("  ✅ Frame Generation: ACTIVADO (OptiFG)")
+                elif fg_type == 'nukems':
+                    # Verificar si dlssg-to-fsr3 está instalado
+                    nukem_dll = os.path.join(game_path, 'dlssg_to_fsr3_amd_is_better.dll')
+                    if os.path.exists(nukem_dll):
+                        details.append("  ✅ Frame Generation: ACTIVADO (Nukem's DLSSG-to-FSR3)")
+                    else:
+                        details.append("  ⚠️ Frame Generation: Configurado como Nukem's pero DLL no encontrado")
+                elif fg_type == 'nofg':
+                    details.append("  ⚪ Frame Generation: DESACTIVADO")
+                else:
+                    details.append(f"  ℹ️ Frame Generation: {fg_type.upper()}")
+                
+                # Upscaler
+                dx12_upscaler = config.get('Upscalers', 'dx12upscaler', fallback='auto')
+                dx11_upscaler = config.get('Upscalers', 'dx11upscaler', fallback='auto')
+                details.append(f"  📊 Upscaler DX12: {dx12_upscaler.upper()}")
+                details.append(f"  📊 Upscaler DX11: {dx11_upscaler.upper()}")
+                
+                # Upscale Mode
+                upscale_mode = config.get('Upscale', 'mode', fallback='auto')
+                details.append(f"  📐 Modo de escalado: {upscale_mode.upper()}")
+                
+                # Sharpness
+                sharpness = config.get('Sharpness', 'sharpness', fallback='auto')
+                if sharpness != 'auto':
+                    details.append(f"  🔪 Nitidez: {sharpness}")
+                
+                # GPU Spoofing
+                dxgi_spoofing = config.get('Spoofing', 'dxgi', fallback='auto')
+                if dxgi_spoofing != 'auto':
+                    gpu_type = "NVIDIA" if dxgi_spoofing.lower() == 'true' else "AMD/Intel"
+                    details.append(f"  🎭 GPU Spoofing: {gpu_type}")
+                
+            except Exception as e:
+                details.append(f"  ⚠️ Error al leer configuración: {e}")
         
         # Archivos adicionales de OptiScaler
         details.append("")
@@ -537,7 +595,7 @@ class GamingApp(ctk.CTk):
         # Verificar dlssg-to-fsr3
         details.append("")
         details.append("═" * 60)
-        details.append("🔍 DLSSG-TO-FSR3 (FRAME GENERATION):")
+        details.append("🔍 DLSSG-TO-FSR3 (Nukem's):")
         details.append("═" * 60)
         
         nukem_files = [
@@ -558,7 +616,7 @@ class GamingApp(ctk.CTk):
         if found_nukem:
             details.extend(found_nukem)
         else:
-            details.append("  ℹ️ No instalado (solo upscaling activo)")
+            details.append("  ℹ️ No instalado")
         
         # Diagnóstico final
         details.append("")
@@ -576,10 +634,24 @@ class GamingApp(ctk.CTk):
         else:
             details.append("  ⚠️ Archivos adicionales: No encontrados")
         
-        if found_nukem:
-            details.append("  ✅ Frame Generation: Instalado")
-        else:
-            details.append("  ℹ️ Frame Generation: No instalado")
+        # Frame Generation diagnosis (basado en configuración)
+        if ini_exists:
+            try:
+                config = configparser.ConfigParser()
+                config.read(ini_path)
+                fg_type = config.get('FrameGen', 'fgtype', fallback='auto').lower()
+                optifg_enabled = config.get('OptiFG', 'enabled', fallback='false').lower()
+                
+                if fg_type == 'optifg' and optifg_enabled == 'true':
+                    details.append("  ✅ Frame Generation: Configurado (OptiFG)")
+                elif fg_type == 'nukems' and found_nukem:
+                    details.append("  ✅ Frame Generation: Configurado (Nukem's)")
+                elif fg_type == 'nofg':
+                    details.append("  ⚪ Frame Generation: Desactivado")
+                else:
+                    details.append("  ℹ️ Frame Generation: Modo automático")
+            except:
+                pass
         
         # Mostrar en messagebox
         details_text = "\n".join(details)
@@ -613,6 +685,15 @@ class GamingApp(ctk.CTk):
                         elif isinstance(self.current_focused_widget, ctk.CTkRadioButton):
                             # Activar el radiobutton
                             self.current_focused_widget.invoke()
+                        elif isinstance(self.current_focused_widget, ctk.CTkSlider):
+                            # Toggle: activar/desactivar slider para ajuste
+                            self.slider_active = not self.slider_active
+                            if self.slider_active:
+                                # Verde brillante cuando está activo
+                                self.current_focused_widget.configure(border_color="#00FF00", border_width=3)
+                            else:
+                                # Volver a color de foco normal
+                                self.current_focused_widget.configure(border_color=COLOR_FOCUS, border_width=2)
                         elif isinstance(self.current_focused_widget, ctk.CTkComboBox):
                             # Abrir combobox estándar si expone método interno
                             try:
@@ -640,6 +721,11 @@ class GamingApp(ctk.CTk):
         elif button == 'B':
             # B: cerrar dropdown WideComboBox si está abierto, si no volver al sidebar
             if self.focus_zone == 'content':
+                # Si hay slider activo, desactivarlo primero
+                if self.slider_active:
+                    self.slider_active = False
+                    return
+                # Si hay WideComboBox abierto, cerrarlo
                 if isinstance(self.current_focused_widget, WideComboBox):
                     try:
                         if self.current_focused_widget.is_open():
@@ -754,6 +840,16 @@ class GamingApp(ctk.CTk):
             elif direction in ['up', 'left']:
                 self._navigate_sidebar(-1)
         elif self.focus_zone == 'content':
+            # Si hay un slider activo, izquierda/derecha ajustan su valor
+            if self.slider_active and isinstance(self.current_focused_widget, ctk.CTkSlider):
+                if direction in ['left', 'right']:
+                    self._adjust_slider(direction)
+                    return
+                # Arriba/abajo desactivan el slider y navegan
+                elif direction in ['up', 'down']:
+                    self.slider_active = False
+                    # Continuar con navegación normal
+            
             # Interceptar navegación dentro de WideComboBox abierto
             if isinstance(self.current_focused_widget, WideComboBox) and self.current_focused_widget.is_open():
                 if direction in ['up', 'down']:
@@ -797,6 +893,63 @@ class GamingApp(ctk.CTk):
                 self._navigate_content(1)
             elif direction in ['up', 'left']:
                 self._navigate_content(-1)
+    
+    def _adjust_slider(self, direction):
+        """Ajusta el valor de un slider activo.
+        
+        Args:
+            direction: 'left' (decrementar) o 'right' (incrementar)
+        """
+        if not isinstance(self.current_focused_widget, ctk.CTkSlider):
+            return
+        
+        slider = self.current_focused_widget
+        try:
+            # Obtener valores del slider
+            current_value = slider.get()
+            min_value = slider.cget("from_")
+            max_value = slider.cget("to")
+            steps = slider.cget("number_of_steps")
+            
+            # Calcular step size
+            if steps and steps > 0:
+                step_size = (max_value - min_value) / steps
+            else:
+                # Si no hay steps definidos, usar 1% del rango
+                step_size = (max_value - min_value) * 0.01
+            
+            # Ajustar valor
+            if direction == 'right':
+                new_value = min(current_value + step_size, max_value)
+            else:  # 'left'
+                new_value = max(current_value - step_size, min_value)
+            
+            # Aplicar nuevo valor usando la variable vinculada si existe
+            variable = slider.cget("variable")
+            if variable:
+                try:
+                    variable.set(new_value)
+                except Exception as var_error:
+                    self.log('ERROR', f"Error actualizando variable: {var_error}")
+                    # Fallback: usar set() directamente
+                    slider.set(new_value)
+            else:
+                # Si no hay variable, usar set() directamente
+                slider.set(new_value)
+            
+            # Forzar actualización visual
+            slider.update_idletasks()
+            
+            # Ejecutar callback manualmente si existe
+            callback = slider.cget("command")
+            if callback and callable(callback):
+                try:
+                    callback(new_value)
+                except Exception as cb_error:
+                    self.log('ERROR', f"Error ejecutando callback del slider: {cb_error}")
+            
+        except Exception as e:
+            self.log('ERROR', f"Error ajustando slider: {e}")
     
     def _navigate_sidebar(self, direction):
         """Navega entre botones del sidebar.
@@ -1199,6 +1352,47 @@ class GamingApp(ctk.CTk):
             widget.bind("<FocusIn>", on_focus_in)
             widget.bind("<FocusOut>", on_focus_out)
     
+    def enable_click_to_focus(self, widget):
+        """Habilita foco al hacer clic en el widget.
+        
+        Args:
+            widget: Widget al que añadir funcionalidad click-to-focus
+        """
+        # Los sliders NO deben tener click-to-focus directo
+        # Requieren Enter/A para activarse
+        if isinstance(widget, ctk.CTkSlider):
+            return
+            
+        def on_click(e):
+            try:
+                # Establecer foco en el widget
+                if hasattr(widget, 'focus'):
+                    widget.focus()
+                # Actualizar widget con foco actual
+                self.current_focused_widget = widget
+                # Actualizar zona de foco a 'content' si no está en sidebar
+                if self.focus_zone == 'sidebar':
+                    self.focus_zone = 'content'
+            except Exception as ex:
+                self.log('ERROR', f"Error en click-to-focus: {ex}")
+        
+        if hasattr(widget, 'bind'):
+            widget.bind("<Button-1>", on_click, add="+")
+    
+    def setup_widget_focus(self, widget):
+        """Configura un widget con indicador de foco y click-to-focus.
+        
+        Para sliders: solo añade indicador de foco (sin click-to-focus)
+        Para otros widgets: añade ambos
+        
+        Args:
+            widget: Widget a configurar
+        """
+        self.add_focus_indicator(widget)
+        # Los sliders solo tienen indicador, no click-to-focus
+        if not isinstance(widget, ctk.CTkSlider):
+            self.enable_click_to_focus(widget)
+    
     def auto_scroll_to_widget(self, widget):
         """Hace scroll automático para traer widget enfocado a la vista.
         
@@ -1398,6 +1592,10 @@ class GamingApp(ctk.CTk):
             # Establecer nuevo widget enfocado
             self.current_focused_widget = widget
             
+            # Desactivar slider si estaba activo y cambiamos de widget
+            if self.slider_active and not isinstance(widget, ctk.CTkSlider):
+                self.slider_active = False
+            
             # Aplicar efecto visual de foco
             if hasattr(widget, 'configure'):
                 try:
@@ -1560,7 +1758,7 @@ class GamingApp(ctk.CTk):
             self.nav_buttons[key] = btn
             
             # Añadir efectos visuales
-            self.add_focus_indicator(btn)
+            self.setup_widget_focus(btn)
         
         # Añadir indicador de gamepad al final
         self.gamepad_indicator_frame = ctk.CTkFrame(
@@ -1790,6 +1988,7 @@ class GamingApp(ctk.CTk):
             command=self.on_gpu_type_changed
         )
         self.gpu_radio_amd.pack(side="left", padx=10)
+        self.setup_widget_focus(self.gpu_radio_amd)
         
         self.gpu_radio_nvidia = ctk.CTkRadioButton(
             self.gpu_radio_frame,
@@ -1800,6 +1999,7 @@ class GamingApp(ctk.CTk):
             command=self.on_gpu_type_changed
         )
         self.gpu_radio_nvidia.pack(side="left", padx=10)
+        self.setup_widget_focus(self.gpu_radio_nvidia)
         
         # (DLL Injection movido a sección avanzada)
         
@@ -1831,6 +2031,7 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=FONT_NORMAL)
         )
         self.upscaler_combo.pack(padx=15, pady=(0, 10), fill="x")
+        self.setup_widget_focus(self.upscaler_combo)
         self.upscaler_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
         
         # === 3. MODO DE REESCALADO ===
@@ -1861,6 +2062,7 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=13)
         )
         self.upscale_mode_combo.pack(padx=15, pady=(0, 10), fill="x")
+        self.setup_widget_focus(self.upscale_mode_combo)
         self.upscale_mode_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
         
         # === 4. FRAME GENERATION ===
@@ -1892,6 +2094,7 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=FONT_NORMAL)
         )
         self.fg_combo.pack(padx=15, pady=(0, 10), fill="x")
+        self.setup_widget_focus(self.fg_combo)
         self.fg_mode_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
         
         # Actualizar opciones según configuración (después de crear el combobox)
@@ -1927,6 +2130,7 @@ class GamingApp(ctk.CTk):
             command=self.on_fps_changed
         )
         self.fps_slider.pack(padx=15, pady=(0, 10), fill="x")
+        self.setup_widget_focus(self.fps_slider)
         self.fps_limit_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
         
         # === 6. SHARPNESS ===
@@ -1963,6 +2167,7 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=FONT_NORMAL)
         )
         self.dll_combo.pack(padx=15, pady=(0, 12), fill="x")
+        self.setup_widget_focus(self.dll_combo)
         self.dll_name_var.trace_add('write', lambda *a: (self._on_advanced_changed()))
 
         # Antialiasing control (Native AA vs OptiScaler)
@@ -1992,6 +2197,7 @@ class GamingApp(ctk.CTk):
             command=self._on_advanced_changed
         )
         self.aa_native_radio.pack(side="left", padx=(0, 20))
+        self.setup_widget_focus(self.aa_native_radio)
         self.aa_optiscaler_radio = ctk.CTkRadioButton(
             aa_opts,
             text="OptiScaler gestiona AA",
@@ -2001,6 +2207,7 @@ class GamingApp(ctk.CTk):
             command=self._on_advanced_changed
         )
         self.aa_optiscaler_radio.pack(side="left")
+        self.setup_widget_focus(self.aa_optiscaler_radio)
 
         # Mipmap Bias control
         mipmap_frame = ctk.CTkFrame(adv_wrap, fg_color="#1a1a1a", corner_radius=8)
@@ -2032,6 +2239,7 @@ class GamingApp(ctk.CTk):
             command=self._on_mipmap_bias_changed
         )
         self.mipmap_slider.pack(padx=15, pady=(0, 10), fill="x")
+        self.setup_widget_focus(self.mipmap_slider)
         self.mipmap_bias_var.trace_add('write', lambda *a: (self._on_advanced_changed()))
 
         # Quality Overrides placeholder
@@ -2062,6 +2270,7 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=FONT_SMALL, weight="bold")
         )
         reset_adv.pack(pady=(4, 10), padx=10, anchor="e")
+        self.setup_widget_focus(reset_adv)
 
         # === Sección 3 (placeholder): HDR Settings ===
         self.hdr_section = CollapsibleSection(config_scroll, title="🌈 HDR Settings", collapsed=True)
@@ -2113,6 +2322,7 @@ class GamingApp(ctk.CTk):
             command=self.on_sharpness_changed
         )
         self.sharpness_slider.pack(padx=15, pady=(0, 10), fill="x")
+        self.setup_widget_focus(self.sharpness_slider)
         self.sharpness_var.trace_add('write', lambda *a: (self.mark_preset_custom(), self.update_custom_state()))
         
         # Aplicar focus indicators a todos los widgets enfocables del panel de configuración
@@ -2161,7 +2371,7 @@ class GamingApp(ctk.CTk):
         def apply_recursive(widget):
             # Aplicar a widget actual si es enfocable
             if isinstance(widget, focusable_types):
-                self.add_focus_indicator(widget)
+                self.setup_widget_focus(widget)
             
             # Buscar en hijos recursivamente
             try:
@@ -2227,6 +2437,7 @@ class GamingApp(ctk.CTk):
                 font=ctk.CTkFont(size=24)
             )
         self.scan_btn.grid(row=0, column=0, sticky="w", padx=(0, 10))
+        self.setup_widget_focus(self.scan_btn)
         
         # Botón filtro
         if self.icons.get("filter"):
@@ -2254,6 +2465,7 @@ class GamingApp(ctk.CTk):
                 font=ctk.CTkFont(size=20)
             )
         self.btn_filter.grid(row=0, column=1, sticky="w", padx=(0, 10))
+        self.setup_widget_focus(self.btn_filter)
         
         # Contador
         self.games_counter_label = ctk.CTkLabel(
@@ -2282,6 +2494,7 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=14, weight="bold")
         )
         self.apply_btn.pack(side="left", padx=5)
+        self.setup_widget_focus(self.apply_btn)
         
         self.remove_btn = ctk.CTkButton(
             btn_actions,
@@ -2293,6 +2506,7 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=14, weight="bold")
         )
         self.remove_btn.pack(side="left", padx=5)
+        self.setup_widget_focus(self.remove_btn)
         
         self.open_folder_btn = ctk.CTkButton(
             btn_actions,
@@ -2304,6 +2518,7 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=14, weight="bold")
         )
         self.open_folder_btn.pack(side="left", padx=5)
+        self.setup_widget_focus(self.open_folder_btn)
         
         # Frame para barra de progreso y estado (inicialmente oculto)
         # Mejora #7: Altura variable (empezamos con altura compacta)

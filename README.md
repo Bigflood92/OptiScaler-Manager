@@ -1,6 +1,6 @@
 # 🎮 OptiScaler Manager
 
-![Version](https://img.shields.io/badge/version-2.3.0-blue)
+![Version](https://img.shields.io/badge/version-2.3.1-blue)
 ![Python](https://img.shields.io/badge/python-3.12-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-orange)
@@ -120,7 +120,7 @@
 
 **[📦 Descargar última versión](https://github.com/Bigflood92/OptiScaler-Manager/releases/latest)**
 
-1. Descarga `Gestor OptiScaler V2.3.exe`
+1. Descarga `Gestor OptiScaler V2.3.1.exe`
 2. Doble clic (Windows solicitará permisos de administrador automáticamente)
 3. Se crearán las carpetas en `Config Optiscaler Gestor/` junto al .exe
 4. ¡Listo para usar!
@@ -160,7 +160,7 @@ python -m src.main
 
 ### Primera Ejecución
 
-1. Ejecuta `Gestor OptiScaler V2.3.exe` (solicitará permisos de administrador automáticamente)
+1. Ejecuta `Gestor OptiScaler V2.3.1.exe` (solicitará permisos de administrador automáticamente)
 2. Aparecerá un tutorial de bienvenida en el primer inicio
 3. Ve a **Ajustes de la App** → **Gestionar Carpetas de Escaneo**
 4. Añade rutas donde tienes juegos instalados (ej: `D:\Juegos`, `C:\XboxGames`)
@@ -240,7 +240,7 @@ pip install nuitka ordered-set zstandard
 # Build con elevación UAC automática
 ./build_nuitka_admin.ps1
 
-# El ejecutable queda en dist/Gestor OptiScaler V2.3.exe
+# El ejecutable queda en dist/Gestor OptiScaler V2.3.1.exe
 ```
 
 ### Alternativa: PyInstaller (obsoleto, no recomendado)

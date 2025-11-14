@@ -7,6 +7,52 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [2.3.1] - 2025-11-14
+
+### Añadido
+- **🖱️ Click-to-Focus Completo**
+  - Click para enfocar: Botones, comboboxes, checkboxes y campos reciben foco al hacer clic
+  - Navegación mouse-gamepad integrada: Cambio fluido entre ambos métodos
+  - Función `enable_click_to_focus()`: Binding automático de clic en widgets
+  - Función `setup_widget_focus()`: Configura indicador + click-to-focus en un solo paso
+
+- **🎚️ Sistema de Sliders Mejorado**
+  - Activación explícita requerida: Presiona Enter/A para activar slider antes de ajustar
+  - Indicadores visuales claros:
+    - 🔵 Borde azul (2px): Slider enfocado pero inactivo
+    - 🟢 Borde verde brillante (3px): Slider activo para ajuste
+  - Ajuste con ←/→: Controla el valor solo cuando está activo (verde)
+  - Desactivación automática: Al navegar (↑/↓), cambiar widget, o presionar B
+  - Función `_adjust_slider()`: Maneja incremento/decremento con step_size correcto
+
+- **📊 Detalles de Instalación Mejorados**
+  - Lectura de OptiScaler.ini: Ahora lee la configuración real del juego
+  - Sección nueva: "⚙️ CONFIGURACIÓN (OptiScaler.ini)" muestra:
+    - Estado exacto de Frame Generation (OptiFG/Nukem's/Desactivado)
+    - Upscaler configurado (DX12/DX11)
+    - Modo de escalado activo
+    - Nivel de nitidez (sharpness)
+    - Configuración de GPU spoofing
+  - Validación de Nukem's DLL cuando fg_type='nukems'
+
+### Corregido
+- Sliders ya no reciben foco directo con clic (requieren activación con Enter/A)
+- Actualización del valor del slider ahora funciona correctamente con ←/→
+- Variable vinculada del slider se sincroniza perfectamente
+- Labels de sliders (FPS, Sharpness, Mipmap) se actualizan en tiempo real
+- Ventana de detalles muestra estado real leyendo OptiScaler.ini en lugar de solo verificar archivos
+
+### Mejorado
+- Logs más limpios: Eliminados mensajes DEBUG excesivos de click-to-focus y sliders
+- Sincronización de sliders: Actualiza variable vinculada + callback manual para garantizar actualización visual
+- Sistema de foco unificado: `setup_widget_focus()` aplica todas las configuraciones necesarias
+
+### Técnico
+- Nueva variable: `self.slider_active` rastrea estado de sliders
+- Navegación mejorada: Intercepta ←/→ cuando slider está activo
+- Desactivación inteligente: Múltiples puntos de desactivación automática
+- Actualización visual forzada: `update_idletasks()` garantiza renderizado inmediato
+
 ## [2.3.0] - 2025-11-14
 
 ### Añadido
