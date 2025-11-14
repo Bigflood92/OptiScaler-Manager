@@ -65,9 +65,6 @@ jobs:
           files: |
             dist/Gestor.OptiScaler.V*.exe
             dist/Gestor.OptiScaler.V*.exe.sha256
-          body: |
-            OptiScaler Manager ${{ github.ref_name }}
-
-            Notas de la versión: ver CHANGELOG.md (sección correspondiente) para la lista completa de cambios.
+          body_path: RELEASE_NOTES_${{ github.ref_name }}.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
