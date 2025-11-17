@@ -1952,11 +1952,11 @@ class GamingApp(ctk.CTk):
             text_color="#00FF00"
         ).pack(side="left", padx=10)
         
-        # Crear combobox primero (con valores por defecto)
+        # Crear combobox primero (con valores base, sin Nukem)
         self.fg_combo = WideComboBox(
             fg_frame,
             variable=self.fg_mode_var,
-            values=["Desactivado", "OptiFG", "FSR-FG (Nukem's DLSSG)"],
+            values=["Desactivado", "OptiFG"],  # Solo valores base
             width=300,
             font=ctk.CTkFont(size=FONT_NORMAL)
         )
@@ -6179,31 +6179,33 @@ Licencia: Open Source
         if not hasattr(self, 'fg_combo'):
             return
         
-        # Verificar si dlssg-to-fsr3 está instalado EN EL JUEGO SELECCIONADO
-        nukem_installed = False
+        # Verificar si dlssg-to-fsr3 está SELECCIONADO en los ajustes
+        nukem_selected = False
         
-        # Obtener el juego seleccionado
-        selected_index = None
-        for widget in self.games_scrollable_frame.winfo_children():
-            if isinstance(widget, ctk.CTkFrame):
-                if hasattr(widget, 'radio') and widget.radio.get() == 1:
-                    selected_index = self.games_scrollable_frame.winfo_children().index(widget)
-                    break
+        # Verificar si hay una ruta configurada para el mod de Nukem
+        nukem_path = ""
+        if hasattr(self, 'nukem_path_var'):
+            nukem_path = self.nukem_path_var.get().strip()
+        else:
+            # Si aún no existe la variable, leer del config
+            nukem_path = self.config.get("nukem_mod_path", "").strip()
         
-        # Verificar si el mod Nukem está instalado en el juego seleccionado
-        if selected_index is not None and selected_index < len(self.games):
-            game_path = self.games[selected_index].get('path', '')
-            if game_path:
-                # Verificar si existe dlssg_to_fsr3_amd_is_better.dll
-                nukem_dll = os.path.join(game_path, 'dlssg_to_fsr3_amd_is_better.dll')
-                nukem_installed = os.path.exists(nukem_dll)
+        # Solo mostrar la opción si hay una ruta configurada y existe
+        if nukem_path and os.path.exists(nukem_path):
+            nukem_selected = True
+            self.log('INFO', f"✓ Mod Nukem detectado en: {nukem_path}")
+        else:
+            self.log('INFO', f"✗ Mod Nukem NO configurado (ruta vacía o no existe: '{nukem_path}')")
         
         # Opciones base (siempre disponibles con OptiScaler)
         options = ["Desactivado", "OptiFG"]
         
-        # Añadir FSR-FG solo si el mod está instalado en el juego
-        if nukem_installed:
+        # Añadir FSR-FG solo si el mod está seleccionado en ajustes
+        if nukem_selected:
             options.append("FSR-FG (Nukem's DLSSG)")
+            self.log('INFO', f"✓ Añadiendo opción FSR-FG al dropdown")
+        else:
+            self.log('INFO', f"✗ NO se añade opción FSR-FG (mod no configurado)")
         
         # Actualizar combobox
         self.fg_combo.configure(values=options)
