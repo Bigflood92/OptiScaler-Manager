@@ -7,7 +7,24 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
 
-## [2.4.0] - 2025-11-17
+## [2.4.1] - 2025-01-17
+
+### Corregido
+- **🎮 Ventana de Detalles Rediseñada**: Reemplazada ventana de detalles de instalación con componentes CustomTkinter
+  - Creado nuevo archivo `installation_details_window.py` con clase `InstallationDetailsWindow`
+  - Implementado `CTkScrollableFrame` para contenido desplazable (optimizado para 700x600px)
+  - Estética consistente: headers #1a1a1a, fondo #0a0a0a, acentos #00BFFF
+  - Secciones organizadas: Core → Config → Adicionales → DLSSG → OptiPatcher → Diagnóstico
+  - Simplificado `show_installation_details()` de 330 líneas a 3 líneas
+- **🔧 Frame Generation Dropdown**: Solo muestra "FSR-FG (Nukem's)" cuando el mod está instalado en el juego seleccionado
+  - Actualizado `update_fg_options()` para verificar existencia de `dlssg_to_fsr3_amd_is_better.dll`
+  - Corregida lógica de detección: comprueba en el juego activo, no solo en configuración
+
+### Mejorado
+- Soporte para pantallas pequeñas (handheld PC, Steam Deck, ROG Ally)
+- Experiencia de usuario en dispositivos portátiles
+
+## [2.4.0] - 2025-01-17
 
 ### Añadido
 - **� Auto-Actualización de la Aplicación**

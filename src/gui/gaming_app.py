@@ -35,6 +35,7 @@ from ..core.github import GitHubClient
 from ..utils.logging import LogManager
 from ..config.paths import MOD_SOURCE_DIR, OPTISCALER_DIR, DLSSG_TO_FSR3_DIR, SEVEN_ZIP_PATH, APP_DIR, get_config_dir
 from .components.windows.welcome_tutorial import WelcomeTutorial, should_show_tutorial
+from .components.windows.installation_details_window import InstallationDetailsWindow
 from .components.collapsible_section import CollapsibleSection
 from .components.wide_combobox import WideComboBox
 
@@ -514,332 +515,14 @@ class GamingApp(ctk.CTk):
         if self.gamepad_connected:
             self.after(50, self.process_gamepad_input)
 
+    
     def show_installation_details(self, game_path: str, game_name: str, status_text: str):
-        """Muestra detalles de archivos del mod en un juego."""
-        import configparser
+        """Muestra detalles de archivos del mod en un juego usando ventana modal CustomTkinter."""
+        InstallationDetailsWindow(self, game_path, game_name, status_text)
         
-        # Analizar archivos instalados
-        details = []
-        details.append(f"📁 Juego: {game_name}")
-        details.append(f"📂 Ruta: {game_path}")
-        details.append(f"📊 Estado: {status_text}")
-        details.append("")
-        details.append("═" * 60)
-        details.append("🔍 ARCHIVOS CORE DE OPTISCALER:")
-        details.append("═" * 60)
-        
-        # Archivos core requeridos
-        # OptiScaler.dll es renombrado a dxgi/d3d11/d3d12/winmm, así que verificamos las versiones renombradas
-        core_dll_names = ['dxgi.dll', 'd3d11.dll', 'd3d12.dll', 'winmm.dll']
-        core_dll_found = False
-        
-        for dll_name in core_dll_names:
-            file_path = os.path.join(game_path, dll_name)
-            if os.path.exists(file_path):
-                try:
-                    size = os.path.getsize(file_path) / 1024  # KB
-                    details.append(f"  ✅ {dll_name} ({size:.1f} KB)")
-                    core_dll_found = True
-                except:
-                    details.append(f"  ✅ {dll_name}")
-                    core_dll_found = True
-        
-        if not core_dll_found:
-            details.append(f"  ❌ OptiScaler.dll - NO ENCONTRADO (debe estar renombrado como dxgi/d3d11/d3d12/winmm)")
-        
-        # Verificar OptiScaler.ini
-        ini_path = os.path.join(game_path, 'OptiScaler.ini')
-        ini_exists = os.path.exists(ini_path)
-        
-        if ini_exists:
-            try:
-                size = os.path.getsize(ini_path) / 1024  # KB
-                details.append(f"  ✅ OptiScaler.ini ({size:.1f} KB)")
-            except:
-                details.append(f"  ✅ OptiScaler.ini")
-        else:
-            details.append(f"  ❌ OptiScaler.ini - NO ENCONTRADO")
-            core_dll_found = False  # Si falta el .ini, el core está incompleto
-        
-        # ========== NUEVA SECCIÓN: CONFIGURACIÓN DEL INI ==========
-        if ini_exists:
-            details.append("")
-            details.append("═" * 60)
-            details.append("⚙️ CONFIGURACIÓN (OptiScaler.ini):")
-            details.append("═" * 60)
-            
-            try:
-                config = configparser.ConfigParser()
-                config.read(ini_path)
-                
-                # Frame Generation
-                fg_type = config.get('FrameGen', 'fgtype', fallback='auto').lower()
-                optifg_enabled = config.get('OptiFG', 'enabled', fallback='false').lower()
-                
-                if fg_type == 'optifg' and optifg_enabled == 'true':
-                    details.append("  ✅ Frame Generation: ACTIVADO (OptiFG)")
-                elif fg_type == 'nukems':
-                    # Verificar si dlssg-to-fsr3 está instalado
-                    nukem_dll = os.path.join(game_path, 'dlssg_to_fsr3_amd_is_better.dll')
-                    if os.path.exists(nukem_dll):
-                        details.append("  ✅ Frame Generation: ACTIVADO (Nukem's DLSSG-to-FSR3)")
-                    else:
-                        details.append("  ⚠️ Frame Generation: Configurado como Nukem's pero DLL no encontrado")
-                elif fg_type == 'nofg':
-                    details.append("  ⚪ Frame Generation: DESACTIVADO")
-                else:
-                    details.append(f"  ℹ️ Frame Generation: {fg_type.upper()}")
-                
-                # Upscaler
-                dx12_upscaler = config.get('Upscalers', 'dx12upscaler', fallback='auto')
-                dx11_upscaler = config.get('Upscalers', 'dx11upscaler', fallback='auto')
-                details.append(f"  📊 Upscaler DX12: {dx12_upscaler.upper()}")
-                details.append(f"  📊 Upscaler DX11: {dx11_upscaler.upper()}")
-                
-                # Upscale Mode
-                upscale_mode = config.get('Upscale', 'mode', fallback='auto')
-                details.append(f"  📐 Modo de escalado: {upscale_mode.upper()}")
-                
-                # Sharpness
-                sharpness = config.get('Sharpness', 'sharpness', fallback='auto')
-                if sharpness != 'auto':
-                    details.append(f"  🔪 Nitidez: {sharpness}")
-                
-                # GPU Spoofing
-                dxgi_spoofing = config.get('Spoofing', 'dxgi', fallback='auto')
-                if dxgi_spoofing != 'auto':
-                    gpu_type = "NVIDIA" if dxgi_spoofing.lower() == 'true' else "AMD/Intel"
-                    details.append(f"  🎭 GPU Spoofing: {gpu_type}")
-                
-                # ========== NUEVAS SECCIONES DE CONFIGURACIÓN ==========
-                
-                # HDR Settings
-                auto_hdr = config.get('HDR', 'EnableAutoHDR', fallback='true').lower()
-                nvidia_override = config.get('HDR', 'NvidiaOverride', fallback='false').lower()
-                hdr_range = config.get('HDR', 'HDRRGBMaxRange', fallback='100.0')
-                details.append(f"  ✨ Auto HDR: {'ACTIVADO' if auto_hdr == 'true' else 'DESACTIVADO'}")
-                if nvidia_override == 'true':
-                    details.append(f"  🎮 NVIDIA HDR Override: ACTIVADO")
-                details.append(f"  💡 HDR Max Range: {hdr_range} nits")
-                
-                # Logging Settings
-                log_level_map = {'0': 'Off', '1': 'Error', '2': 'Warn', '3': 'Info', '4': 'Debug', '5': 'Trace'}
-                log_level = config.get('Logging', 'LogLevel', fallback='3')
-                open_console = config.get('Logging', 'OpenConsole', fallback='false').lower()
-                log_to_file = config.get('Logging', 'LogToFile', fallback='true').lower()
-                details.append(f"  📊 Nivel de Log: {log_level_map.get(log_level, log_level)}")
-                details.append(f"  🖥️ Consola: {'ACTIVADA' if open_console == 'true' else 'DESACTIVADA'}")
-                details.append(f"  💾 Log a archivo: {'ACTIVADO' if log_to_file == 'true' else 'DESACTIVADO'}")
-                
-                # Quality Overrides
-                quality_override = config.get('QualityOverrides', 'QualityRatioOverrideEnabled', fallback='false').lower()
-                if quality_override == 'true':
-                    details.append(f"  🎯 Quality Override: ACTIVADO")
-                    quality_ratio = config.get('QualityOverrides', 'Quality', fallback='1.5')
-                    balanced_ratio = config.get('QualityOverrides', 'Balanced', fallback='1.7')
-                    performance_ratio = config.get('QualityOverrides', 'Performance', fallback='2.0')
-                    ultra_ratio = config.get('QualityOverrides', 'UltraPerformance', fallback='3.0')
-                    details.append(f"     Quality: {quality_ratio}, Balanced: {balanced_ratio}, Performance: {performance_ratio}, Ultra: {ultra_ratio}")
-                
-                # CAS Sharpening
-                cas_enabled = config.get('CAS', 'Enabled', fallback='false').lower()
-                if cas_enabled == 'true':
-                    cas_type = config.get('CAS', 'Type', fallback='1')
-                    cas_sharpness = config.get('CAS', 'Sharpness', fallback='0.5')
-                    cas_type_name = 'RCAS' if cas_type == '1' else 'CAS'
-                    details.append(f"  ✨ CAS Sharpening: ACTIVADO ({cas_type_name}, Nitidez: {cas_sharpness})")
-                
-                # NVNGX Spoofing
-                nvngx_dx12 = config.get('Nvngx', 'Dx12Spoofing', fallback='true').lower()
-                nvngx_dx11 = config.get('Nvngx', 'Dx11Spoofing', fallback='true').lower()
-                nvngx_vulkan = config.get('Nvngx', 'VulkanSpoofing', fallback='true').lower()
-                enabled_apis = []
-                if nvngx_dx12 == 'true': enabled_apis.append('DX12')
-                if nvngx_dx11 == 'true': enabled_apis.append('DX11')
-                if nvngx_vulkan == 'true': enabled_apis.append('Vulkan')
-                details.append(f"  🎭 NVNGX Spoofing: {', '.join(enabled_apis) if enabled_apis else 'DESACTIVADO'}")
-                
-                # Overlay Settings
-                overlay_menu = config.get('Menu', 'OverlayMenu', fallback='auto').lower()
-                overlay_map = {'auto': 'Desactivado', 'basic': 'Básico', 'true': 'Completo'}
-                overlay_status = overlay_map.get(overlay_menu, overlay_menu.upper())
-                details.append(f"  📊 Overlay: {overlay_status}")
-                
-                if overlay_menu in ['basic', 'true']:
-                    # Mostrar opciones adicionales del overlay si está activado
-                    overlay_fps = config.get('Menu', 'OverlayShowFPS', fallback='true').lower()
-                    overlay_frametime = config.get('Menu', 'OverlayShowFrameTime', fallback='true').lower()
-                    overlay_messages = config.get('Menu', 'OverlayShowMessages', fallback='true').lower()
-                    overlay_position = config.get('Menu', 'OverlayPosition', fallback='0')
-                    overlay_scale = config.get('Menu', 'OverlayScale', fallback='1.00')
-                    overlay_font_size = config.get('Menu', 'OverlayFontSize', fallback='14')
-                    
-                    position_map = {
-                        '0': 'Superior Izquierda', '1': 'Superior Centro', '2': 'Superior Derecha',
-                        '3': 'Centro Izquierda', '4': 'Centro', '5': 'Centro Derecha',
-                        '6': 'Inferior Izquierda', '7': 'Inferior Centro', '8': 'Inferior Derecha'
-                    }
-                    
-                    metrics = []
-                    if overlay_fps == 'true': metrics.append('FPS')
-                    if overlay_frametime == 'true': metrics.append('Frame Time')
-                    if overlay_messages == 'true': metrics.append('Messages')
-                    
-                    details.append(f"     Métricas: {', '.join(metrics) if metrics else 'Ninguna'}")
-                    details.append(f"     Posición: {position_map.get(overlay_position, overlay_position)}")
-                    scale_percent = float(overlay_scale) * 100
-                    details.append(f"     Escala: {scale_percent:.0f}%, Fuente: {overlay_font_size}px")
-                
-            except Exception as e:
-                details.append(f"  ⚠️ Error al leer configuración: {e}")
-        
-        # Archivos adicionales de OptiScaler
-        details.append("")
-        details.append("═" * 60)
-        details.append("🔍 ARCHIVOS ADICIONALES DE OPTISCALER:")
-        details.append("═" * 60)
-        
-        # No incluir las DLLs core (dxgi, d3d11, d3d12, winmm) aquí ya que se revisaron arriba
-        additional_files = [
-            'amd_fidelityfx_dx12.dll', 'amd_fidelityfx_vk.dll',
-            'amd_fidelityfx_upscaler_dx12.dll', 'amd_fidelityfx_framegeneration_dx12.dll',
-            'libxess.dll', 'libxess_dx11.dll', 'nvngx.dll'
-        ]
-        
-        found_additional = []
-        for file in additional_files:
-            file_path = os.path.join(game_path, file)
-            if os.path.exists(file_path):
-                try:
-                    size = os.path.getsize(file_path) / 1024
-                    found_additional.append(f"  ✅ {file} ({size:.1f} KB)")
-                except:
-                    found_additional.append(f"  ✅ {file}")
-        
-        if found_additional:
-            details.extend(found_additional)
-        else:
-            details.append("  ℹ️ Ninguno encontrado")
-        
-        # Verificar carpetas
-        details.append("")
-        details.append("═" * 60)
-        details.append("🔍 CARPETAS DE RUNTIME:")
-        details.append("═" * 60)
-        
-        runtime_dirs = ['D3D12_Optiscaler', 'nvngx_dlss', 'DlssOverrides']
-        found_runtime = False
-        
-        for dir_name in runtime_dirs:
-            dir_path = os.path.join(game_path, dir_name)
-            if os.path.exists(dir_path) and os.path.isdir(dir_path):
-                try:
-                    file_count = len([f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))])
-                    details.append(f"  ✅ {dir_name}/ ({file_count} archivos)")
-                    found_runtime = True
-                except:
-                    details.append(f"  ✅ {dir_name}/")
-                    found_runtime = True
-        
-        if not found_runtime:
-            details.append("  ⚠️ No se encontraron carpetas de runtime")
-            details.append("     (Puede ser normal en versiones antiguas de OptiScaler)")
-            
-        # Verificar dlssg-to-fsr3
-        details.append("")
-        details.append("═" * 60)
-        details.append("🔍 DLSSG-TO-FSR3 (Nukem's):")
-        details.append("═" * 60)
-        
-        nukem_files = [
-            'dlssg_to_fsr3_amd_is_better.dll',
-            'dlssg_to_fsr3.ini'
-        ]
-        
-        found_nukem = []
-        for file in nukem_files:
-            file_path = os.path.join(game_path, file)
-            if os.path.exists(file_path):
-                try:
-                    size = os.path.getsize(file_path) / 1024
-                    found_nukem.append(f"  ✅ {file} ({size:.1f} KB)")
-                except:
-                    found_nukem.append(f"  ✅ {file}")
-        
-        if found_nukem:
-            details.extend(found_nukem)
-        else:
-            details.append("  ℹ️ No instalado")
-        
-        # === Verificar OptiPatcher ===
-        details.append("")
-        details.append("═" * 60)
-        details.append("🔍 OPTIPATCHER (PLUGIN ASI):")
-        details.append("═" * 60)
-        
-        plugins_dir = os.path.join(game_path, "plugins")
-        optipatcher_asi = os.path.join(plugins_dir, "OptiPatcher.asi")
-        
-        if os.path.exists(optipatcher_asi):
-            try:
-                size = os.path.getsize(optipatcher_asi) / 1024
-                details.append(f"  ✅ OptiPatcher.asi ({size:.1f} KB)")
-            except:
-                details.append(f"  ✅ OptiPatcher.asi")
-            
-            # Verificar si LoadAsiPlugins está habilitado
-            if ini_exists:
-                try:
-                    config = configparser.ConfigParser()
-                    config.read(ini_path)
-                    load_asi = config.get('Plugins', 'LoadAsiPlugins', fallback='false').lower()
-                    if load_asi == 'true':
-                        details.append("  ✅ LoadAsiPlugins: ACTIVADO")
-                    else:
-                        details.append("  ⚠️ LoadAsiPlugins: DESACTIVADO (OptiPatcher no se cargará)")
-                except:
-                    pass
-        else:
-            details.append("  ℹ️ No instalado")
-        
-        # Diagnóstico final
-        details.append("")
-        details.append("═" * 60)
-        details.append("📋 DIAGNÓSTICO:")
-        details.append("═" * 60)
-        
-        if core_dll_found:
-            details.append("  ✅ Archivos core: COMPLETO")
-        else:
-            details.append("  ❌ Archivos core: INCOMPLETO")
-        
-        if found_runtime or found_additional:
-            details.append("  ✅ Archivos adicionales: Encontrados")
-        else:
-            details.append("  ⚠️ Archivos adicionales: No encontrados")
-        
-        # Frame Generation diagnosis (basado en configuración)
-        if ini_exists:
-            try:
-                config = configparser.ConfigParser()
-                config.read(ini_path)
-                fg_type = config.get('FrameGen', 'fgtype', fallback='auto').lower()
-                optifg_enabled = config.get('OptiFG', 'enabled', fallback='false').lower()
-                
-                if fg_type == 'optifg' and optifg_enabled == 'true':
-                    details.append("  ✅ Frame Generation: Configurado (OptiFG)")
-                elif fg_type == 'nukems' and found_nukem:
-                    details.append("  ✅ Frame Generation: Configurado (Nukem's)")
-                elif fg_type == 'nofg':
-                    details.append("  ⚪ Frame Generation: Desactivado")
-                else:
-                    details.append("  ℹ️ Frame Generation: Modo automático")
-            except:
-                pass
-        
-        # Mostrar en messagebox
-        details_text = "\n".join(details)
-        messagebox.showinfo("Detalles de Instalación", details_text)
+    def show_installation_details(self, game_path: str, game_name: str, status_text: str):
+        """Muestra detalles de archivos del mod en un juego usando ventana modal CustomTkinter."""
+        InstallationDetailsWindow(self, game_path, game_name, status_text)
     
     def gamepad_button_press(self, button):
         """Maneja presión de botones del gamepad."""
@@ -6496,22 +6179,30 @@ Licencia: Open Source
         if not hasattr(self, 'fg_combo'):
             return
         
-        # Verificar si dlssg-to-fsr3 está configurado en ajustes
-        nukem_configured = False
-        if hasattr(self, 'nukem_path_var'):
-            # Si ya existe la variable, usarla
-            nukem_path = self.nukem_path_var.get().strip()
-            nukem_configured = bool(nukem_path and os.path.exists(nukem_path))
-        else:
-            # Si aún no existe (primera carga), leer del config
-            nukem_path = self.config.get("nukem_mod_path", "").strip()
-            nukem_configured = bool(nukem_path and os.path.exists(nukem_path))
+        # Verificar si dlssg-to-fsr3 está instalado EN EL JUEGO SELECCIONADO
+        nukem_installed = False
+        
+        # Obtener el juego seleccionado
+        selected_index = None
+        for widget in self.games_scrollable_frame.winfo_children():
+            if isinstance(widget, ctk.CTkFrame):
+                if hasattr(widget, 'radio') and widget.radio.get() == 1:
+                    selected_index = self.games_scrollable_frame.winfo_children().index(widget)
+                    break
+        
+        # Verificar si el mod Nukem está instalado en el juego seleccionado
+        if selected_index is not None and selected_index < len(self.games):
+            game_path = self.games[selected_index].get('path', '')
+            if game_path:
+                # Verificar si existe dlssg_to_fsr3_amd_is_better.dll
+                nukem_dll = os.path.join(game_path, 'dlssg_to_fsr3_amd_is_better.dll')
+                nukem_installed = os.path.exists(nukem_dll)
         
         # Opciones base (siempre disponibles con OptiScaler)
         options = ["Desactivado", "OptiFG"]
         
-        # Añadir FSR-FG solo si está configurado en ajustes
-        if nukem_configured:
+        # Añadir FSR-FG solo si el mod está instalado en el juego
+        if nukem_installed:
             options.append("FSR-FG (Nukem's DLSSG)")
         
         # Actualizar combobox

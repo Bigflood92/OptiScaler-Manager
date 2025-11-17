@@ -32,7 +32,7 @@ if (-not (Test-Path -Path "dist")) {
   --show-progress `
   --show-memory `
   --output-dir=dist `
-  --output-filename="Gestor OptiScaler V2.4.0.exe" `
+    --output-filename="Gestor OptiScaler V2.4.1.exe" `
   run.py
 
 if ($LASTEXITCODE -ne 0) {

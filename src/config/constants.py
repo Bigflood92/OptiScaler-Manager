@@ -9,7 +9,7 @@ import os
 
 # Application Info
 APP_TITLE = "Gestor OptiScaler"
-APP_VERSION = "2.4.0"
+APP_VERSION = "2.4.1"
 
 # Filenames / small paths (kept as strings for backwards compatibility)
 CONFIG_FILE = "injector_config.json"
