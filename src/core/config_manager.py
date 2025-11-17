@@ -6,8 +6,7 @@ import os
 import json
 from typing import Dict, Any
 
-from ..config.constants import CACHE_DIR
-from ..config.paths import MOD_SOURCE_DIR, CONFIG_FILE
+from ..config.paths import MOD_SOURCE_DIR, CONFIG_FILE, CACHE_DIR
 
 
 def get_config_path() -> str:

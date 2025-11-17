@@ -17,13 +17,16 @@ from ..config.constants import (
     NUKEM_API_URL,
     NUKEM_REPO_OWNER,
     NUKEM_REPO_NAME,
-    CACHE_DIR
+    OPTIPATCHER_API_URL,
+    OPTIPATCHER_REPO_OWNER,
+    OPTIPATCHER_REPO_NAME
 )
 from ..config.paths import (
     MOD_SOURCE_DIR,
     OPTISCALER_DIR,
     DLSSG_TO_FSR3_DIR,
-    SEVEN_ZIP_PATH
+    SEVEN_ZIP_PATH,
+    CACHE_DIR
 )
 from ..utils.error_handling import error_handler, FSRException
 from ..utils.paths import normalize_path, create_directory
@@ -36,7 +39,7 @@ class GitHubClient:
         
         Args:
             logger: Optional logging function to use
-            repo_type: 'optiscaler' or 'nukem' to select which repository to target
+            repo_type: 'optiscaler', 'nukem', or 'optipatcher' to select which repository to target
         """
         self.logger = logger or print
         self.session = requests.Session()
@@ -50,6 +53,10 @@ class GitHubClient:
             self.api_base = NUKEM_API_URL
             self.owner = NUKEM_REPO_OWNER
             self.repo = NUKEM_REPO_NAME
+        elif repo_type == "optipatcher":
+            self.api_base = OPTIPATCHER_API_URL
+            self.owner = OPTIPATCHER_REPO_OWNER
+            self.repo = OPTIPATCHER_REPO_NAME
         else:  # optiscaler por defecto
             self.api_base = GITHUB_API_URL
             self.owner = GITHUB_REPO_OWNER
@@ -702,6 +709,109 @@ class GitHubClient:
             
         except Exception as e:
             error_msg = f"Error al descargar desde archivo fuente: {e}"
+            self.logger('ERROR', error_msg)
+            if progress_callback:
+                progress_callback(0, 1, True, f"Error: {e}")
+            raise FSRException(error_msg)
+    
+    def download_optipatcher(
+        self,
+        destination_path: str,
+        progress_callback: Optional[Callable] = None
+    ) -> bool:
+        """Descarga OptiPatcher.asi desde el repositorio oficial.
+        
+        Args:
+            destination_path: Ruta donde guardar OptiPatcher.asi
+            progress_callback: Callback opcional para progreso
+            
+        Returns:
+            bool: True si fue exitoso
+            
+        Raises:
+            FSRException: Si la descarga falla
+        """
+        try:
+            # Crear cliente para repositorio OptiPatcher
+            optipatcher_client = GitHubClient(
+                logger=self.logger,
+                repo_type="optipatcher"
+            )
+            
+            # Obtener último release
+            self.logger('INFO', "Obteniendo última versión de OptiPatcher...")
+            release = optipatcher_client.get_latest_release(use_cache=False)
+            
+            version = release.get('tag_name', 'unknown')
+            self.logger('INFO', f"Versión de OptiPatcher: {version}")
+            
+            # Buscar asset OptiPatcher.asi (puede tener versión en el nombre)
+            asset = None
+            for a in release.get('assets', []):
+                # Buscar cualquier archivo .asi
+                if a['name'].endswith('.asi'):
+                    asset = a
+                    self.logger('INFO', f"Encontrado archivo ASI: {a['name']}")
+                    break
+            
+            if not asset:
+                error_msg = "No se encontró archivo .asi en el release"
+                self.logger('ERROR', error_msg)
+                raise FSRException(error_msg)
+            
+            download_url = asset['browser_download_url']
+            expected_size = asset['size']
+            original_filename = asset['name']
+            
+            self.logger('INFO', f"Descargando {original_filename} desde {download_url}...")
+            
+            # Descargar archivo
+            response = optipatcher_client.session.get(download_url, stream=True)
+            response.raise_for_status()
+            
+            # Crear directorio si no existe
+            os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+            
+            downloaded = 0
+            with open(destination_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        
+                        if progress_callback:
+                            progress = min(downloaded / expected_size, 1.0) if expected_size > 0 else 0
+                            progress_callback(
+                                downloaded,
+                                expected_size,
+                                False,
+                                f"Descargando OptiPatcher {version}... {progress:.1%}"
+                            )
+            
+            self.logger('OK', f"OptiPatcher descargado correctamente ({original_filename} → OptiPatcher.asi): {destination_path}")
+            
+            # Guardar información de versión en un archivo de texto
+            try:
+                version_file = os.path.join(os.path.dirname(destination_path), "version.txt")
+                with open(version_file, 'w', encoding='utf-8') as f:
+                    f.write(f"{version}\n{original_filename}")
+                self.logger('INFO', f"Información de versión guardada: {version}")
+            except Exception as e:
+                self.logger('WARN', f"No se pudo guardar información de versión: {e}")
+            
+            if progress_callback:
+                progress_callback(expected_size, expected_size, True, f"OptiPatcher {version} instalado")
+            
+            return True
+            
+        except requests.RequestException as e:
+            error_msg = f"Error al descargar OptiPatcher: {e}"
+            self.logger('ERROR', error_msg)
+            if progress_callback:
+                progress_callback(0, 1, True, f"Error: {e}")
+            raise FSRException(error_msg)
+        except Exception as e:
+            error_msg = f"Error inesperado al descargar OptiPatcher: {e}"
             self.logger('ERROR', error_msg)
             if progress_callback:
                 progress_callback(0, 1, True, f"Error: {e}")

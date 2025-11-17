@@ -32,7 +32,7 @@ if (-not (Test-Path -Path "dist")) {
   --show-progress `
   --show-memory `
   --output-dir=dist `
-  --output-filename="Gestor OptiScaler V2.3.1.exe" `
+  --output-filename="Gestor OptiScaler V2.4.0.exe" `
   run.py
 
 if ($LASTEXITCODE -ne 0) {
@@ -40,4 +40,4 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-Write-Host "Build completed: dist\Gestor OptiScaler V2.3.1.exe" -ForegroundColor Green
+Write-Host "Build completed: dist\Gestor OptiScaler V2.4.0.exe" -ForegroundColor Green

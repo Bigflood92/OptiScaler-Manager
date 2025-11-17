@@ -7,6 +7,102 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [2.4.0] - 2025-11-17
+
+### Añadido
+- **� Auto-Actualización de la Aplicación**
+  - Verificación automática al iniciar la aplicación
+  - Ventana modal con información del release:
+    - Versión actual vs nueva versión
+    - Notas del release (changelog de GitHub)
+    - Botones: "Ver en GitHub", "Cerrar", "Descargar y Actualizar"
+  - Sistema de descarga e instalación automática:
+    - Descarga el nuevo ejecutable desde GitHub
+    - Crea backup del ejecutable actual
+    - Reemplaza el ejecutable automáticamente
+    - Reinicia la aplicación con la nueva versión
+    - Limpia backups antiguos
+  - Comparación semver inteligente de versiones
+  - Detección de conexión a internet
+  - Logs detallados de todo el proceso
+  - Funciona tanto en script Python como en ejecutable compilado
+
+- **�📊 Overlay Settings - Monitorización en Tiempo Real**
+  - 7 nuevas variables de configuración para overlay de OptiScaler:
+    - `overlay_mode`: 3 modos (Desactivado, Básico, Completo)
+    - `overlay_show_fps`: Mostrar FPS
+    - `overlay_show_frametime`: Mostrar Frame Time
+    - `overlay_show_messages`: Mostrar mensajes de depuración
+    - `overlay_position`: 8 posiciones en pantalla
+    - `overlay_scale`: Escala de 100% a 200%
+    - `overlay_font_size`: Pequeña (12px), Media (16px), Grande (20px)
+  - UI completa con 196 líneas de código en `gaming_app.py`:
+    - Sección colapsable "📊 Overlay Settings (Monitorización)"
+    - 3 modos con visibilidad dinámica de controles
+    - 6 callbacks para actualización en tiempo real
+  - Integración con `installer.py`:
+    - Nueva sección `[Menu]` en OptiScaler.ini
+    - Función `update_optiscaler_ini()` actualizada
+  - Presets actualizados: Todos incluyen configuración de overlay
+  - Persistencia completa: `on_closing()` y `show_installation_details()`
+  - Documentación:
+    - Tutorial de bienvenida actualizado
+    - Panel de ayuda con entrada dedicada
+    - FAQs actualizadas
+
+- **🔧 OptiPatcher Plugin - Compatibilidad Mejorada**
+  - Sistema completo de descarga e instalación:
+    - Constantes en `constants.py`: `OPTIPATCHER_REPO_OWNER`, `OPTIPATCHER_REPO_NAME`, `OPTIPATCHER_API_URL`
+    - Cliente GitHub actualizado con `repo_type="optipatcher"`
+    - Función `download_optipatcher()` con detección automática de .asi
+  - Funciones de instalación en `installer.py`:
+    - `install_optipatcher()`: Crea plugins/, copia .asi, habilita LoadAsiPlugins=true
+    - `uninstall_optipatcher()`: Elimina .asi, deshabilita plugin, limpia carpetas
+  - UI en pestaña Ajustes:
+    - Checkbox: "Instalar OptiPatcher automáticamente"
+    - Label de estado: Versión + fecha o "Plugin no descargado"
+    - Botón dinámico: "Buscar actualizaciones" → "Descargar actualización/OptiPatcher"
+    - Botón "GitHub": Abre página de releases
+  - Sistema de versiones:
+    - Archivo `version.txt` guarda versión y nombre original
+    - Detección automática de archivos .asi con versión en nombre
+    - Comparación de fechas para detectar actualizaciones
+  - Integración automática:
+    - Se instala después de OptiScaler si está habilitado
+    - Se desinstala al remover OptiScaler
+    - Sección en `show_installation_details()`
+  - Soporte para 171+ juegos: Black Myth: Wukong, Stalker 2, Hogwarts Legacy...
+  - Elimina errores D3D12 en Intel Arc GPUs
+  - Sin spoofing necesario: Parches en memoria
+
+- **🎨 WideComboBox Mejorado**
+  - Parámetro `max_visible_items` (default: 8)
+  - Renderizado condicional: CTkFrame sin scroll cuando items ≤ max_visible_items
+  - CTkScrollableFrame solo cuando items > max_visible_items
+  - Overlay y Debug dropdowns: `max_visible_items=3` y `max_visible_items=6`
+
+### Cambiado
+- **Versión actualizada a 2.4.0**
+  - `APP_VERSION = "2.4.0"` en `constants.py`
+  - Título: `APP_TITLE = f"GESTOR AUTOMATIZADO DE OPTISCALER V{APP_VERSION}"`
+
+### Corregido
+- **Cache Directory duplicada**
+  - `CACHE_DIR` ahora se importa desde `paths.py` en lugar de `constants.py`
+  - Eliminada definición incorrecta `CACHE_DIR = os.getcwd()` en `constants.py`
+  - Solo se crea `.cache` en `Config Optiscaler Gestor/`
+
+- **Estilo UI consistente**
+  - Overlay y Debug dropdowns ahora usan `WideComboBox` en lugar de `CTkComboBox`
+  - Cambio de callbacks de `command` a `trace_add` para WideComboBox
+
+### Técnico
+- Import de `datetime` añadido en `gaming_app.py`
+- Función `_restore_button_state()` para gestión de estado de botón OptiPatcher
+- Funciones `_show_update_available()` y `_show_download_option()` para cambio dinámico de botón
+- Descarga con threading en `download_optipatcher_update()`
+- Variable `self.optipatcher_latest_release` almacena info de release
+
 ## [2.3.1] - 2025-11-14
 
 ### Añadido

@@ -9,11 +9,10 @@ import os
 
 # Application Info
 APP_TITLE = "Gestor OptiScaler"
-APP_VERSION = "2.0"
+APP_VERSION = "2.4.0"
 
 # Filenames / small paths (kept as strings for backwards compatibility)
 CONFIG_FILE = "injector_config.json"
-CACHE_DIR = os.path.join(os.getcwd(), ".cache")
 
 # GitHub configuration - OptiScaler (upscaler)
 GITHUB_REPO_OWNER = "optiscaler"
@@ -27,6 +26,12 @@ NUKEM_REPO_OWNER = "Nukem9"
 NUKEM_REPO_NAME = "dlssg-to-fsr3"
 NUKEM_API_URL = f"https://api.github.com/repos/{NUKEM_REPO_OWNER}/{NUKEM_REPO_NAME}/releases"
 NUKEM_LATEST_RELEASE_URL = f"{NUKEM_API_URL}/latest"
+
+# GitHub configuration - OptiPatcher (ASI plugin para OptiScaler)
+OPTIPATCHER_REPO_OWNER = "optiscaler"
+OPTIPATCHER_REPO_NAME = "OptiPatcher"
+OPTIPATCHER_API_URL = f"https://api.github.com/repos/{OPTIPATCHER_REPO_OWNER}/{OPTIPATCHER_REPO_NAME}/releases"
+OPTIPATCHER_LATEST_RELEASE_URL = f"{OPTIPATCHER_API_URL}/latest"
 
 # Archivos requeridos de dlssg-to-fsr3 (Nukem) para Frame Generation
 NUKEM_REQUIRED_FILES = [

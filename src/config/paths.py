@@ -73,3 +73,8 @@ def initialize_directories():
     
     for directory in directories:
         os.makedirs(directory, exist_ok=True)
+
+
+def get_config_dir():
+    """Return the application configuration directory path."""
+    return APP_DIR

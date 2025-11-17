@@ -21,8 +21,8 @@ def setup_path():
 project_root = setup_path()
 
 # Now we can import our modules
-from .core.utils import is_admin, run_as_admin
-from .config.paths import initialize_directories
+from src.core.utils import is_admin, run_as_admin
+from src.config.paths import initialize_directories
 
 
 def main():
@@ -30,20 +30,32 @@ def main():
     # Inicializar estructura de directorios
     initialize_directories()
     
-    # Verifica permisos de administrador y relanza si falta elevación
-    if not is_admin():
-        print("[UAC] No se detectan privilegios de administrador. Intentando elevar...")
-        elevated = run_as_admin()
-        if elevated:
-            print("[UAC] Elevación solicitada. Cerrando proceso actual.")
-            return 0  # El nuevo proceso elevado continuará.
-        else:
-            print("[UAC] Falló la elevación automática. Ejecuta manualmente 'Ejecutar como administrador'.")
-            return 1
+    # SKIP_ADMIN: Variable de entorno para omitir verificación (solo para desarrollo/debug)
+    skip_admin_check = os.environ.get('SKIP_ADMIN_CHECK', '0') == '1'
+    
+    if skip_admin_check:
+        print("[DEBUG] SKIP_ADMIN_CHECK activado - omitiendo verificación de permisos")
+    else:
+        # Verifica permisos de administrador y relanza si falta elevación
+        admin_status = is_admin()
+        print(f"[DEBUG] is_admin() = {admin_status}")
+        
+        if not admin_status:
+            print("[UAC] No se detectan privilegios de administrador. Intentando elevar...")
+            elevated = run_as_admin()
+            print(f"[DEBUG] run_as_admin() = {elevated}")
+            if elevated:
+                print("[UAC] Elevación solicitada. Cerrando proceso actual.")
+                return 0  # El nuevo proceso elevado continuará.
+            else:
+                print("[UAC] Falló la elevación automática. Ejecuta manualmente 'Ejecutar como administrador'.")
+                return 1
+        
+        print("[DEBUG] Continuando con privilegios de administrador...")
     
     # Iniciar aplicación
     try:
-        from .gui.gaming_app import GamingApp
+        from src.gui.gaming_app import GamingApp
         app = GamingApp()
         app.mainloop()
         return 0

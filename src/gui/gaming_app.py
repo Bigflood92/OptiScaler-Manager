@@ -14,7 +14,11 @@ Estructura:
 
 import os
 import sys
+import platform
+import subprocess
+import webbrowser
 from pathlib import Path
+from datetime import datetime
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import threading
@@ -24,18 +28,18 @@ import time
 # Imports de módulos core
 from ..core.scanner import scan_games, invalidate_scan_cache
 from ..core.config_manager import load_config, save_config
-from ..core.installer import inject_fsr_mod, uninstall_fsr_mod, install_combined_mods
+from ..core.installer import inject_fsr_mod, uninstall_fsr_mod, install_combined_mods, install_optipatcher, uninstall_optipatcher
 from ..core.mod_detector import compute_game_mod_status, get_version_badge_info
 from ..core.utils import detect_gpu_vendor, should_use_dual_mod
 from ..core.github import GitHubClient
 from ..utils.logging import LogManager
-from ..config.paths import MOD_SOURCE_DIR, OPTISCALER_DIR, DLSSG_TO_FSR3_DIR, SEVEN_ZIP_PATH, APP_DIR
+from ..config.paths import MOD_SOURCE_DIR, OPTISCALER_DIR, DLSSG_TO_FSR3_DIR, SEVEN_ZIP_PATH, APP_DIR, get_config_dir
 from .components.windows.welcome_tutorial import WelcomeTutorial, should_show_tutorial
 from .components.collapsible_section import CollapsibleSection
 from .components.wide_combobox import WideComboBox
 
 # Constantes
-APP_VERSION = "2.3.1"
+APP_VERSION = "2.4.0"
 APP_TITLE = f"GESTOR AUTOMATIZADO DE OPTISCALER V{APP_VERSION}"
 
 # Colores para feedback visual
@@ -89,7 +93,37 @@ class GamingApp(ctk.CTk):
             'upscaler': self.upscaler_var.get(),
             'sharpness': self.sharpness_var.get(),
             'fps_limit': self.fps_limit_var.get(),
-            'dll_name': self.dll_name_var.get()
+            'dll_name': self.dll_name_var.get(),
+            # HDR Settings
+            'auto_hdr': self.auto_hdr_var.get(),
+            'nvidia_hdr_override': self.nvidia_hdr_override_var.get(),
+            'hdr_rgb_range': self.hdr_rgb_range_var.get(),
+            # Debug/Logging
+            'log_level': self.log_level_var.get(),
+            'open_console': self.open_console_var.get(),
+            'log_to_file': self.log_to_file_var.get(),
+            # Quality Overrides
+            'quality_override_enabled': self.quality_override_enabled_var.get(),
+            'quality_ratio': self.quality_ratio_var.get(),
+            'balanced_ratio': self.balanced_ratio_var.get(),
+            'performance_ratio': self.performance_ratio_var.get(),
+            'ultra_perf_ratio': self.ultra_perf_ratio_var.get(),
+            # CAS Sharpening
+            'cas_enabled': self.cas_enabled_var.get(),
+            'cas_type': self.cas_type_var.get(),
+            'cas_sharpness': self.cas_sharpness_var.get(),
+            # NVNGX Spoofing
+            'nvngx_dx12': self.nvngx_dx12_var.get(),
+            'nvngx_dx11': self.nvngx_dx11_var.get(),
+            'nvngx_vulkan': self.nvngx_vulkan_var.get(),
+            # Overlay Settings
+            'overlay_mode': self.overlay_mode_var.get(),
+            'overlay_show_fps': self.overlay_show_fps_var.get(),
+            'overlay_show_frametime': self.overlay_show_frametime_var.get(),
+            'overlay_show_messages': self.overlay_show_messages_var.get(),
+            'overlay_position': self.overlay_position_var.get(),
+            'overlay_scale': self.overlay_scale_var.get(),
+            'overlay_font_size': self.overlay_font_size_var.get()
         }
     """Aplicación Gaming Mode - Interfaz completa."""
     
@@ -167,6 +201,43 @@ class GamingApp(ctk.CTk):
         # Opciones avanzadas nuevas
         self.native_aa_var = ctk.BooleanVar(value=self.config.get("use_native_aa", True))
         self.mipmap_bias_var = ctk.DoubleVar(value=self.config.get("mipmap_bias", 0.0))
+        
+        # Overlay Settings variables
+        self.overlay_mode_var = ctk.StringVar(value=self.config.get("overlay_mode", "Desactivado"))  # Desactivado/Básico/Completo
+        self.overlay_show_fps_var = ctk.BooleanVar(value=self.config.get("overlay_show_fps", True))
+        self.overlay_show_frametime_var = ctk.BooleanVar(value=self.config.get("overlay_show_frametime", True))
+        self.overlay_show_messages_var = ctk.BooleanVar(value=self.config.get("overlay_show_messages", True))
+        self.overlay_position_var = ctk.StringVar(value=self.config.get("overlay_position", "Superior Izquierda"))
+        self.overlay_scale_var = ctk.DoubleVar(value=self.config.get("overlay_scale", 1.0))
+        self.overlay_font_size_var = ctk.IntVar(value=self.config.get("overlay_font_size", 14))
+        
+        # HDR Settings variables
+        self.auto_hdr_var = ctk.BooleanVar(value=self.config.get("auto_hdr", True))
+        self.nvidia_hdr_override_var = ctk.BooleanVar(value=self.config.get("nvidia_hdr_override", False))
+        self.hdr_rgb_range_var = ctk.DoubleVar(value=self.config.get("hdr_rgb_range", 100.0))
+        
+        # Debug/Logging variables
+        self.log_level_var = ctk.StringVar(value=self.config.get("log_level", "Info"))
+        self.open_console_var = ctk.BooleanVar(value=self.config.get("open_console", False))
+        self.log_to_file_var = ctk.BooleanVar(value=self.config.get("log_to_file", True))
+        
+        # Quality Overrides variables
+        self.quality_override_enabled_var = ctk.BooleanVar(value=self.config.get("quality_override_enabled", False))
+        self.quality_ratio_var = ctk.DoubleVar(value=self.config.get("quality_ratio", 1.5))
+        self.balanced_ratio_var = ctk.DoubleVar(value=self.config.get("balanced_ratio", 1.7))
+        self.performance_ratio_var = ctk.DoubleVar(value=self.config.get("performance_ratio", 2.0))
+        self.ultra_perf_ratio_var = ctk.DoubleVar(value=self.config.get("ultra_perf_ratio", 3.0))
+        
+        # CAS Sharpening variables
+        self.cas_enabled_var = ctk.BooleanVar(value=self.config.get("cas_enabled", False))
+        self.cas_sharpness_var = ctk.DoubleVar(value=self.config.get("cas_sharpness", 0.5))
+        self.cas_type_var = ctk.StringVar(value=self.config.get("cas_type", "RCAS"))  # "RCAS" o "CAS"
+        
+        # NVNGX Spoofing variables (por defecto todos activados)
+        self.nvngx_dx12_var = ctk.BooleanVar(value=self.config.get("nvngx_dx12", True))
+        self.nvngx_dx11_var = ctk.BooleanVar(value=self.config.get("nvngx_dx11", True))
+        self.nvngx_vulkan_var = ctk.BooleanVar(value=self.config.get("nvngx_vulkan", True))
+        
         # Flag para suprimir cambio a Custom durante aplicación programática de presets
         self._suppress_custom = False
         # Estado persistente de configuración personalizada
@@ -210,6 +281,9 @@ class GamingApp(ctk.CTk):
         
         # Mostrar tutorial de bienvenida si es la primera vez
         self.after(500, self.show_welcome_if_needed)
+        
+        # Verificar actualizaciones de la aplicación
+        self.after(1500, self.check_app_updates)
 
     # ==================================================================================
     # ICONOS Y RECURSOS
@@ -537,6 +611,85 @@ class GamingApp(ctk.CTk):
                     gpu_type = "NVIDIA" if dxgi_spoofing.lower() == 'true' else "AMD/Intel"
                     details.append(f"  🎭 GPU Spoofing: {gpu_type}")
                 
+                # ========== NUEVAS SECCIONES DE CONFIGURACIÓN ==========
+                
+                # HDR Settings
+                auto_hdr = config.get('HDR', 'EnableAutoHDR', fallback='true').lower()
+                nvidia_override = config.get('HDR', 'NvidiaOverride', fallback='false').lower()
+                hdr_range = config.get('HDR', 'HDRRGBMaxRange', fallback='100.0')
+                details.append(f"  ✨ Auto HDR: {'ACTIVADO' if auto_hdr == 'true' else 'DESACTIVADO'}")
+                if nvidia_override == 'true':
+                    details.append(f"  🎮 NVIDIA HDR Override: ACTIVADO")
+                details.append(f"  💡 HDR Max Range: {hdr_range} nits")
+                
+                # Logging Settings
+                log_level_map = {'0': 'Off', '1': 'Error', '2': 'Warn', '3': 'Info', '4': 'Debug', '5': 'Trace'}
+                log_level = config.get('Logging', 'LogLevel', fallback='3')
+                open_console = config.get('Logging', 'OpenConsole', fallback='false').lower()
+                log_to_file = config.get('Logging', 'LogToFile', fallback='true').lower()
+                details.append(f"  📊 Nivel de Log: {log_level_map.get(log_level, log_level)}")
+                details.append(f"  🖥️ Consola: {'ACTIVADA' if open_console == 'true' else 'DESACTIVADA'}")
+                details.append(f"  💾 Log a archivo: {'ACTIVADO' if log_to_file == 'true' else 'DESACTIVADO'}")
+                
+                # Quality Overrides
+                quality_override = config.get('QualityOverrides', 'QualityRatioOverrideEnabled', fallback='false').lower()
+                if quality_override == 'true':
+                    details.append(f"  🎯 Quality Override: ACTIVADO")
+                    quality_ratio = config.get('QualityOverrides', 'Quality', fallback='1.5')
+                    balanced_ratio = config.get('QualityOverrides', 'Balanced', fallback='1.7')
+                    performance_ratio = config.get('QualityOverrides', 'Performance', fallback='2.0')
+                    ultra_ratio = config.get('QualityOverrides', 'UltraPerformance', fallback='3.0')
+                    details.append(f"     Quality: {quality_ratio}, Balanced: {balanced_ratio}, Performance: {performance_ratio}, Ultra: {ultra_ratio}")
+                
+                # CAS Sharpening
+                cas_enabled = config.get('CAS', 'Enabled', fallback='false').lower()
+                if cas_enabled == 'true':
+                    cas_type = config.get('CAS', 'Type', fallback='1')
+                    cas_sharpness = config.get('CAS', 'Sharpness', fallback='0.5')
+                    cas_type_name = 'RCAS' if cas_type == '1' else 'CAS'
+                    details.append(f"  ✨ CAS Sharpening: ACTIVADO ({cas_type_name}, Nitidez: {cas_sharpness})")
+                
+                # NVNGX Spoofing
+                nvngx_dx12 = config.get('Nvngx', 'Dx12Spoofing', fallback='true').lower()
+                nvngx_dx11 = config.get('Nvngx', 'Dx11Spoofing', fallback='true').lower()
+                nvngx_vulkan = config.get('Nvngx', 'VulkanSpoofing', fallback='true').lower()
+                enabled_apis = []
+                if nvngx_dx12 == 'true': enabled_apis.append('DX12')
+                if nvngx_dx11 == 'true': enabled_apis.append('DX11')
+                if nvngx_vulkan == 'true': enabled_apis.append('Vulkan')
+                details.append(f"  🎭 NVNGX Spoofing: {', '.join(enabled_apis) if enabled_apis else 'DESACTIVADO'}")
+                
+                # Overlay Settings
+                overlay_menu = config.get('Menu', 'OverlayMenu', fallback='auto').lower()
+                overlay_map = {'auto': 'Desactivado', 'basic': 'Básico', 'true': 'Completo'}
+                overlay_status = overlay_map.get(overlay_menu, overlay_menu.upper())
+                details.append(f"  📊 Overlay: {overlay_status}")
+                
+                if overlay_menu in ['basic', 'true']:
+                    # Mostrar opciones adicionales del overlay si está activado
+                    overlay_fps = config.get('Menu', 'OverlayShowFPS', fallback='true').lower()
+                    overlay_frametime = config.get('Menu', 'OverlayShowFrameTime', fallback='true').lower()
+                    overlay_messages = config.get('Menu', 'OverlayShowMessages', fallback='true').lower()
+                    overlay_position = config.get('Menu', 'OverlayPosition', fallback='0')
+                    overlay_scale = config.get('Menu', 'OverlayScale', fallback='1.00')
+                    overlay_font_size = config.get('Menu', 'OverlayFontSize', fallback='14')
+                    
+                    position_map = {
+                        '0': 'Superior Izquierda', '1': 'Superior Centro', '2': 'Superior Derecha',
+                        '3': 'Centro Izquierda', '4': 'Centro', '5': 'Centro Derecha',
+                        '6': 'Inferior Izquierda', '7': 'Inferior Centro', '8': 'Inferior Derecha'
+                    }
+                    
+                    metrics = []
+                    if overlay_fps == 'true': metrics.append('FPS')
+                    if overlay_frametime == 'true': metrics.append('Frame Time')
+                    if overlay_messages == 'true': metrics.append('Messages')
+                    
+                    details.append(f"     Métricas: {', '.join(metrics) if metrics else 'Ninguna'}")
+                    details.append(f"     Posición: {position_map.get(overlay_position, overlay_position)}")
+                    scale_percent = float(overlay_scale) * 100
+                    details.append(f"     Escala: {scale_percent:.0f}%, Fuente: {overlay_font_size}px")
+                
             except Exception as e:
                 details.append(f"  ⚠️ Error al leer configuración: {e}")
         
@@ -615,6 +768,37 @@ class GamingApp(ctk.CTk):
         
         if found_nukem:
             details.extend(found_nukem)
+        else:
+            details.append("  ℹ️ No instalado")
+        
+        # === Verificar OptiPatcher ===
+        details.append("")
+        details.append("═" * 60)
+        details.append("🔍 OPTIPATCHER (PLUGIN ASI):")
+        details.append("═" * 60)
+        
+        plugins_dir = os.path.join(game_path, "plugins")
+        optipatcher_asi = os.path.join(plugins_dir, "OptiPatcher.asi")
+        
+        if os.path.exists(optipatcher_asi):
+            try:
+                size = os.path.getsize(optipatcher_asi) / 1024
+                details.append(f"  ✅ OptiPatcher.asi ({size:.1f} KB)")
+            except:
+                details.append(f"  ✅ OptiPatcher.asi")
+            
+            # Verificar si LoadAsiPlugins está habilitado
+            if ini_exists:
+                try:
+                    config = configparser.ConfigParser()
+                    config.read(ini_path)
+                    load_asi = config.get('Plugins', 'LoadAsiPlugins', fallback='false').lower()
+                    if load_asi == 'true':
+                        details.append("  ✅ LoadAsiPlugins: ACTIVADO")
+                    else:
+                        details.append("  ⚠️ LoadAsiPlugins: DESACTIVADO (OptiPatcher no se cargará)")
+                except:
+                    pass
         else:
             details.append("  ℹ️ No instalado")
         
@@ -2242,22 +2426,129 @@ class GamingApp(ctk.CTk):
         self.setup_widget_focus(self.mipmap_slider)
         self.mipmap_bias_var.trace_add('write', lambda *a: (self._on_advanced_changed()))
 
-        # Quality Overrides placeholder
-        qo_frame = ctk.CTkFrame(adv_wrap, fg_color="#1a1a1a", corner_radius=8)
-        qo_frame.pack(fill="x", pady=8)
-        ctk.CTkLabel(
-            qo_frame,
-            text="📐 Quality Overrides (Próximamente)",
-            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
-        ).pack(anchor="w", padx=15, pady=(10, 5))
-        ctk.CTkLabel(
-            qo_frame,
-            text="Podrás ajustar ratios internos para cada preset (Quality / Balanced / Performance / Ultra).",
+        # ===== QUALITY OVERRIDES =====
+        qo_section = CollapsibleSection(
+            parent=adv_wrap,
+            title="📐 Quality Overrides",
+            collapsed=True
+        )
+        qo_section.pack(fill="x", pady=8)
+        
+        qo_content = qo_section.content_frame
+        
+        # Enable checkbox
+        enable_qo_check = ctk.CTkCheckBox(
+            qo_content,
+            text="Activar ratios de calidad personalizados",
+            variable=self.quality_override_enabled_var,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=self._on_quality_override_changed
+        )
+        enable_qo_check.pack(anchor="w", padx=15, pady=(10, 15))
+        self.setup_widget_focus(enable_qo_check)
+        
+        # Info text
+        info_text = ctk.CTkLabel(
+            qo_content,
+            text="Los ratios controlan la resolución interna de renderizado. Valores más altos = menor resolución interna = mejor rendimiento pero menor calidad visual.",
             font=ctk.CTkFont(size=FONT_TINY),
-            text_color="#888888",
+            text_color="#cccccc",
             wraplength=850,
             justify="left"
-        ).pack(anchor="w", padx=15, pady=(0, 10))
+        )
+        info_text.pack(anchor="w", padx=15, pady=(0, 15))
+        
+        # Grid frame for the 4 spinboxes
+        ratios_grid = ctk.CTkFrame(qo_content, fg_color="transparent")
+        ratios_grid.pack(fill="x", padx=15, pady=(0, 10))
+        ratios_grid.grid_columnconfigure((0, 1), weight=1)
+        
+        # Quality preset ratio
+        quality_frame = ctk.CTkFrame(ratios_grid, fg_color="#2a2a2a", corner_radius=6)
+        quality_frame.grid(row=0, column=0, padx=(0, 5), pady=5, sticky="ew")
+        ctk.CTkLabel(
+            quality_frame,
+            text="🏆 Quality",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold"),
+            text_color="#4CAF50"
+        ).pack(anchor="w", padx=10, pady=(8, 2))
+        self.quality_ratio_entry = ctk.CTkEntry(
+            quality_frame,
+            width=100,
+            textvariable=self.quality_ratio_var,
+            font=ctk.CTkFont(size=FONT_NORMAL)
+        )
+        self.quality_ratio_entry.pack(anchor="w", padx=10, pady=(0, 8))
+        self.setup_widget_focus(self.quality_ratio_entry)
+        self.quality_ratio_var.trace_add('write', lambda *a: self._validate_quality_ratio('quality'))
+        
+        # Balanced preset ratio
+        balanced_frame = ctk.CTkFrame(ratios_grid, fg_color="#2a2a2a", corner_radius=6)
+        balanced_frame.grid(row=0, column=1, padx=(5, 0), pady=5, sticky="ew")
+        ctk.CTkLabel(
+            balanced_frame,
+            text="⚖️ Balanced",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold"),
+            text_color="#2196F3"
+        ).pack(anchor="w", padx=10, pady=(8, 2))
+        self.balanced_ratio_entry = ctk.CTkEntry(
+            balanced_frame,
+            width=100,
+            textvariable=self.balanced_ratio_var,
+            font=ctk.CTkFont(size=FONT_NORMAL)
+        )
+        self.balanced_ratio_entry.pack(anchor="w", padx=10, pady=(0, 8))
+        self.setup_widget_focus(self.balanced_ratio_entry)
+        self.balanced_ratio_var.trace_add('write', lambda *a: self._validate_quality_ratio('balanced'))
+        
+        # Performance preset ratio
+        performance_frame = ctk.CTkFrame(ratios_grid, fg_color="#2a2a2a", corner_radius=6)
+        performance_frame.grid(row=1, column=0, padx=(0, 5), pady=5, sticky="ew")
+        ctk.CTkLabel(
+            performance_frame,
+            text="⚡ Performance",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold"),
+            text_color="#FF9800"
+        ).pack(anchor="w", padx=10, pady=(8, 2))
+        self.performance_ratio_entry = ctk.CTkEntry(
+            performance_frame,
+            width=100,
+            textvariable=self.performance_ratio_var,
+            font=ctk.CTkFont(size=FONT_NORMAL)
+        )
+        self.performance_ratio_entry.pack(anchor="w", padx=10, pady=(0, 8))
+        self.setup_widget_focus(self.performance_ratio_entry)
+        self.performance_ratio_var.trace_add('write', lambda *a: self._validate_quality_ratio('performance'))
+        
+        # Ultra Performance preset ratio
+        ultra_perf_frame = ctk.CTkFrame(ratios_grid, fg_color="#2a2a2a", corner_radius=6)
+        ultra_perf_frame.grid(row=1, column=1, padx=(5, 0), pady=5, sticky="ew")
+        ctk.CTkLabel(
+            ultra_perf_frame,
+            text="🚀 Ultra Performance",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold"),
+            text_color="#F44336"
+        ).pack(anchor="w", padx=10, pady=(8, 2))
+        self.ultra_perf_ratio_entry = ctk.CTkEntry(
+            ultra_perf_frame,
+            width=100,
+            textvariable=self.ultra_perf_ratio_var,
+            font=ctk.CTkFont(size=FONT_NORMAL)
+        )
+        self.ultra_perf_ratio_entry.pack(anchor="w", padx=10, pady=(0, 8))
+        self.setup_widget_focus(self.ultra_perf_ratio_entry)
+        self.ultra_perf_ratio_var.trace_add('write', lambda *a: self._validate_quality_ratio('ultra_perf'))
+        
+        # Warning for extreme values
+        self.qo_warning_label = ctk.CTkLabel(
+            qo_content,
+            text="",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#FF9800",
+            wraplength=850,
+            justify="left"
+        )
+        self.qo_warning_label.pack(anchor="w", padx=15, pady=(5, 10))
 
         # Btn restaurar valores por defecto avanzados
         reset_adv = ctk.CTkButton(
@@ -2272,29 +2563,636 @@ class GamingApp(ctk.CTk):
         reset_adv.pack(pady=(4, 10), padx=10, anchor="e")
         self.setup_widget_focus(reset_adv)
 
-        # === Sección 3 (placeholder): HDR Settings ===
+        # === Sección 3: Overlay Settings ===
+        self.overlay_section = CollapsibleSection(config_scroll, title="📊 Overlay Settings", collapsed=True)
+        # No empaquetar aún - update_config_visibility() lo hará
+        
+        overlay_wrap = ctk.CTkFrame(self.overlay_section.content_frame, fg_color="transparent")
+        overlay_wrap.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Info header
+        info_header = ctk.CTkFrame(overlay_wrap, fg_color="#2a2a2a", corner_radius=6)
+        info_header.pack(fill="x", padx=15, pady=(10, 15))
+        
+        ctk.CTkLabel(
+            info_header,
+            text="ℹ️ El overlay muestra información en tiempo real dentro del juego (FPS, tiempos de frame, etc.)",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#cccccc",
+            wraplength=850,
+            justify="left"
+        ).pack(padx=10, pady=8)
+        
+        # Modo de Overlay
+        mode_frame = ctk.CTkFrame(overlay_wrap, fg_color="transparent")
+        mode_frame.pack(fill="x", padx=15, pady=(5, 10))
+        
+        ctk.CTkLabel(
+            mode_frame,
+            text="🎯 Modo de Overlay:",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(side="left")
+        
+        self.overlay_mode_combo = WideComboBox(
+            mode_frame,
+            variable=self.overlay_mode_var,
+            values=["Desactivado", "Básico", "Completo"],
+            width=200,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            max_visible_items=3  # Mostrar todas las 3 opciones sin scroll
+        )
+        self.overlay_mode_combo.pack(side="left", padx=10)
+        self.setup_widget_focus(self.overlay_mode_combo)
+        self.overlay_mode_var.trace_add('write', lambda *a: (self._on_overlay_mode_changed(), self.mark_preset_custom(), self.update_custom_state()))
+        
+        # Frame de métricas (solo visible cuando overlay está activo)
+        self.overlay_metrics_frame = ctk.CTkFrame(overlay_wrap, fg_color="#1a1a1a", corner_radius=8)
+        
+        ctk.CTkLabel(
+            self.overlay_metrics_frame,
+            text="📈 Métricas a Mostrar:",
+            font=ctk.CTkFont(size=FONT_TINY, weight="bold")
+        ).pack(anchor="w", padx=10, pady=(8, 5))
+        
+        # Checkboxes para métricas
+        self.overlay_fps_check = ctk.CTkCheckBox(
+            self.overlay_metrics_frame,
+            text="📊 Mostrar FPS (Frames por Segundo)",
+            variable=self.overlay_show_fps_var,
+            font=ctk.CTkFont(size=FONT_SMALL),
+            command=self._on_overlay_metrics_changed
+        )
+        self.overlay_fps_check.pack(anchor="w", padx=15, pady=5)
+        self.setup_widget_focus(self.overlay_fps_check)
+        
+        self.overlay_frametime_check = ctk.CTkCheckBox(
+            self.overlay_metrics_frame,
+            text="⏱️ Mostrar Frame Time (milisegundos por frame)",
+            variable=self.overlay_show_frametime_var,
+            font=ctk.CTkFont(size=FONT_SMALL),
+            command=self._on_overlay_metrics_changed
+        )
+        self.overlay_frametime_check.pack(anchor="w", padx=15, pady=5)
+        self.setup_widget_focus(self.overlay_frametime_check)
+        
+        self.overlay_messages_check = ctk.CTkCheckBox(
+            self.overlay_metrics_frame,
+            text="💬 Mostrar Mensajes del Sistema",
+            variable=self.overlay_show_messages_var,
+            font=ctk.CTkFont(size=FONT_SMALL),
+            command=self._on_overlay_metrics_changed
+        )
+        self.overlay_messages_check.pack(anchor="w", padx=15, pady=(5, 10))
+        self.setup_widget_focus(self.overlay_messages_check)
+        
+        # Posición del overlay
+        self.position_frame = ctk.CTkFrame(overlay_wrap, fg_color="#1a1a1a", corner_radius=8)
+        
+        ctk.CTkLabel(
+            self.position_frame,
+            text="📍 Posición en Pantalla:",
+            font=ctk.CTkFont(size=FONT_TINY, weight="bold")
+        ).pack(anchor="w", padx=10, pady=(8, 5))
+        
+        positions_grid = ctk.CTkFrame(self.position_frame, fg_color="transparent")
+        positions_grid.pack(padx=15, pady=(0, 10))
+        
+        # Grid 3x3 de posiciones
+        positions = [
+            ("↖️ Superior Izquierda", 0, 0),
+            ("⬆️ Superior Centro", 0, 1),
+            ("↗️ Superior Derecha", 0, 2),
+            ("⬅️ Centro Izquierda", 1, 0),
+            ("⏺️ Centro", 1, 1),
+            ("➡️ Centro Derecha", 1, 2),
+            ("↙️ Inferior Izquierda", 2, 0),
+            ("⬇️ Inferior Centro", 2, 1),
+            ("↘️ Inferior Derecha", 2, 2)
+        ]
+        
+        for text, row, col in positions:
+            rb = ctk.CTkRadioButton(
+                positions_grid,
+                text=text,
+                variable=self.overlay_position_var,
+                value=text.split(" ", 1)[1],  # Extraer "Superior Izquierda", etc.
+                command=self._on_overlay_position_changed,
+                font=ctk.CTkFont(size=FONT_TINY)
+            )
+            rb.grid(row=row, column=col, padx=5, pady=3, sticky="w")
+            self.setup_widget_focus(rb)
+        
+        # Escala del overlay
+        self.scale_frame = ctk.CTkFrame(overlay_wrap, fg_color="transparent")
+        
+        scale_title_frame = ctk.CTkFrame(self.scale_frame, fg_color="transparent")
+        scale_title_frame.pack(fill="x", padx=15, pady=(10, 5))
+        
+        ctk.CTkLabel(
+            scale_title_frame,
+            text="🔍 Escala del Overlay:",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(side="left")
+        
+        self.overlay_scale_label = ctk.CTkLabel(
+            scale_title_frame,
+            text=f"{int(self.overlay_scale_var.get() * 100)}%",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#00BFFF"
+        )
+        self.overlay_scale_label.pack(side="left", padx=10)
+        
+        self.overlay_scale_slider = ctk.CTkSlider(
+            self.scale_frame,
+            from_=0.5,
+            to=2.0,
+            number_of_steps=15,
+            variable=self.overlay_scale_var,
+            command=self._on_overlay_scale_changed
+        )
+        self.overlay_scale_slider.pack(fill="x", padx=15, pady=(0, 5))
+        self.setup_widget_focus(self.overlay_scale_slider)
+        
+        ctk.CTkLabel(
+            self.scale_frame,
+            text="ℹ️ 50% = Muy pequeño | 100% = Normal | 200% = Muy grande",
+            font=ctk.CTkFont(size=FONT_TINY-1),
+            text_color="#666666"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
+        
+        # Tamaño de fuente
+        self.font_frame = ctk.CTkFrame(overlay_wrap, fg_color="transparent")
+        
+        font_title_frame = ctk.CTkFrame(self.font_frame, fg_color="transparent")
+        font_title_frame.pack(fill="x", padx=15, pady=(5, 5))
+        
+        ctk.CTkLabel(
+            font_title_frame,
+            text="🔤 Tamaño de Fuente:",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(side="left")
+        
+        self.overlay_font_label = ctk.CTkLabel(
+            font_title_frame,
+            text=f"{self.overlay_font_size_var.get()}px",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#00BFFF"
+        )
+        self.overlay_font_label.pack(side="left", padx=10)
+        
+        self.overlay_font_slider = ctk.CTkSlider(
+            self.font_frame,
+            from_=10,
+            to=24,
+            number_of_steps=14,
+            variable=self.overlay_font_size_var,
+            command=self._on_overlay_font_changed
+        )
+        self.overlay_font_slider.pack(fill="x", padx=15, pady=(0, 5))
+        self.setup_widget_focus(self.overlay_font_slider)
+        
+        ctk.CTkLabel(
+            self.font_frame,
+            text="ℹ️ Tamaño recomendado: 14px (legible en 1080p/1440p)",
+            font=ctk.CTkFont(size=FONT_TINY-1),
+            text_color="#666666"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
+        
+        # Actualizar visibilidad inicial del metrics_frame
+        self._update_overlay_ui_visibility()
+
+        # === Sección 4: HDR Settings ===
         self.hdr_section = CollapsibleSection(config_scroll, title="🌈 HDR Settings", collapsed=True)
         # No empaquetar aún - update_config_visibility() lo hará
-        ctk.CTkLabel(
-            self.hdr_section.content_frame,
-            text="(Próximamente) Auto HDR, NVIDIA Override, Luminancia máxima…",
+        
+        hdr_wrap = ctk.CTkFrame(self.hdr_section.content_frame, fg_color="transparent")
+        hdr_wrap.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Auto HDR Checkbox
+        self.auto_hdr_check = ctk.CTkCheckBox(
+            hdr_wrap,
+            text="✨ Activar Auto HDR",
+            variable=self.auto_hdr_var,
+            font=ctk.CTkFont(size=FONT_SMALL, weight="bold"),
+            command=self._on_hdr_changed
+        )
+        self.auto_hdr_check.pack(anchor="w", padx=15, pady=(10, 5))
+        self.setup_widget_focus(self.auto_hdr_check)
+        
+        # NVIDIA HDR Override Checkbox
+        self.nvidia_hdr_check = ctk.CTkCheckBox(
+            hdr_wrap,
+            text="🎮 NVIDIA HDR Override (solo GPUs RTX)",
+            variable=self.nvidia_hdr_override_var,
             font=ctk.CTkFont(size=FONT_SMALL),
-            text_color="#888888",
-            wraplength=900,
-            justify="left"
-        ).pack(padx=15, pady=10, anchor="w")
+            command=self._on_hdr_changed
+        )
+        self.nvidia_hdr_check.pack(anchor="w", padx=15, pady=5)
+        self.setup_widget_focus(self.nvidia_hdr_check)
+        
+        # HDR RGB Max Range Slider
+        hdr_slider_frame = ctk.CTkFrame(hdr_wrap, fg_color="transparent")
+        hdr_slider_frame.pack(fill="x", padx=15, pady=(10, 5))
+        
+        hdr_title_frame = ctk.CTkFrame(hdr_slider_frame, fg_color="transparent")
+        hdr_title_frame.pack(fill="x")
+        
+        ctk.CTkLabel(
+            hdr_title_frame,
+            text="💡 Luminancia Máxima (nits):",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(side="left")
+        
+        self.hdr_range_label = ctk.CTkLabel(
+            hdr_title_frame,
+            text=f"{int(self.hdr_rgb_range_var.get())} nits",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#FFD700"
+        )
+        self.hdr_range_label.pack(side="left", padx=10)
+        
+        self.hdr_range_slider = ctk.CTkSlider(
+            hdr_slider_frame,
+            from_=10.0,
+            to=200.0,
+            number_of_steps=190,
+            variable=self.hdr_rgb_range_var,
+            command=self.on_hdr_range_changed
+        )
+        self.hdr_range_slider.pack(fill="x", pady=(5, 10))
+        self.setup_widget_focus(self.hdr_range_slider)
+        
+        # HDR Presets
+        preset_frame = ctk.CTkFrame(hdr_wrap, fg_color="#1a1a1a", corner_radius=8)
+        preset_frame.pack(fill="x", padx=15, pady=(5, 10))
+        
+        ctk.CTkLabel(
+            preset_frame,
+            text="⚡ Presets Rápidos:",
+            font=ctk.CTkFont(size=FONT_TINY, weight="bold")
+        ).pack(anchor="w", padx=10, pady=(8, 5))
+        
+        presets_buttons_frame = ctk.CTkFrame(preset_frame, fg_color="transparent")
+        presets_buttons_frame.pack(fill="x", padx=10, pady=(0, 8))
+        
+        btn_sdr = ctk.CTkButton(
+            presets_buttons_frame,
+            text="📺 SDR",
+            width=100,
+            height=28,
+            command=lambda: self._apply_hdr_preset("sdr"),
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
+            font=ctk.CTkFont(size=FONT_TINY)
+        )
+        btn_sdr.pack(side="left", padx=2)
+        self.setup_widget_focus(btn_sdr)
+        
+        btn_hdr400 = ctk.CTkButton(
+            presets_buttons_frame,
+            text="🌟 HDR400",
+            width=100,
+            height=28,
+            command=lambda: self._apply_hdr_preset("hdr400"),
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
+            font=ctk.CTkFont(size=FONT_TINY)
+        )
+        btn_hdr400.pack(side="left", padx=2)
+        self.setup_widget_focus(btn_hdr400)
+        
+        btn_hdr600 = ctk.CTkButton(
+            presets_buttons_frame,
+            text="✨ HDR600",
+            width=100,
+            height=28,
+            command=lambda: self._apply_hdr_preset("hdr600"),
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
+            font=ctk.CTkFont(size=FONT_TINY)
+        )
+        btn_hdr600.pack(side="left", padx=2)
+        self.setup_widget_focus(btn_hdr600)
+        
+        btn_hdr1000 = ctk.CTkButton(
+            presets_buttons_frame,
+            text="💎 HDR1000+",
+            width=100,
+            height=28,
+            command=lambda: self._apply_hdr_preset("hdr1000"),
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
+            font=ctk.CTkFont(size=FONT_TINY)
+        )
+        btn_hdr1000.pack(side="left", padx=2)
+        self.setup_widget_focus(btn_hdr1000)
+        
+        # Info text
+        ctk.CTkLabel(
+            hdr_wrap,
+            text="ℹ️ SDR = sin HDR | HDR400 = 100 nits | HDR600 = 150 nits | HDR1000+ = 200 nits",
+            font=ctk.CTkFont(size=FONT_TINY-1),
+            text_color="#666666"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
 
-        # === Sección 4 (placeholder): Debug y Logging ===
+        # ===== CAS SHARPENING =====
+        self.cas_section = CollapsibleSection(config_scroll, title="✨ CAS Sharpening", collapsed=True)
+        # No empaquetar aún - update_config_visibility() lo hará
+        
+        cas_wrap = ctk.CTkFrame(self.cas_section.content_frame, fg_color="transparent")
+        cas_wrap.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Enable CAS checkbox
+        self.cas_enabled_check = ctk.CTkCheckBox(
+            cas_wrap,
+            text="Activar CAS (Contrast Adaptive Sharpening)",
+            variable=self.cas_enabled_var,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=self._on_cas_changed
+        )
+        self.cas_enabled_check.pack(anchor="w", padx=15, pady=(10, 15))
+        self.setup_widget_focus(self.cas_enabled_check)
+        
+        # Info text explaining CAS vs RCAS
+        info_frame = ctk.CTkFrame(cas_wrap, fg_color="#2a2a2a", corner_radius=6)
+        info_frame.pack(fill="x", padx=15, pady=(0, 15))
+        
+        ctk.CTkLabel(
+            info_frame,
+            text="ℹ️ Diferencias entre algoritmos:",
+            font=ctk.CTkFont(size=FONT_SMALL, weight="bold"),
+            text_color="#00BFFF"
+        ).pack(anchor="w", padx=10, pady=(8, 5))
+        
+        ctk.CTkLabel(
+            info_frame,
+            text="• RCAS (Robust): Mejor calidad, preserva detalles finos, menos artifacts.\n• CAS (Standard): Más rápido, puede ser más agresivo con el contraste.",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#cccccc",
+            wraplength=850,
+            justify="left"
+        ).pack(anchor="w", padx=10, pady=(0, 8))
+        
+        # Radio buttons for CAS type
+        cas_type_frame = ctk.CTkFrame(cas_wrap, fg_color="transparent")
+        cas_type_frame.pack(fill="x", padx=15, pady=(0, 15))
+        
+        ctk.CTkLabel(
+            cas_type_frame,
+            text="Algoritmo:",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+        
+        radio_frame = ctk.CTkFrame(cas_type_frame, fg_color="transparent")
+        radio_frame.pack(fill="x")
+        
+        self.cas_rcas_radio = ctk.CTkRadioButton(
+            radio_frame,
+            text="🏆 RCAS (Recomendado)",
+            variable=self.cas_type_var,
+            value="RCAS",
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=self._on_cas_changed
+        )
+        self.cas_rcas_radio.pack(side="left", padx=(0, 20))
+        self.setup_widget_focus(self.cas_rcas_radio)
+        
+        self.cas_cas_radio = ctk.CTkRadioButton(
+            radio_frame,
+            text="⚡ CAS (Clásico)",
+            variable=self.cas_type_var,
+            value="CAS",
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=self._on_cas_changed
+        )
+        self.cas_cas_radio.pack(side="left")
+        self.setup_widget_focus(self.cas_cas_radio)
+        
+        # CAS Sharpness slider
+        cas_sharpness_title = ctk.CTkFrame(cas_wrap, fg_color="transparent")
+        cas_sharpness_title.pack(fill="x", padx=15, pady=(0, 5))
+        
+        ctk.CTkLabel(
+            cas_sharpness_title,
+            text="Intensidad CAS:",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold")
+        ).pack(side="left")
+        
+        self.cas_sharpness_label = ctk.CTkLabel(
+            cas_sharpness_title,
+            text=f"✨ {self.cas_sharpness_var.get():.2f}",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#00BFFF"
+        )
+        self.cas_sharpness_label.pack(side="left", padx=10)
+        
+        self.cas_sharpness_slider = ctk.CTkSlider(
+            cas_wrap,
+            from_=0.0,
+            to=1.0,
+            number_of_steps=100,
+            variable=self.cas_sharpness_var,
+            command=self._on_cas_sharpness_changed
+        )
+        self.cas_sharpness_slider.pack(padx=15, pady=(0, 10), fill="x")
+        self.setup_widget_focus(self.cas_sharpness_slider)
+        
+        # Warning about RCAS conflict
+        ctk.CTkLabel(
+            cas_wrap,
+            text="⚠️ Nota: Si CAS está activado, el slider RCAS de la sección básica será ignorado (solo uno activo a la vez).",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#FFA500",
+            wraplength=850,
+            justify="left"
+        ).pack(anchor="w", padx=15, pady=(5, 10))
+        
+        # ===== NVNGX SPOOFING =====
+        self.nvngx_section = CollapsibleSection(config_scroll, title="🎭 NVNGX Spoofing", collapsed=True)
+        # No empaquetar aún - update_config_visibility() lo hará
+        
+        nvngx_wrap = ctk.CTkFrame(self.nvngx_section.content_frame, fg_color="transparent")
+        nvngx_wrap.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Info/Warning header
+        warning_frame = ctk.CTkFrame(nvngx_wrap, fg_color="#3a2a2a", corner_radius=6, border_width=2, border_color="#FFA500")
+        warning_frame.pack(fill="x", padx=15, pady=(10, 15))
+        
+        ctk.CTkLabel(
+            warning_frame,
+            text="⚠️ CONFIGURACIÓN AVANZADA - Solo modificar si hay problemas",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold"),
+            text_color="#FFA500"
+        ).pack(anchor="w", padx=10, pady=(8, 5))
+        
+        ctk.CTkLabel(
+            warning_frame,
+            text="Por defecto, OptiScaler engaña (spoof) a los juegos para que crean que DLSS está disponible en todas las APIs (DirectX 12/11, Vulkan).\nSolo desmarca una opción si un juego específico tiene problemas de inicialización o crashes.",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#cccccc",
+            wraplength=850,
+            justify="left"
+        ).pack(anchor="w", padx=10, pady=(0, 8))
+        
+        # Checkboxes para cada API
+        ctk.CTkLabel(
+            nvngx_wrap,
+            text="Activar spoofing para:",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(0, 10))
+        
+        # DirectX 12
+        self.nvngx_dx12_check = ctk.CTkCheckBox(
+            nvngx_wrap,
+            text="✅ DirectX 12 (Recomendado - mayoría de juegos modernos)",
+            variable=self.nvngx_dx12_var,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=self._on_nvngx_changed
+        )
+        self.nvngx_dx12_check.pack(anchor="w", padx=15, pady=5)
+        self.setup_widget_focus(self.nvngx_dx12_check)
+        
+        # DirectX 11
+        self.nvngx_dx11_check = ctk.CTkCheckBox(
+            nvngx_wrap,
+            text="✅ DirectX 11 (Juegos más antiguos)",
+            variable=self.nvngx_dx11_var,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=self._on_nvngx_changed
+        )
+        self.nvngx_dx11_check.pack(anchor="w", padx=15, pady=5)
+        self.setup_widget_focus(self.nvngx_dx11_check)
+        
+        # Vulkan
+        self.nvngx_vulkan_check = ctk.CTkCheckBox(
+            nvngx_wrap,
+            text="✅ Vulkan (Doom Eternal, Red Dead Redemption 2, etc.)",
+            variable=self.nvngx_vulkan_var,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            command=self._on_nvngx_changed
+        )
+        self.nvngx_vulkan_check.pack(anchor="w", padx=15, pady=5)
+        self.setup_widget_focus(self.nvngx_vulkan_check)
+        
+        # Info adicional
+        ctk.CTkLabel(
+            nvngx_wrap,
+            text="ℹ️ Si un juego no inicia o crashea al cargar, intenta desmarcar la API correspondiente y reinstala el mod.",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#888888",
+            wraplength=850,
+            justify="left"
+        ).pack(anchor="w", padx=15, pady=(15, 10))
+        
+        # === Sección Debug y Logging (al final) ===
         self.debug_section = CollapsibleSection(config_scroll, title="🐛 Debug y Logging", collapsed=True)
         # No empaquetar aún - update_config_visibility() lo hará
+        
+        debug_wrap = ctk.CTkFrame(self.debug_section.content_frame, fg_color="transparent")
+        debug_wrap.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Log Level Dropdown
+        log_level_frame = ctk.CTkFrame(debug_wrap, fg_color="transparent")
+        log_level_frame.pack(fill="x", padx=15, pady=(10, 5))
+        
         ctk.CTkLabel(
-            self.debug_section.content_frame,
-            text="(Próximamente) Nivel de log, consola, carpeta de logs, overlay debug…",
+            log_level_frame,
+            text="📊 Nivel de Log:",
+            font=ctk.CTkFont(size=FONT_SECTION, weight="bold")
+        ).pack(side="left")
+        
+        self.log_level_combo = WideComboBox(
+            log_level_frame,
+            variable=self.log_level_var,
+            values=["Off", "Error", "Warn", "Info", "Debug", "Trace"],
+            width=200,
+            font=ctk.CTkFont(size=FONT_NORMAL),
+            max_visible_items=6  # Mostrar todas las 6 opciones sin scroll
+        )
+        self.log_level_combo.pack(side="left", padx=10)
+        self.setup_widget_focus(self.log_level_combo)
+        self.log_level_var.trace_add('write', lambda *a: (self._on_logging_changed(), self.mark_preset_custom(), self.update_custom_state()))
+        
+        # Open Console Checkbox
+        self.open_console_check = ctk.CTkCheckBox(
+            debug_wrap,
+            text="🖥️ Abrir ventana de consola al iniciar juego",
+            variable=self.open_console_var,
             font=ctk.CTkFont(size=FONT_SMALL),
-            text_color="#888888",
-            wraplength=900,
+            command=self._on_logging_changed
+        )
+        self.open_console_check.pack(anchor="w", padx=15, pady=5)
+        self.setup_widget_focus(self.open_console_check)
+        
+        # Log to File Checkbox
+        self.log_to_file_check = ctk.CTkCheckBox(
+            debug_wrap,
+            text="💾 Guardar logs en archivo",
+            variable=self.log_to_file_var,
+            font=ctk.CTkFont(size=FONT_SMALL),
+            command=self._on_logging_changed
+        )
+        self.log_to_file_check.pack(anchor="w", padx=15, pady=5)
+        self.setup_widget_focus(self.log_to_file_check)
+        
+        # Log Management Section
+        log_mgmt_frame = ctk.CTkFrame(debug_wrap, fg_color="#1a1a1a", corner_radius=8)
+        log_mgmt_frame.pack(fill="x", padx=15, pady=(10, 5))
+        
+        ctk.CTkLabel(
+            log_mgmt_frame,
+            text="📁 Gestión de Logs",
+            font=ctk.CTkFont(size=FONT_TINY, weight="bold")
+        ).pack(anchor="w", padx=10, pady=(8, 5))
+        
+        # Log location info
+        logs_dir = os.path.join(get_config_dir(), "logs")
+        ctk.CTkLabel(
+            log_mgmt_frame,
+            text=f"Ubicación: {logs_dir}",
+            font=ctk.CTkFont(size=FONT_TINY-1),
+            text_color="#888888"
+        ).pack(anchor="w", padx=10, pady=(0, 5))
+        
+        # Buttons frame
+        log_buttons_frame = ctk.CTkFrame(log_mgmt_frame, fg_color="transparent")
+        log_buttons_frame.pack(fill="x", padx=10, pady=(0, 8))
+        
+        btn_open_logs = ctk.CTkButton(
+            log_buttons_frame,
+            text="📂 Abrir Carpeta",
+            width=140,
+            height=28,
+            command=self._open_logs_folder,
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
+            font=ctk.CTkFont(size=FONT_TINY)
+        )
+        btn_open_logs.pack(side="left", padx=2)
+        self.setup_widget_focus(btn_open_logs)
+        
+        btn_clean_logs = ctk.CTkButton(
+            log_buttons_frame,
+            text="🗑️ Limpiar Antiguos",
+            width=140,
+            height=28,
+            command=self._clean_old_logs,
+            fg_color="#3a3a3a",
+            hover_color="#4a4a4a",
+            font=ctk.CTkFont(size=FONT_TINY)
+        )
+        btn_clean_logs.pack(side="left", padx=2)
+        self.setup_widget_focus(btn_clean_logs)
+        
+        # Info text
+        ctk.CTkLabel(
+            debug_wrap,
+            text="ℹ️ Los logs se guardan en la carpeta de configuración. 'Limpiar Antiguos' elimina logs de más de 7 días.",
+            font=ctk.CTkFont(size=FONT_TINY-1),
+            text_color="#666666",
+            wraplength=850,
             justify="left"
-        ).pack(padx=15, pady=10, anchor="w")
+        ).pack(anchor="w", padx=15, pady=(5, 10))
         
         sharpness_title_frame = ctk.CTkFrame(sharpness_frame, fg_color="transparent")
         sharpness_title_frame.pack(fill="x", padx=15, pady=(10, 5))
@@ -2923,6 +3821,97 @@ class GamingApp(ctk.CTk):
             font=ctk.CTkFont(size=11)
         ).pack(fill="x", padx=15, pady=(2, 5))
         
+        # === OptiPatcher (Plugin ASI) ===
+        ctk.CTkLabel(
+            mod_frame,
+            text="OptiPatcher (Plugin ASI)",
+            font=ctk.CTkFont(size=FONT_NORMAL, weight="bold"),
+            text_color="#00BFFF"
+        ).pack(anchor="w", padx=15, pady=(15, 2))
+        
+        ctk.CTkLabel(
+            mod_frame,
+            text="🔧 Plugin que mejora compatibilidad eliminando necesidad de spoofing",
+            font=ctk.CTkFont(size=FONT_TINY),
+            text_color="#888888"
+        ).pack(anchor="w", padx=15, pady=(0, 5))
+        
+        # Checkbox para habilitar/deshabilitar
+        self.optipatcher_enabled_var = ctk.BooleanVar(value=True)
+        self.optipatcher_check = ctk.CTkCheckBox(
+            mod_frame,
+            text="✅ Instalar OptiPatcher automáticamente (Recomendado)",
+            variable=self.optipatcher_enabled_var,
+            font=ctk.CTkFont(size=FONT_SMALL),
+            command=self._on_optipatcher_changed
+        )
+        self.optipatcher_check.pack(anchor="w", padx=15, pady=5)
+        self.setup_widget_focus(self.optipatcher_check)
+        
+        # Frame horizontal para versión y botones
+        optipatcher_controls = ctk.CTkFrame(mod_frame, fg_color="transparent")
+        optipatcher_controls.pack(fill="x", padx=15, pady=(5, 5))
+        
+        # Label de estado/versión (ocupa espacio flexible)
+        self.optipatcher_status_label = ctk.CTkLabel(
+            optipatcher_controls,
+            text="📦 Plugin no descargado",
+            font=ctk.CTkFont(size=FONT_SMALL),
+            text_color="#FFA500",
+            anchor="w"
+        )
+        self.optipatcher_status_label.pack(side="left", fill="x", expand=True)
+        
+        # Botón de verificar/descargar (cambia dinámicamente)
+        self.optipatcher_action_btn = ctk.CTkButton(
+            optipatcher_controls,
+            text="🔄 Buscar actualizaciones",
+            command=self.check_optipatcher_updates,
+            height=30,
+            width=160,
+            fg_color="#2a2a2a",
+            hover_color="#3a3a3a",
+            font=ctk.CTkFont(size=FONT_TINY)
+        )
+        self.optipatcher_action_btn.pack(side="left", padx=5)
+        
+        # Botón GitHub
+        ctk.CTkButton(
+            optipatcher_controls,
+            text="🔗 GitHub",
+            command=lambda: webbrowser.open("https://github.com/optiscaler/OptiPatcher/releases"),
+            height=30,
+            width=80,
+            fg_color="#2a2a2a",
+            hover_color="#3a3a3a",
+            font=ctk.CTkFont(size=FONT_TINY)
+        ).pack(side="left")
+        
+        # Variable para guardar info de última release
+        self.optipatcher_latest_release = None
+        
+        # Actualizar estado al iniciar
+        self.after(100, self.update_optipatcher_status)
+        
+        # Info expandible
+        optipatcher_info_frame = ctk.CTkFrame(mod_frame, fg_color="#0a0a0a", corner_radius=6)
+        optipatcher_info_frame.pack(fill="x", padx=15, pady=(0, 5))
+        
+        info_text = (
+            "✅ Soporta 171+ juegos (Wukong, Stalker 2, Hogwarts Legacy, etc.)\n"
+            "✅ Elimina errores 'D3D12 not supported' en Intel Arc\n"
+            "✅ Mejora estabilidad en GPUs AMD/Intel\n"
+            "✅ No modifica archivos del juego (parches en memoria)"
+        )
+        
+        ctk.CTkLabel(
+            optipatcher_info_frame,
+            text=info_text,
+            font=ctk.CTkFont(size=FONT_TINY-1),
+            text_color="#aaaaaa",
+            justify="left"
+        ).pack(anchor="w", padx=10, pady=5)
+        
         # dlssg-to-fsr3 - Mostrar si es necesario
         if self.use_dual_mod:
             nukem_label_text = "dlssg-to-fsr3 (Frame Generation) - REQUERIDO"
@@ -3210,6 +4199,8 @@ class GamingApp(ctk.CTk):
              "Sí, la app detecta automáticamente juegos de Xbox Game Pass y Windows Store."),
             ("¿Qué son los WideComboBox con autoscroll?", 
              "Menús desplegables optimizados para navegación con gamepad que hacen scroll automático."),
+            ("¿Cómo funciona el Overlay de FPS? (NUEVO v2.4)", 
+             "El overlay muestra FPS, Frame Time y mensajes del sistema directamente en el juego sin necesidad de RTSS u otros programas. Configura modo (Básico/Completo), posición (9 ubicaciones), escala (50%-200%) y tamaño de fuente (10-24px) en la sección Configuración del Mod."),
         ]
         
         for i, (question, answer) in enumerate(faqs):
@@ -3264,6 +4255,20 @@ class GamingApp(ctk.CTk):
              "0: Sin límite (usa todo el rendimiento de GPU). 30-60 FPS: Para mejor duración de batería. 90-120 FPS: Para pantallas de alta frecuencia. 144+ FPS: Para monitores gaming."),
             ("Sharpness (Nitidez)", 
              "0.0-0.3: Imagen suave, menos artefactos. 0.5: Balance recomendado. 0.7-1.0: Imagen muy nítida, puede crear artefactos. Ajusta según preferencia visual."),
+            ("📊 Overlay Settings (NUEVO v2.4)", 
+             "Desactivado: Sin overlay en juego. Básico: Muestra solo FPS (bajo impacto). Completo: FPS + Frame Time + Mensajes del sistema. Personaliza posición (9 ubicaciones), escala (50%-200%) y tamaño de fuente (10-24px). Perfecto para monitorear rendimiento sin programas externos."),
+            ("🔧 OptiPatcher (Plugin - NUEVO v2.4)", 
+             "Plugin ASI que mejora compatibilidad en 171+ juegos. Elimina necesidad de spoofing y parches en memoria sin modificar archivos. Soluciona errores 'D3D12 not supported' en Intel Arc. Mejora estabilidad en AMD/Intel. Instalación automática recomendada. Soporta: Wukong, Stalker 2, Hogwarts Legacy, FF7 Rebirth y muchos más."),
+            ("🌈 HDR Settings", 
+             "Auto HDR: Activa automáticamente el espacio de color HDR. NVIDIA Override: Fuerza configuración HDR en GPUs NVIDIA. Max Range: Controla el rango dinámico (nits). Requiere monitor HDR compatible."),
+            ("🐛 Debug/Logging", 
+             "Off/Error: Sin logs o solo errores críticos. Warn/Info: Logs informativos para troubleshooting. Debug/Trace: Logs detallados para reportar bugs. Consola: Abre ventana de consola en tiempo real. Log a archivo: Guarda logs en disco."),
+            ("🎯 Quality Overrides", 
+             "Permite personalizar los ratios de cada modo de calidad. Quality: 1.3-1.7x (más calidad). Balanced: 1.5-2.0x (equilibrado). Performance: 1.7-2.3x (más FPS). Ultra Perf: 2.5-3.5x (máximo FPS). Desactiva para usar valores por defecto del mod."),
+            ("✨ CAS Sharpening", 
+             "RCAS: Algoritmo de nitidez robusto (recomendado). CAS: Contrast Adaptive Sharpening (alternativa). Motion Sharpness: Ajusta nitidez según movimiento de cámara. Contrast Boost: Aumenta nitidez en áreas de alto contraste. Valor: 0.0-1.3 intensidad del efecto."),
+            ("🎭 NVNGX Spoofing", 
+             "Permite que GPUs AMD/Intel usen características de NVIDIA. DX12/DX11/Vulkan: Activa spoofing por API gráfica. Necesario para Frame Generation en GPUs no-NVIDIA. Todo activado por defecto (recomendado)."),
         ]
         
         for option, desc in config_options:
@@ -3428,28 +4433,148 @@ Licencia: Open Source
                 "upscale_mode": "Rendimiento",
                 "upscaler": "FSR 3.1",
                 "sharpness": 0.3,
-                "fps_limit": 0
+                "fps_limit": 0,
+                # HDR: Desactivado en modo Performance para máximo rendimiento
+                "auto_hdr": False,
+                "nvidia_hdr_override": False,
+                "hdr_rgb_range": 100.0,
+                # Logging: Mínimo en Performance
+                "log_level": "Error",
+                "open_console": False,
+                "log_to_file": False,
+                # Quality Overrides: Desactivado
+                "quality_override_enabled": False,
+                "quality_ratio": 1.5,
+                "balanced_ratio": 1.7,
+                "performance_ratio": 2.0,
+                "ultra_perf_ratio": 3.0,
+                # CAS: Activado con sharpening bajo
+                "cas_enabled": True,
+                "cas_type": "RCAS",
+                "cas_sharpness": 0.3,
+                # NVNGX: Todo activado
+                "nvngx_dx12": True,
+                "nvngx_dx11": True,
+                "nvngx_vulkan": True,
+                # Overlay: Básico con FPS en Performance
+                "overlay_mode": "Básico",
+                "overlay_show_fps": True,
+                "overlay_show_frametime": False,
+                "overlay_show_messages": False,
+                "overlay_position": "Superior Derecha",
+                "overlay_scale": 0.8,
+                "overlay_font_size": 12
             },
             "balanced": {
                 "fg_mode": "OptiFG",
                 "upscale_mode": "Equilibrado",
                 "upscaler": "Automático",
                 "sharpness": 0.5,
-                "fps_limit": 0
+                "fps_limit": 0,
+                # HDR: Activado con configuración estándar
+                "auto_hdr": True,
+                "nvidia_hdr_override": False,
+                "hdr_rgb_range": 100.0,
+                # Logging: Info level
+                "log_level": "Info",
+                "open_console": False,
+                "log_to_file": True,
+                # Quality Overrides: Desactivado
+                "quality_override_enabled": False,
+                "quality_ratio": 1.5,
+                "balanced_ratio": 1.7,
+                "performance_ratio": 2.0,
+                "ultra_perf_ratio": 3.0,
+                # CAS: Activado con sharpening medio
+                "cas_enabled": True,
+                "cas_type": "RCAS",
+                "cas_sharpness": 0.5,
+                # NVNGX: Todo activado
+                "nvngx_dx12": True,
+                "nvngx_dx11": True,
+                "nvngx_vulkan": True,
+                # Overlay: Completo en Balanced
+                "overlay_mode": "Completo",
+                "overlay_show_fps": True,
+                "overlay_show_frametime": True,
+                "overlay_show_messages": True,
+                "overlay_position": "Superior Izquierda",
+                "overlay_scale": 1.0,
+                "overlay_font_size": 14
             },
             "quality": {
                 "fg_mode": "Desactivado",
                 "upscale_mode": "Calidad",
                 "upscaler": "XeSS",
                 "sharpness": 0.7,
-                "fps_limit": 0
+                "fps_limit": 0,
+                # HDR: Activado con configuración alta
+                "auto_hdr": True,
+                "nvidia_hdr_override": True,
+                "hdr_rgb_range": 150.0,
+                # Logging: Debug level
+                "log_level": "Debug",
+                "open_console": False,
+                "log_to_file": True,
+                # Quality Overrides: Desactivado (usar nativo)
+                "quality_override_enabled": False,
+                "quality_ratio": 1.5,
+                "balanced_ratio": 1.7,
+                "performance_ratio": 2.0,
+                "ultra_perf_ratio": 3.0,
+                # CAS: Desactivado en Quality (usar nativo)
+                "cas_enabled": False,
+                "cas_type": "RCAS",
+                "cas_sharpness": 0.5,
+                # NVNGX: Todo activado
+                "nvngx_dx12": True,
+                "nvngx_dx11": True,
+                "nvngx_vulkan": True,
+                # Overlay: Desactivado en Quality para máxima calidad
+                "overlay_mode": "Desactivado",
+                "overlay_show_fps": True,
+                "overlay_show_frametime": True,
+                "overlay_show_messages": True,
+                "overlay_position": "Superior Izquierda",
+                "overlay_scale": 1.0,
+                "overlay_font_size": 14
             },
             "default": {
                 "fg_mode": "Desactivado",
                 "upscale_mode": "Automático",
                 "upscaler": "Automático",
                 "sharpness": 0.5,
-                "fps_limit": 0
+                "fps_limit": 0,
+                # HDR: Activado por defecto
+                "auto_hdr": True,
+                "nvidia_hdr_override": False,
+                "hdr_rgb_range": 100.0,
+                # Logging: Info level
+                "log_level": "Info",
+                "open_console": False,
+                "log_to_file": True,
+                # Quality Overrides: Desactivado
+                "quality_override_enabled": False,
+                "quality_ratio": 1.5,
+                "balanced_ratio": 1.7,
+                "performance_ratio": 2.0,
+                "ultra_perf_ratio": 3.0,
+                # CAS: Desactivado por defecto
+                "cas_enabled": False,
+                "cas_type": "RCAS",
+                "cas_sharpness": 0.5,
+                # NVNGX: Todo activado
+                "nvngx_dx12": True,
+                "nvngx_dx11": True,
+                "nvngx_vulkan": True,
+                # Overlay: Desactivado por defecto
+                "overlay_mode": "Desactivado",
+                "overlay_show_fps": True,
+                "overlay_show_frametime": True,
+                "overlay_show_messages": True,
+                "overlay_position": "Superior Izquierda",
+                "overlay_scale": 1.0,
+                "overlay_font_size": 14
             },
             "custom": {
                 # No cambia nada, solo para referencia
@@ -3468,11 +4593,52 @@ Licencia: Open Source
             # Suprimir cambio automático a Custom mientras actualizamos variables
             self._suppress_custom = True
             config = presets[preset]
+            
+            # Variables básicas
             self.fg_mode_var.set(config["fg_mode"])
             self.upscale_mode_var.set(config["upscale_mode"])
             self.upscaler_var.set(config["upscaler"])
             self.sharpness_var.set(config["sharpness"])
             self.fps_limit_var.set(config["fps_limit"])
+            
+            # HDR Settings
+            self.auto_hdr_var.set(config.get("auto_hdr", True))
+            self.nvidia_hdr_override_var.set(config.get("nvidia_hdr_override", False))
+            self.hdr_rgb_range_var.set(config.get("hdr_rgb_range", 100.0))
+            
+            # Debug/Logging
+            self.log_level_var.set(config.get("log_level", "Info"))
+            self.open_console_var.set(config.get("open_console", False))
+            self.log_to_file_var.set(config.get("log_to_file", True))
+            
+            # OptiPatcher
+            self.optipatcher_enabled_var.set(config.get("optipatcher_enabled", True))
+            
+            # Quality Overrides
+            self.quality_override_enabled_var.set(config.get("quality_override_enabled", False))
+            self.quality_ratio_var.set(config.get("quality_ratio", 1.5))
+            self.balanced_ratio_var.set(config.get("balanced_ratio", 1.7))
+            self.performance_ratio_var.set(config.get("performance_ratio", 2.0))
+            self.ultra_perf_ratio_var.set(config.get("ultra_perf_ratio", 3.0))
+            
+            # CAS Sharpening
+            self.cas_enabled_var.set(config.get("cas_enabled", False))
+            self.cas_type_var.set(config.get("cas_type", "RCAS"))
+            self.cas_sharpness_var.set(config.get("cas_sharpness", 0.5))
+            
+            # NVNGX Spoofing
+            self.nvngx_dx12_var.set(config.get("nvngx_dx12", True))
+            self.nvngx_dx11_var.set(config.get("nvngx_dx11", True))
+            self.nvngx_vulkan_var.set(config.get("nvngx_vulkan", True))
+            
+            # Overlay Settings
+            self.overlay_mode_var.set(config.get("overlay_mode", "Desactivado"))
+            self.overlay_show_fps_var.set(config.get("overlay_show_fps", True))
+            self.overlay_show_frametime_var.set(config.get("overlay_show_frametime", True))
+            self.overlay_show_messages_var.set(config.get("overlay_show_messages", True))
+            self.overlay_position_var.set(config.get("overlay_position", "Superior Izquierda"))
+            self.overlay_scale_var.set(config.get("overlay_scale", 1.0))
+            self.overlay_font_size_var.set(config.get("overlay_font_size", 14))
 
             # Actualizar labels
             self.on_sharpness_changed(config["sharpness"])
@@ -3494,12 +4660,51 @@ Licencia: Open Source
             if getattr(self, 'custom_preset_state', None):
                 self._suppress_custom = True
                 state = self.custom_preset_state
+                
+                # Variables básicas
                 if 'fg_mode' in state: self.fg_mode_var.set(state['fg_mode'])
                 if 'upscale_mode' in state: self.upscale_mode_var.set(state['upscale_mode'])
                 if 'upscaler' in state: self.upscaler_var.set(state['upscaler'])
                 if 'sharpness' in state: self.sharpness_var.set(state['sharpness']); self.on_sharpness_changed(state['sharpness'])
                 if 'fps_limit' in state: self.fps_limit_var.set(state['fps_limit']); self.on_fps_changed(state['fps_limit'])
                 if 'dll_name' in state: self.dll_name_var.set(state['dll_name'])
+                
+                # HDR Settings
+                if 'auto_hdr' in state: self.auto_hdr_var.set(state['auto_hdr'])
+                if 'nvidia_hdr_override' in state: self.nvidia_hdr_override_var.set(state['nvidia_hdr_override'])
+                if 'hdr_rgb_range' in state: self.hdr_rgb_range_var.set(state['hdr_rgb_range'])
+                
+                # Debug/Logging
+                if 'log_level' in state: self.log_level_var.set(state['log_level'])
+                if 'open_console' in state: self.open_console_var.set(state['open_console'])
+                if 'log_to_file' in state: self.log_to_file_var.set(state['log_to_file'])
+                
+                # Quality Overrides
+                if 'quality_override_enabled' in state: self.quality_override_enabled_var.set(state['quality_override_enabled'])
+                if 'quality_ratio' in state: self.quality_ratio_var.set(state['quality_ratio'])
+                if 'balanced_ratio' in state: self.balanced_ratio_var.set(state['balanced_ratio'])
+                if 'performance_ratio' in state: self.performance_ratio_var.set(state['performance_ratio'])
+                if 'ultra_perf_ratio' in state: self.ultra_perf_ratio_var.set(state['ultra_perf_ratio'])
+                
+                # CAS Sharpening
+                if 'cas_enabled' in state: self.cas_enabled_var.set(state['cas_enabled'])
+                if 'cas_type' in state: self.cas_type_var.set(state['cas_type'])
+                if 'cas_sharpness' in state: self.cas_sharpness_var.set(state['cas_sharpness'])
+                
+                # NVNGX Spoofing
+                if 'nvngx_dx12' in state: self.nvngx_dx12_var.set(state['nvngx_dx12'])
+                if 'nvngx_dx11' in state: self.nvngx_dx11_var.set(state['nvngx_dx11'])
+                if 'nvngx_vulkan' in state: self.nvngx_vulkan_var.set(state['nvngx_vulkan'])
+                
+                # Overlay Settings
+                if 'overlay_mode' in state: self.overlay_mode_var.set(state['overlay_mode'])
+                if 'overlay_show_fps' in state: self.overlay_show_fps_var.set(state['overlay_show_fps'])
+                if 'overlay_show_frametime' in state: self.overlay_show_frametime_var.set(state['overlay_show_frametime'])
+                if 'overlay_show_messages' in state: self.overlay_show_messages_var.set(state['overlay_show_messages'])
+                if 'overlay_position' in state: self.overlay_position_var.set(state['overlay_position'])
+                if 'overlay_scale' in state: self.overlay_scale_var.set(state['overlay_scale'])
+                if 'overlay_font_size' in state: self.overlay_font_size_var.set(state['overlay_font_size'])
+                
                 self._suppress_custom = False
             self.active_preset_label.configure(text="✏️ Custom")
             self.log('INFO', "Modo personalizado activado (estado restaurado)")
@@ -4311,10 +5516,49 @@ Licencia: Open Source
                             upscale_mode_selected=upscale_mode,
                             sharpness_selected=sharpness,
                             overlay_selected=overlay,
-                            mb_selected=mb
+                            mb_selected=mb,
+                            auto_hdr=self.auto_hdr_var.get(),
+                            nvidia_hdr_override=self.nvidia_hdr_override_var.get(),
+                            hdr_rgb_range=self.hdr_rgb_range_var.get(),
+                            log_level=self.log_level_var.get(),
+                            open_console=self.open_console_var.get(),
+                            log_to_file=self.log_to_file_var.get(),
+                            quality_override_enabled=self.quality_override_enabled_var.get(),
+                            quality_ratio=self.quality_ratio_var.get(),
+                            balanced_ratio=self.balanced_ratio_var.get(),
+                            performance_ratio=self.performance_ratio_var.get(),
+                            ultra_perf_ratio=self.ultra_perf_ratio_var.get(),
+                            cas_enabled=self.cas_enabled_var.get(),
+                            cas_type=self.cas_type_var.get(),
+                            cas_sharpness=self.cas_sharpness_var.get(),
+                            nvngx_dx12=self.nvngx_dx12_var.get(),
+                            nvngx_dx11=self.nvngx_dx11_var.get(),
+                            nvngx_vulkan=self.nvngx_vulkan_var.get(),
+                            overlay_mode=self.overlay_mode_var.get(),
+                            overlay_show_fps=self.overlay_show_fps_var.get(),
+                            overlay_show_frametime=self.overlay_show_frametime_var.get(),
+                            overlay_show_messages=self.overlay_show_messages_var.get(),
+                            overlay_position=self.overlay_position_var.get(),
+                            overlay_scale=self.overlay_scale_var.get(),
+                            overlay_font_size=self.overlay_font_size_var.get()
                         )
                     
                     if result:
+                        # Instalar OptiPatcher si está habilitado
+                        if self.optipatcher_enabled_var.get():
+                            optipatcher_asi = MOD_SOURCE_DIR / "OptiPatcher" / "OptiPatcher.asi"
+                            if optipatcher_asi.exists():
+                                self.log('INFO', f"Instalando OptiPatcher en {game_name}...")
+                                optipatcher_result = install_optipatcher(
+                                    target_dir=game_path,
+                                    optipatcher_asi_path=str(optipatcher_asi),
+                                    log_func=self.log
+                                )
+                                if not optipatcher_result:
+                                    self.log('WARN', f"OptiPatcher no se pudo instalar en {game_name}")
+                            else:
+                                self.log('WARN', f"OptiPatcher.asi no encontrado. Usa 'Buscar actualizaciones' para descargarlo.")
+                        
                         success_count += 1
                         self.log('OK', f"✅ {game_name}: Instalado correctamente")
                         # Mejora #3: Guardar en lista de exitosos
@@ -4421,6 +5665,9 @@ Licencia: Open Source
                               self.update_progress(c, t, f"🗑️ Desinstalando {c}/{t}: {n[:30]}{'...' if len(n) > 30 else ''}", show_time=True))
                     
                     result = uninstall_fsr_mod(game_path, self.log)
+                    
+                    # Desinstalar OptiPatcher también
+                    uninstall_optipatcher(game_path, self.log)
                     
                     if result:
                         success_count += 1
@@ -4601,7 +5848,31 @@ Licencia: Open Source
                         upscale_mode_selected=upscale_mode,
                         sharpness_selected=sharpness,
                         overlay_selected=overlay,
-                        mb_selected=mb
+                        mb_selected=mb,
+                        auto_hdr=self.auto_hdr_var.get(),
+                        nvidia_hdr_override=self.nvidia_hdr_override_var.get(),
+                        hdr_rgb_range=self.hdr_rgb_range_var.get(),
+                        log_level=self.log_level_var.get(),
+                        open_console=self.open_console_var.get(),
+                        log_to_file=self.log_to_file_var.get(),
+                        quality_override_enabled=self.quality_override_enabled_var.get(),
+                        quality_ratio=self.quality_ratio_var.get(),
+                        balanced_ratio=self.balanced_ratio_var.get(),
+                        performance_ratio=self.performance_ratio_var.get(),
+                        ultra_perf_ratio=self.ultra_perf_ratio_var.get(),
+                        cas_enabled=self.cas_enabled_var.get(),
+                        cas_type=self.cas_type_var.get(),
+                        cas_sharpness=self.cas_sharpness_var.get(),
+                        nvngx_dx12=self.nvngx_dx12_var.get(),
+                        nvngx_dx11=self.nvngx_dx11_var.get(),
+                        nvngx_vulkan=self.nvngx_vulkan_var.get(),
+                        overlay_mode=self.overlay_mode_var.get(),
+                        overlay_show_fps=self.overlay_show_fps_var.get(),
+                        overlay_show_frametime=self.overlay_show_frametime_var.get(),
+                        overlay_show_messages=self.overlay_show_messages_var.get(),
+                        overlay_position=self.overlay_position_var.get(),
+                        overlay_scale=self.overlay_scale_var.get(),
+                        overlay_font_size=self.overlay_font_size_var.get()
                     )
                 
                 if result:
@@ -4635,6 +5906,9 @@ Licencia: Open Source
         def uninstall_thread():
             try:
                 result = uninstall_fsr_mod(folder, self.log)
+                
+                # Desinstalar OptiPatcher también
+                uninstall_optipatcher(folder, self.log)
                 
                 if result:
                     self.after(0, lambda: messagebox.showinfo("Éxito", "Mod desinstalado correctamente"))
@@ -4682,6 +5956,540 @@ Licencia: Open Source
         self.sharpness_label.configure(text=f"✨ {sharpness_value:.2f}")
         self.config["sharpness"] = sharpness_value
         save_config(self.config)
+    
+    def on_hdr_range_changed(self, value):
+        """Actualiza el label cuando cambia el slider de HDR RGB Range."""
+        range_value = int(float(value))
+        self.hdr_range_label.configure(text=f"{range_value} nits")
+        self.config["hdr_rgb_range"] = range_value
+        save_config(self.config)
+    
+    # ==================================================================================
+    # OVERLAY SETTINGS CALLBACKS
+    # ==================================================================================
+    
+    def _on_overlay_mode_changed(self, *args):
+        """Callback cuando cambia el modo de overlay."""
+        self.config["overlay_mode"] = self.overlay_mode_var.get()
+        save_config(self.config)
+        self._update_overlay_ui_visibility()
+        self.log('INFO', f"Modo de overlay cambiado a: {self.overlay_mode_var.get()}")
+    
+    def _on_overlay_metrics_changed(self):
+        """Callback cuando cambian las métricas a mostrar."""
+        self.config["overlay_show_fps"] = self.overlay_show_fps_var.get()
+        self.config["overlay_show_frametime"] = self.overlay_show_frametime_var.get()
+        self.config["overlay_show_messages"] = self.overlay_show_messages_var.get()
+        save_config(self.config)
+        self.mark_preset_custom()
+        self.update_custom_state()
+    
+    def _on_overlay_position_changed(self):
+        """Callback cuando cambia la posición del overlay."""
+        self.config["overlay_position"] = self.overlay_position_var.get()
+        save_config(self.config)
+        self.mark_preset_custom()
+        self.update_custom_state()
+    
+    def _on_overlay_scale_changed(self, value):
+        """Callback cuando cambia la escala del overlay."""
+        try:
+            self.overlay_scale_label.configure(text=f"{int(float(value) * 100)}%")
+            self.config["overlay_scale"] = float(value)
+            save_config(self.config)
+            self.mark_preset_custom()
+            self.update_custom_state()
+        except Exception:
+            pass
+    
+    def _on_overlay_font_changed(self, value):
+        """Callback cuando cambia el tamaño de fuente del overlay."""
+        try:
+            font_size = int(float(value))
+            self.overlay_font_label.configure(text=f"{font_size}px")
+            self.config["overlay_font_size"] = font_size
+            save_config(self.config)
+            self.mark_preset_custom()
+            self.update_custom_state()
+        except Exception:
+            pass
+    
+    def _update_overlay_ui_visibility(self):
+        """Actualiza la visibilidad de las opciones de overlay según el modo seleccionado."""
+        mode = self.overlay_mode_var.get()
+        
+        if mode == "Desactivado":
+            # Ocultar todo excepto el dropdown de modo
+            if hasattr(self, 'overlay_metrics_frame'):
+                self.overlay_metrics_frame.pack_forget()
+            if hasattr(self, 'position_frame'):
+                self.position_frame.pack_forget()
+            if hasattr(self, 'scale_frame'):
+                self.scale_frame.pack_forget()
+            if hasattr(self, 'font_frame'):
+                self.font_frame.pack_forget()
+        else:
+            # Mostrar opciones según el modo
+            if hasattr(self, 'overlay_metrics_frame'):
+                self.overlay_metrics_frame.pack(fill="x", padx=15, pady=(5, 10))
+            if hasattr(self, 'position_frame'):
+                self.position_frame.pack(fill="x", padx=15, pady=(5, 10))
+            if hasattr(self, 'scale_frame'):
+                self.scale_frame.pack(fill="x", pady=(5, 5))
+            if hasattr(self, 'font_frame'):
+                self.font_frame.pack(fill="x", pady=(5, 10))
+            
+            # En modo "Básico", solo mostrar FPS
+            if mode == "Básico":
+                self.overlay_show_fps_var.set(True)
+                self.overlay_show_frametime_var.set(False)
+                self.overlay_show_messages_var.set(False)
+                # Deshabilitar checkboxes de frametime y messages
+                if hasattr(self, 'overlay_frametime_check'):
+                    self.overlay_frametime_check.configure(state="disabled")
+                if hasattr(self, 'overlay_messages_check'):
+                    self.overlay_messages_check.configure(state="disabled")
+            elif mode == "Completo":
+                # Habilitar todos los checkboxes
+                if hasattr(self, 'overlay_frametime_check'):
+                    self.overlay_frametime_check.configure(state="normal")
+                if hasattr(self, 'overlay_messages_check'):
+                    self.overlay_messages_check.configure(state="normal")
+    
+    # ==================================================================================
+    # HDR SETTINGS CALLBACKS
+    # ==================================================================================
+    
+    def _on_hdr_changed(self):
+        """Callback cuando cambian las opciones de HDR."""
+        self.config["auto_hdr"] = self.auto_hdr_var.get()
+        self.config["nvidia_hdr_override"] = self.nvidia_hdr_override_var.get()
+        save_config(self.config)
+        self.mark_preset_custom()
+        self.update_custom_state()
+    
+    def _apply_hdr_preset(self, preset_name):
+        """Aplica un preset rápido de HDR."""
+        presets = {
+            "sdr": {"auto_hdr": False, "nvidia_override": False, "rgb_range": 80.0},
+            "hdr400": {"auto_hdr": True, "nvidia_override": False, "rgb_range": 100.0},
+            "hdr600": {"auto_hdr": True, "nvidia_override": False, "rgb_range": 150.0},
+            "hdr1000": {"auto_hdr": True, "nvidia_override": False, "rgb_range": 200.0}
+        }
+        
+        if preset_name in presets:
+            preset = presets[preset_name]
+            self.auto_hdr_var.set(preset["auto_hdr"])
+            self.nvidia_hdr_override_var.set(preset["nvidia_override"])
+            self.hdr_rgb_range_var.set(preset["rgb_range"])
+            self._on_hdr_changed()
+            self.on_hdr_range_changed(preset["rgb_range"])
+    
+    def _on_logging_changed(self, *args):
+        """Callback cuando cambian las opciones de logging."""
+        self.config["log_level"] = self.log_level_var.get()
+        self.config["open_console"] = self.open_console_var.get()
+        self.config["log_to_file"] = self.log_to_file_var.get()
+        save_config(self.config)
+    
+    def _on_optipatcher_changed(self, *args):
+        """Callback cuando cambia el estado de OptiPatcher."""
+        self.config["optipatcher_enabled"] = self.optipatcher_enabled_var.get()
+        save_config(self.config)
+        self.log('INFO', f"OptiPatcher {'habilitado' if self.optipatcher_enabled_var.get() else 'deshabilitado'}")
+    
+    def update_optipatcher_status(self):
+        """Actualiza el label de estado con versión instalada"""
+        try:
+            optipatcher_dir = MOD_SOURCE_DIR / "OptiPatcher"
+            optipatcher_asi = optipatcher_dir / "OptiPatcher.asi"
+            version_file = optipatcher_dir / "version.txt"
+            
+            if optipatcher_asi.exists():
+                # Obtener fecha de modificación
+                timestamp = optipatcher_asi.stat().st_mtime
+                date_str = datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y")
+                file_size_kb = optipatcher_asi.stat().st_size / 1024
+                
+                # Intentar leer versión desde archivo
+                version_str = None
+                if version_file.exists():
+                    try:
+                        with open(version_file, 'r', encoding='utf-8') as f:
+                            version_str = f.readline().strip()
+                    except:
+                        pass
+                
+                if version_str:
+                    self.optipatcher_status_label.configure(
+                        text=f"📦 Versión {version_str} del {date_str} ({file_size_kb:.0f} KB)",
+                        text_color="#4CAF50"
+                    )
+                else:
+                    self.optipatcher_status_label.configure(
+                        text=f"📦 Descargado el {date_str} ({file_size_kb:.0f} KB)",
+                        text_color="#4CAF50"
+                    )
+            else:
+                self.optipatcher_status_label.configure(
+                    text="📦 Plugin no descargado",
+                    text_color="#FFA500"
+                )
+        except Exception as e:
+            self.optipatcher_status_label.configure(
+                text="⚠️ Error verificando estado",
+                text_color="#FF5555"
+            )
+    
+    def check_optipatcher_updates(self):
+        """Verifica si hay actualizaciones disponibles de OptiPatcher"""
+        def check_in_thread():
+            try:
+                from src.core.github import GitHubClient
+                
+                # Obtener última release
+                github_client = GitHubClient(repo_type="optipatcher")
+                releases = github_client.get_releases()
+                
+                if not releases:
+                    self.after(0, lambda: self._restore_button_state())
+                    self.after(0, lambda: messagebox.showinfo(
+                        "OptiPatcher",
+                        "No se pudieron obtener las releases de GitHub.\n\n"
+                        "Verifica tu conexión a internet."
+                    ))
+                    return
+                
+                latest = releases[0]
+                version = latest.get("tag_name", "unknown")
+                published = latest.get("published_at", "")
+                
+                if published:
+                    try:
+                        date_obj = datetime.strptime(published, "%Y-%m-%dT%H:%M:%SZ")
+                        date_str = date_obj.strftime("%d/%m/%Y")
+                    except:
+                        date_str = published.split("T")[0]
+                else:
+                    date_str = "Desconocida"
+                
+                # Guardar info de release
+                self.optipatcher_latest_release = latest
+                
+                # Verificar si ya está descargado
+                optipatcher_asi = MOD_SOURCE_DIR / "OptiPatcher" / "OptiPatcher.asi"
+                
+                if optipatcher_asi.exists():
+                    # Comparar fechas
+                    local_timestamp = optipatcher_asi.stat().st_mtime
+                    local_date = datetime.fromtimestamp(local_timestamp)
+                    
+                    try:
+                        remote_date = datetime.strptime(published, "%Y-%m-%dT%H:%M:%SZ")
+                        
+                        if remote_date > local_date:
+                            # Hay actualización disponible
+                            self.after(0, lambda v=version, d=date_str: self._show_update_available(v, d))
+                        else:
+                            # Ya está actualizado
+                            self.after(0, lambda: self._restore_button_state())
+                            self.after(0, lambda v=version, d=date_str: messagebox.showinfo(
+                                "OptiPatcher",
+                                f"✅ Ya tienes la última versión\n\n"
+                                f"Versión: {v}\n"
+                                f"Fecha: {d}"
+                            ))
+                    except:
+                        # Si hay error comparando, ofrecer descargar
+                        self.after(0, lambda v=version, d=date_str: self._show_update_available(v, d))
+                else:
+                    # No está descargado, cambiar botón a descargar
+                    self.after(0, lambda v=version, d=date_str: self._show_download_option(v, d))
+                    
+            except Exception as e:
+                self.after(0, lambda: self._restore_button_state())
+                self.after(0, lambda err=str(e): messagebox.showerror(
+                    "Error",
+                    f"Error verificando actualizaciones:\n{err}"
+                ))
+        
+        # Mostrar que está verificando
+        self.optipatcher_action_btn.configure(text="⏳ Verificando...", state="disabled")
+        
+        # Ejecutar en thread
+        thread = threading.Thread(target=check_in_thread, daemon=True)
+        thread.start()
+    
+    def _restore_button_state(self):
+        """Restaura el botón a su estado inicial"""
+        self.optipatcher_action_btn.configure(
+            text="🔄 Buscar actualizaciones",
+            state="normal",
+            command=self.check_optipatcher_updates
+        )
+    
+    def _show_update_available(self, version, date_str):
+        """Cambia el botón a modo descarga de actualización"""
+        self.optipatcher_action_btn.configure(
+            text="⬇️ Descargar actualización",
+            state="normal",
+            command=self.download_optipatcher_update
+        )
+        
+    def _show_update_available(self, version, date_str):
+        """Cambia el botón a modo descarga de actualización"""
+        self.optipatcher_action_btn.configure(
+            text="⬇️ Descargar actualización",
+            state="normal",
+            command=self.download_optipatcher_update
+        )
+        
+        messagebox.showinfo(
+            "Actualización disponible",
+            f"🆕 Nueva versión de OptiPatcher\n\n"
+            f"Versión: {version}\n"
+            f"Fecha: {date_str}\n\n"
+            f"Haz clic en 'Descargar actualización' para obtenerla."
+        )
+    
+    def _show_download_option(self, version, date_str):
+        """Cambia el botón a modo descarga inicial"""
+        self.optipatcher_action_btn.configure(
+            text="⬇️ Descargar OptiPatcher",
+            state="normal",
+            command=self.download_optipatcher_update
+        )
+        
+        messagebox.showinfo(
+            "OptiPatcher",
+            f"📦 OptiPatcher {version}\n"
+            f"Publicado: {date_str}\n\n"
+            f"Haz clic en 'Descargar OptiPatcher' para descargarlo."
+        )
+    
+    def download_optipatcher_update(self):
+        """Descarga la última versión de OptiPatcher"""
+        if not self.optipatcher_latest_release:
+            messagebox.showerror("Error", "No hay información de release disponible.")
+            return
+        
+        def download_in_thread():
+            try:
+                from src.core.github import GitHubClient
+                
+                self.after(0, lambda: self.log("🔄 Descargando OptiPatcher..."))
+                
+                # Definir ruta de destino
+                optipatcher_dir = MOD_SOURCE_DIR / "OptiPatcher"
+                optipatcher_asi = optipatcher_dir / "OptiPatcher.asi"
+                
+                github_client = GitHubClient(repo_type="optipatcher")
+                result = github_client.download_optipatcher(destination_path=str(optipatcher_asi))
+                
+                if result:
+                    self.after(0, lambda: self.log("✅ OptiPatcher descargado correctamente"))
+                    self.after(0, self.update_optipatcher_status)
+                    self.after(0, self._restore_button_state)
+                    self.after(0, lambda: messagebox.showinfo(
+                        "Descarga completada",
+                        "✅ OptiPatcher descargado correctamente\n\n"
+                        "Se instalará automáticamente al instalar OptiScaler en tus juegos."
+                    ))
+                else:
+                    self.after(0, lambda: self.log("❌ Error descargando OptiPatcher"))
+                    self.after(0, self._restore_button_state)
+                    self.after(0, lambda: messagebox.showerror(
+                        "Error",
+                        "No se pudo descargar OptiPatcher.\n\n"
+                        "Puedes descargarlo manualmente desde GitHub."
+                    ))
+                    
+            except Exception as e:
+                self.after(0, lambda: self.log(f"❌ Error: {str(e)}"))
+                self.after(0, self._restore_button_state)
+                self.after(0, lambda err=str(e): messagebox.showerror(
+                    "Error",
+                    f"Error durante la descarga:\n{err}\n\n"
+                    "Puedes descargar manualmente desde GitHub."
+                ))
+        
+        # Cambiar botón a descargando
+        self.optipatcher_action_btn.configure(text="⏳ Descargando...", state="disabled")
+        
+        # Ejecutar descarga
+        thread = threading.Thread(target=download_in_thread, daemon=True)
+        thread.start()
+    
+    def _open_logs_folder(self):
+        """Abre la carpeta de logs en el explorador."""
+        logs_dir = os.path.join(get_config_dir(), "logs")
+        
+        # Crear carpeta si no existe
+        if not os.path.exists(logs_dir):
+            os.makedirs(logs_dir, exist_ok=True)
+        
+        # Abrir en explorador
+        try:
+            if platform.system() == "Windows":
+                os.startfile(logs_dir)
+            elif platform.system() == "Darwin":  # macOS
+                subprocess.run(["open", logs_dir])
+            else:  # Linux
+                subprocess.run(["xdg-open", logs_dir])
+            self.log('INFO', f"Carpeta de logs abierta: {logs_dir}")
+        except Exception as e:
+            self.log('ERROR', f"Error al abrir carpeta de logs: {e}")
+            messagebox.showerror("Error", f"No se pudo abrir la carpeta de logs:\n{e}")
+    
+    def _clean_old_logs(self):
+        """Elimina logs de más de 7 días."""
+        import time
+        from pathlib import Path
+        
+        logs_dir = Path(get_config_dir()) / "logs"
+        
+        if not logs_dir.exists():
+            messagebox.showinfo("Info", "No hay carpeta de logs para limpiar.")
+            return
+        
+        try:
+            # Obtener fecha límite (7 días atrás)
+            seven_days_ago = time.time() - (7 * 24 * 60 * 60)
+            deleted_count = 0
+            
+            # Buscar y eliminar archivos .log antiguos
+            for log_file in logs_dir.glob("*.log"):
+                if log_file.stat().st_mtime < seven_days_ago:
+                    log_file.unlink()
+                    deleted_count += 1
+                    self.log('INFO', f"Log antiguo eliminado: {log_file.name}")
+            
+            if deleted_count > 0:
+                messagebox.showinfo(
+                    "Limpieza Completada",
+                    f"Se eliminaron {deleted_count} archivo(s) de log antiguos."
+                )
+                self.log('OK', f"Limpieza de logs: {deleted_count} archivos eliminados")
+            else:
+                messagebox.showinfo(
+                    "Sin archivos antiguos",
+                    "No se encontraron logs de más de 7 días."
+                )
+                self.log('INFO', "Limpieza de logs: no hay archivos antiguos")
+        
+        except Exception as e:
+            self.log('ERROR', f"Error al limpiar logs: {e}")
+            messagebox.showerror("Error", f"Error al limpiar logs:\n{e}")
+    
+    def _on_quality_override_changed(self):
+        """Callback cuando cambia el estado de Quality Overrides."""
+        enabled = self.quality_override_enabled_var.get()
+        
+        # Guardar en config
+        self.config["quality_override_enabled"] = enabled
+        self.config["quality_ratio"] = self.quality_ratio_var.get()
+        self.config["balanced_ratio"] = self.balanced_ratio_var.get()
+        self.config["performance_ratio"] = self.performance_ratio_var.get()
+        self.config["ultra_perf_ratio"] = self.ultra_perf_ratio_var.get()
+        save_config(self.config)
+        
+        self.log('INFO', f"Quality Overrides {'activado' if enabled else 'desactivado'}")
+        self._on_advanced_changed()
+    
+    def _validate_quality_ratio(self, preset_name):
+        """Valida y actualiza el ratio de calidad. Muestra warning si es extremo."""
+        ratio_vars = {
+            'quality': self.quality_ratio_var,
+            'balanced': self.balanced_ratio_var,
+            'performance': self.performance_ratio_var,
+            'ultra_perf': self.ultra_perf_ratio_var
+        }
+        
+        var = ratio_vars.get(preset_name)
+        if not var:
+            return
+        
+        try:
+            value = var.get()
+            
+            # Validar rango (0.5 - 4.0)
+            if value < 0.5:
+                var.set(0.5)
+                value = 0.5
+            elif value > 4.0:
+                var.set(4.0)
+                value = 4.0
+            
+            # Actualizar config
+            config_key = f"{preset_name}_ratio" if preset_name != 'ultra_perf' else 'ultra_perf_ratio'
+            self.config[config_key] = value
+            save_config(self.config)
+            
+            # Mostrar warning si valores extremos
+            all_ratios = [v.get() for v in ratio_vars.values()]
+            if any(r < 1.0 for r in all_ratios):
+                self.qo_warning_label.configure(
+                    text="⚠️ Ratios < 1.0 pueden causar mayor resolución interna (más carga GPU, posibles artifacts)."
+                )
+            elif any(r > 3.5 for r in all_ratios):
+                self.qo_warning_label.configure(
+                    text="⚠️ Ratios > 3.5 pueden causar pérdida significativa de calidad visual."
+                )
+            else:
+                self.qo_warning_label.configure(text="")
+            
+            self._on_advanced_changed()
+        
+        except Exception as e:
+            self.log('ERROR', f"Error validando ratio {preset_name}: {e}")
+    
+    def _on_cas_changed(self):
+        """Callback cuando cambia la configuración de CAS."""
+        enabled = self.cas_enabled_var.get()
+        cas_type = self.cas_type_var.get()
+        sharpness = self.cas_sharpness_var.get()
+        
+        # Guardar en config
+        self.config["cas_enabled"] = enabled
+        self.config["cas_type"] = cas_type
+        self.config["cas_sharpness"] = sharpness
+        save_config(self.config)
+        
+        self.log('INFO', f"CAS {'activado' if enabled else 'desactivado'} - Tipo: {cas_type}, Intensidad: {sharpness:.2f}")
+        self.mark_preset_custom()
+        self.update_custom_state()
+    
+    def _on_cas_sharpness_changed(self, value):
+        """Actualiza el label cuando cambia el slider de CAS sharpness."""
+        try:
+            self.cas_sharpness_label.configure(text=f"✨ {float(value):.2f}")
+            self.config["cas_sharpness"] = float(value)
+            save_config(self.config)
+            self.mark_preset_custom()
+            self.update_custom_state()
+        except Exception as e:
+            self.log('ERROR', f"Error actualizando CAS sharpness: {e}")
+    
+    def _on_nvngx_changed(self):
+        """Callback cuando cambia la configuración de NVNGX spoofing."""
+        dx12 = self.nvngx_dx12_var.get()
+        dx11 = self.nvngx_dx11_var.get()
+        vulkan = self.nvngx_vulkan_var.get()
+        
+        # Guardar en config
+        self.config["nvngx_dx12"] = dx12
+        self.config["nvngx_dx11"] = dx11
+        self.config["nvngx_vulkan"] = vulkan
+        save_config(self.config)
+        
+        status = []
+        if dx12: status.append("DX12")
+        if dx11: status.append("DX11")
+        if vulkan: status.append("Vulkan")
+        
+        self.log('INFO', f"NVNGX Spoofing activado para: {', '.join(status) if status else 'Ninguna API'}")
+        self.mark_preset_custom()
+        self.update_custom_state()
     
     def update_fg_options(self):
         """Actualiza las opciones de Frame Generation según GPU y mods instalados."""
@@ -4796,14 +6604,20 @@ Licencia: Open Source
         has_optiscaler = self.check_optiscaler_available()
         
         if has_optiscaler:
-            # Mostrar secciones colapsables, ocultar mensaje
+            # Mostrar secciones colapsables en el orden correcto, ocultar mensaje
             self.config_no_mod_frame.pack_forget()
             if hasattr(self, 'basic_section'):
                 self.basic_section.pack(fill="x", pady=5)
             if hasattr(self, 'advanced_section'):
                 self.advanced_section.pack(fill="x", pady=5)
+            if hasattr(self, 'overlay_section'):
+                self.overlay_section.pack(fill="x", pady=5)
             if hasattr(self, 'hdr_section'):
                 self.hdr_section.pack(fill="x", pady=5)
+            if hasattr(self, 'cas_section'):
+                self.cas_section.pack(fill="x", pady=5)
+            if hasattr(self, 'nvngx_section'):
+                self.nvngx_section.pack(fill="x", pady=5)
             if hasattr(self, 'debug_section'):
                 self.debug_section.pack(fill="x", pady=5)
         else:
@@ -4812,10 +6626,16 @@ Licencia: Open Source
                 self.basic_section.pack_forget()
             if hasattr(self, 'advanced_section'):
                 self.advanced_section.pack_forget()
+            if hasattr(self, 'overlay_section'):
+                self.overlay_section.pack_forget()
             if hasattr(self, 'hdr_section'):
                 self.hdr_section.pack_forget()
             if hasattr(self, 'debug_section'):
                 self.debug_section.pack_forget()
+            if hasattr(self, 'cas_section'):
+                self.cas_section.pack_forget()
+            if hasattr(self, 'nvngx_section'):
+                self.nvngx_section.pack_forget()
             self.config_no_mod_frame.pack(fill="x", pady=20, padx=20)
     
     def select_custom_mod_folder(self):
@@ -5169,6 +6989,11 @@ Licencia: Open Source
         if should_show_tutorial(config_path):
             self.show_welcome_tutorial()
     
+    def check_app_updates(self):
+        """Verifica si hay actualizaciones de la aplicación disponibles."""
+        self.log("INFO", "Verificando actualizaciones de la aplicación...")
+        check_app_updates_async(self)
+    
     def show_welcome_tutorial(self):
         """Muestra la ventana de tutorial de bienvenida."""
         config_path = APP_DIR / "injector_config.json"
@@ -5187,11 +7012,48 @@ Licencia: Open Source
         except:
             pass
         
-        # Guardar configuración
+        # Guardar configuración básica
         self.config["gpu_choice"] = self.gpu_var.get()
         self.config["fg_mode"] = self.fg_mode_var.get()
         self.config["upscale_mode"] = self.upscale_mode_var.get()
         self.config["last_spoof_name"] = self.dll_name_var.get()
+        
+        # Guardar HDR Settings
+        self.config["auto_hdr"] = self.auto_hdr_var.get()
+        self.config["nvidia_hdr_override"] = self.nvidia_hdr_override_var.get()
+        self.config["hdr_rgb_range"] = self.hdr_rgb_range_var.get()
+        
+        # Guardar Debug/Logging
+        self.config["log_level"] = self.log_level_var.get()
+        self.config["open_console"] = self.open_console_var.get()
+        self.config["log_to_file"] = self.log_to_file_var.get()
+        
+        # Guardar Quality Overrides
+        self.config["quality_override_enabled"] = self.quality_override_enabled_var.get()
+        self.config["quality_ratio"] = self.quality_ratio_var.get()
+        self.config["balanced_ratio"] = self.balanced_ratio_var.get()
+        self.config["performance_ratio"] = self.performance_ratio_var.get()
+        self.config["ultra_perf_ratio"] = self.ultra_perf_ratio_var.get()
+        
+        # Guardar CAS Sharpening
+        self.config["cas_enabled"] = self.cas_enabled_var.get()
+        self.config["cas_type"] = self.cas_type_var.get()
+        self.config["cas_sharpness"] = self.cas_sharpness_var.get()
+        
+        # Guardar NVNGX Spoofing
+        self.config["nvngx_dx12"] = self.nvngx_dx12_var.get()
+        self.config["nvngx_dx11"] = self.nvngx_dx11_var.get()
+        self.config["nvngx_vulkan"] = self.nvngx_vulkan_var.get()
+        
+        # Guardar Overlay Settings
+        self.config["overlay_mode"] = self.overlay_mode_var.get()
+        self.config["overlay_show_fps"] = self.overlay_show_fps_var.get()
+        self.config["overlay_show_frametime"] = self.overlay_show_frametime_var.get()
+        self.config["overlay_show_messages"] = self.overlay_show_messages_var.get()
+        self.config["overlay_position"] = self.overlay_position_var.get()
+        self.config["overlay_scale"] = self.overlay_scale_var.get()
+        self.config["overlay_font_size"] = self.overlay_font_size_var.get()
+        
         save_config(self.config)
         
         if messagebox.askokcancel("Salir", "¿Seguro que quieres salir?"):
@@ -5662,6 +7524,86 @@ class DownloadWindow(ctk.CTkToplevel):
     def download_selected(self):
         """Descarga el release seleccionado (DEPRECADO - Ya no se usa)."""
         pass
+
+
+# ==================================================================================
+# SISTEMA DE AUTO-ACTUALIZACIÓN DE LA APLICACIÓN
+# ==================================================================================
+
+def check_app_updates_async(app_instance):
+    """Verifica actualizaciones en thread separado."""
+    import threading
+    from ..core.app_updater import check_for_updates
+    
+    def check_thread():
+        try:
+            result = check_for_updates(logger=app_instance.log)
+            
+            if result:
+                latest_version, release_info = result
+                # Mostrar ventana de actualización en el hilo principal
+                app_instance.after(0, lambda: show_update_dialog(app_instance, latest_version, release_info))
+        except Exception as e:
+            app_instance.log("ERROR", f"Error verificando actualizaciones de la app: {e}")
+    
+    thread = threading.Thread(target=check_thread, daemon=True)
+    thread.start()
+
+
+def show_update_dialog(app_instance, latest_version: str, release_info: dict):
+    """Muestra el diálogo de actualización."""
+    from ..config.constants import APP_VERSION
+    from .components.windows.update_window import UpdateWindow
+    
+    def on_update_accepted():
+        """Callback cuando el usuario acepta actualizar."""
+        download_and_install_app_update(app_instance, release_info)
+    
+    UpdateWindow(
+        app_instance,
+        current_version=APP_VERSION,
+        latest_version=latest_version,
+        release_info=release_info,
+        update_callback=on_update_accepted
+    )
+
+
+def download_and_install_app_update(app_instance, release_info: dict):
+    """Descarga e instala la actualización de la aplicación."""
+    from tkinter import messagebox
+    import threading
+    from ..core.app_updater import download_and_install_update
+    
+    def download_thread():
+        try:
+            app_instance.log("INFO", "Iniciando descarga de actualización...")
+            
+            success = download_and_install_update(
+                release_info,
+                logger=app_instance.log,
+                progress_callback=None  # Podemos añadir barra de progreso si queremos
+            )
+            
+            if success:
+                app_instance.log("OK", "Actualización descargada. Cerrando aplicación...")
+                # Cerrar la aplicación
+                app_instance.after(1000, lambda: app_instance.quit())
+            else:
+                app_instance.after(0, lambda: messagebox.showerror(
+                    "Error",
+                    "No se pudo descargar la actualización.\n\n"
+                    "Puedes descargarla manualmente desde GitHub."
+                ))
+        except Exception as e:
+            app_instance.log("ERROR", f"Error durante la actualización: {e}")
+            app_instance.after(0, lambda: messagebox.showerror(
+                "Error",
+                f"Error durante la actualización:\n{str(e)}\n\n"
+                "Puedes descargar manualmente desde GitHub."
+            ))
+    
+    thread = threading.Thread(target=download_thread, daemon=True)
+    thread.start()
 
 
 if __name__ == "__main__":

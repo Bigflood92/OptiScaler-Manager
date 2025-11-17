@@ -273,7 +273,7 @@ def configure_and_rename_dll(target_dir: str, spoof_dll_name: str, log_func) -> 
         return False
 
 
-def update_optiscaler_ini(target_dir: str, gpu_choice: int, fg_mode_selected: str, upscaler_selected: str, upscale_mode_selected: str, sharpness_selected: float, overlay_selected: bool, mb_selected: bool, log_func) -> bool:
+def update_optiscaler_ini(target_dir: str, gpu_choice: int, fg_mode_selected: str, upscaler_selected: str, upscale_mode_selected: str, sharpness_selected: float, overlay_selected: bool, mb_selected: bool, log_func, auto_hdr: bool = True, nvidia_hdr_override: bool = False, hdr_rgb_range: float = 100.0, log_level: str = "Info", open_console: bool = False, log_to_file: bool = True, quality_override_enabled: bool = False, quality_ratio: float = 1.5, balanced_ratio: float = 1.7, performance_ratio: float = 2.0, ultra_perf_ratio: float = 3.0, cas_enabled: bool = False, cas_type: str = "RCAS", cas_sharpness: float = 0.5, nvngx_dx12: bool = True, nvngx_dx11: bool = True, nvngx_vulkan: bool = True, overlay_mode: str = "Desactivado", overlay_show_fps: bool = True, overlay_show_frametime: bool = True, overlay_show_messages: bool = True, overlay_position: str = "Superior Izquierda", overlay_scale: float = 1.0, overlay_font_size: int = 14) -> bool:
     """Actualiza OptiScaler.ini con las opciones seleccionadas.
 
     Ajustado para coincidir con la estructura real del INI:
@@ -401,16 +401,215 @@ def update_optiscaler_ini(target_dir: str, gpu_choice: int, fg_mode_selected: st
             log_func('INFO', f"OptiScaler.ini: [Sharpness] Sharpness -> {sharpness_str}")
             changes_made = True
 
-        # Overlay (aprox: usar [Menu] OverlayMenu=true/basic/off). Simplificamos a habilitar menú si overlay_selected
+        # Overlay Settings (Menu section)
         if not config.has_section('Menu'):
             config.add_section('Menu')
-        overlay_val = 'true' if overlay_selected else 'auto'
-        if config.get('Menu', 'OverlayMenu', fallback='auto') != overlay_val:
-            config.set('Menu', 'OverlayMenu', overlay_val)
-            log_func('INFO', f"OptiScaler.ini: [Menu] OverlayMenu -> {overlay_val}")
+        
+        # OverlayMenu: auto/basic/true based on mode
+        overlay_menu_map = {
+            "Desactivado": "auto",
+            "Básico": "basic",
+            "Completo": "true"
+        }
+        overlay_menu_val = overlay_menu_map.get(overlay_mode, "auto")
+        
+        if config.get('Menu', 'OverlayMenu', fallback='auto') != overlay_menu_val:
+            config.set('Menu', 'OverlayMenu', overlay_menu_val)
+            log_func('INFO', f"OptiScaler.ini: [Menu] OverlayMenu -> {overlay_menu_val}")
             changes_made = True
+        
+        # Additional overlay settings (only if overlay is not disabled)
+        if overlay_mode != "Desactivado":
+            # Show FPS
+            show_fps_str = 'true' if overlay_show_fps else 'false'
+            if config.get('Menu', 'OverlayShowFPS', fallback='true') != show_fps_str:
+                config.set('Menu', 'OverlayShowFPS', show_fps_str)
+                log_func('INFO', f"OptiScaler.ini: [Menu] OverlayShowFPS -> {show_fps_str}")
+                changes_made = True
+            
+            # Show Frame Time
+            show_frametime_str = 'true' if overlay_show_frametime else 'false'
+            if config.get('Menu', 'OverlayShowFrameTime', fallback='true') != show_frametime_str:
+                config.set('Menu', 'OverlayShowFrameTime', show_frametime_str)
+                log_func('INFO', f"OptiScaler.ini: [Menu] OverlayShowFrameTime -> {show_frametime_str}")
+                changes_made = True
+            
+            # Show Messages
+            show_messages_str = 'true' if overlay_show_messages else 'false'
+            if config.get('Menu', 'OverlayShowMessages', fallback='true') != show_messages_str:
+                config.set('Menu', 'OverlayShowMessages', show_messages_str)
+                log_func('INFO', f"OptiScaler.ini: [Menu] OverlayShowMessages -> {show_messages_str}")
+                changes_made = True
+            
+            # Position mapping
+            position_map = {
+                "Superior Izquierda": "0",
+                "Superior Centro": "1",
+                "Superior Derecha": "2",
+                "Centro Izquierda": "3",
+                "Centro": "4",
+                "Centro Derecha": "5",
+                "Inferior Izquierda": "6",
+                "Inferior Centro": "7",
+                "Inferior Derecha": "8"
+            }
+            position_val = position_map.get(overlay_position, "0")
+            if config.get('Menu', 'OverlayPosition', fallback='0') != position_val:
+                config.set('Menu', 'OverlayPosition', position_val)
+                log_func('INFO', f"OptiScaler.ini: [Menu] OverlayPosition -> {position_val}")
+                changes_made = True
+            
+            # Scale
+            scale_str = f"{overlay_scale:.2f}"
+            if config.get('Menu', 'OverlayScale', fallback='1.00') != scale_str:
+                config.set('Menu', 'OverlayScale', scale_str)
+                log_func('INFO', f"OptiScaler.ini: [Menu] OverlayScale -> {scale_str}")
+                changes_made = True
+            
+            # Font Size
+            font_size_str = str(overlay_font_size)
+            if config.get('Menu', 'OverlayFontSize', fallback='14') != font_size_str:
+                config.set('Menu', 'OverlayFontSize', font_size_str)
+                log_func('INFO', f"OptiScaler.ini: [Menu] OverlayFontSize -> {font_size_str}")
+                changes_made = True
 
         # Motion blur (no existe sección directa; ignoramos para no introducir claves ficticias)
+
+        # HDR Settings
+        if not config.has_section('HDR'):
+            config.add_section('HDR')
+        
+        hdr_enabled_str = 'true' if auto_hdr else 'false'
+        if config.get('HDR', 'EnableAutoHDR', fallback='true') != hdr_enabled_str:
+            config.set('HDR', 'EnableAutoHDR', hdr_enabled_str)
+            log_func('INFO', f"OptiScaler.ini: [HDR] EnableAutoHDR -> {hdr_enabled_str}")
+            changes_made = True
+        
+        nvidia_override_str = 'true' if nvidia_hdr_override else 'false'
+        if config.get('HDR', 'NvidiaOverride', fallback='false') != nvidia_override_str:
+            config.set('HDR', 'NvidiaOverride', nvidia_override_str)
+            log_func('INFO', f"OptiScaler.ini: [HDR] NvidiaOverride -> {nvidia_override_str}")
+            changes_made = True
+        
+        hdr_range_str = f"{hdr_rgb_range:.1f}"
+        if config.get('HDR', 'HDRRGBMaxRange', fallback='100.0') != hdr_range_str:
+            config.set('HDR', 'HDRRGBMaxRange', hdr_range_str)
+            log_func('INFO', f"OptiScaler.ini: [HDR] HDRRGBMaxRange -> {hdr_range_str}")
+            changes_made = True
+
+        # Logging Settings
+        LOG_LEVEL_MAP = {
+            "Off": "0", "Error": "1", "Warn": "2", 
+            "Info": "3", "Debug": "4", "Trace": "5"
+        }
+        
+        if not config.has_section('Logging'):
+            config.add_section('Logging')
+        
+        log_level_code = LOG_LEVEL_MAP.get(log_level, "3")
+        if config.get('Logging', 'LogLevel', fallback='3') != log_level_code:
+            config.set('Logging', 'LogLevel', log_level_code)
+            log_func('INFO', f"OptiScaler.ini: [Logging] LogLevel -> {log_level_code} ({log_level})")
+            changes_made = True
+        
+        open_console_str = 'true' if open_console else 'false'
+        if config.get('Logging', 'OpenConsole', fallback='false') != open_console_str:
+            config.set('Logging', 'OpenConsole', open_console_str)
+            log_func('INFO', f"OptiScaler.ini: [Logging] OpenConsole -> {open_console_str}")
+            changes_made = True
+        
+        log_to_file_str = 'true' if log_to_file else 'false'
+        if config.get('Logging', 'LogToFile', fallback='true') != log_to_file_str:
+            config.set('Logging', 'LogToFile', log_to_file_str)
+            log_func('INFO', f"OptiScaler.ini: [Logging] LogToFile -> {log_to_file_str}")
+            changes_made = True
+        
+        # ===== QUALITY OVERRIDES =====
+        if not config.has_section('QualityOverrides'):
+            config.add_section('QualityOverrides')
+        
+        qo_enabled_str = 'true' if quality_override_enabled else 'false'
+        if config.get('QualityOverrides', 'QualityRatioOverrideEnabled', fallback='false') != qo_enabled_str:
+            config.set('QualityOverrides', 'QualityRatioOverrideEnabled', qo_enabled_str)
+            log_func('INFO', f"OptiScaler.ini: [QualityOverrides] QualityRatioOverrideEnabled -> {qo_enabled_str}")
+            changes_made = True
+        
+        # Solo escribir ratios si están activados
+        if quality_override_enabled:
+            quality_ratio_str = f"{quality_ratio:.2f}"
+            if config.get('QualityOverrides', 'Quality', fallback='1.50') != quality_ratio_str:
+                config.set('QualityOverrides', 'Quality', quality_ratio_str)
+                log_func('INFO', f"OptiScaler.ini: [QualityOverrides] Quality -> {quality_ratio_str}")
+                changes_made = True
+            
+            balanced_ratio_str = f"{balanced_ratio:.2f}"
+            if config.get('QualityOverrides', 'Balanced', fallback='1.70') != balanced_ratio_str:
+                config.set('QualityOverrides', 'Balanced', balanced_ratio_str)
+                log_func('INFO', f"OptiScaler.ini: [QualityOverrides] Balanced -> {balanced_ratio_str}")
+                changes_made = True
+            
+            performance_ratio_str = f"{performance_ratio:.2f}"
+            if config.get('QualityOverrides', 'Performance', fallback='2.00') != performance_ratio_str:
+                config.set('QualityOverrides', 'Performance', performance_ratio_str)
+                log_func('INFO', f"OptiScaler.ini: [QualityOverrides] Performance -> {performance_ratio_str}")
+                changes_made = True
+            
+            ultra_perf_ratio_str = f"{ultra_perf_ratio:.2f}"
+            if config.get('QualityOverrides', 'UltraPerformance', fallback='3.00') != ultra_perf_ratio_str:
+                config.set('QualityOverrides', 'UltraPerformance', ultra_perf_ratio_str)
+                log_func('INFO', f"OptiScaler.ini: [QualityOverrides] UltraPerformance -> {ultra_perf_ratio_str}")
+                changes_made = True
+        
+        # ===== CAS SHARPENING =====
+        if not config.has_section('CAS'):
+            config.add_section('CAS')
+        
+        cas_enabled_str = 'true' if cas_enabled else 'false'
+        if config.get('CAS', 'Enabled', fallback='false') != cas_enabled_str:
+            config.set('CAS', 'Enabled', cas_enabled_str)
+            log_func('INFO', f"OptiScaler.ini: [CAS] Enabled -> {cas_enabled_str}")
+            changes_made = True
+        
+        # Solo escribir configuración si CAS está activado
+        if cas_enabled:
+            # Tipo de CAS (RCAS o CAS)
+            cas_type_value = '1' if cas_type == "RCAS" else '0'  # RCAS=1, CAS=0
+            if config.get('CAS', 'Type', fallback='1') != cas_type_value:
+                config.set('CAS', 'Type', cas_type_value)
+                log_func('INFO', f"OptiScaler.ini: [CAS] Type -> {cas_type_value} ({cas_type})")
+                changes_made = True
+            
+            # Sharpness
+            cas_sharpness_str = f"{cas_sharpness:.2f}"
+            if config.get('CAS', 'Sharpness', fallback='0.50') != cas_sharpness_str:
+                config.set('CAS', 'Sharpness', cas_sharpness_str)
+                log_func('INFO', f"OptiScaler.ini: [CAS] Sharpness -> {cas_sharpness_str}")
+                changes_made = True
+        
+        # ===== NVNGX SPOOFING =====
+        if not config.has_section('Nvngx'):
+            config.add_section('Nvngx')
+        
+        # DirectX 12 Spoofing
+        dx12_str = 'true' if nvngx_dx12 else 'false'
+        if config.get('Nvngx', 'Dx12Spoofing', fallback='true') != dx12_str:
+            config.set('Nvngx', 'Dx12Spoofing', dx12_str)
+            log_func('INFO', f"OptiScaler.ini: [Nvngx] Dx12Spoofing -> {dx12_str}")
+            changes_made = True
+        
+        # DirectX 11 Spoofing
+        dx11_str = 'true' if nvngx_dx11 else 'false'
+        if config.get('Nvngx', 'Dx11Spoofing', fallback='true') != dx11_str:
+            config.set('Nvngx', 'Dx11Spoofing', dx11_str)
+            log_func('INFO', f"OptiScaler.ini: [Nvngx] Dx11Spoofing -> {dx11_str}")
+            changes_made = True
+        
+        # Vulkan Spoofing
+        vulkan_str = 'true' if nvngx_vulkan else 'false'
+        if config.get('Nvngx', 'VulkanSpoofing', fallback='true') != vulkan_str:
+            config.set('Nvngx', 'VulkanSpoofing', vulkan_str)
+            log_func('INFO', f"OptiScaler.ini: [Nvngx] VulkanSpoofing -> {vulkan_str}")
+            changes_made = True
 
         if changes_made:
             with open(ini_path, 'w', encoding='utf-8') as f:
@@ -479,7 +678,14 @@ def read_optiscaler_ini(target_dir: str, log_func):
 
 
 def inject_fsr_mod(mod_source_dir: str, target_dir: str, log_func, spoof_dll_name: str = "dxgi.dll", gpu_choice: int = 2, fg_mode_selected: str = "Automático",
-                   upscaler_selected: str = "Automático", upscale_mode_selected: str = "Automático", sharpness_selected: float = 0.8, overlay_selected: bool = False, mb_selected: bool = True) -> bool:
+                   upscaler_selected: str = "Automático", upscale_mode_selected: str = "Automático", sharpness_selected: float = 0.8, overlay_selected: bool = False, mb_selected: bool = True, 
+                   auto_hdr: bool = True, nvidia_hdr_override: bool = False, hdr_rgb_range: float = 100.0, log_level: str = "Info", open_console: bool = False, log_to_file: bool = True,
+                   quality_override_enabled: bool = False, quality_ratio: float = 1.5, balanced_ratio: float = 1.7, performance_ratio: float = 2.0, ultra_perf_ratio: float = 3.0,
+                   cas_enabled: bool = False, cas_type: str = "RCAS", cas_sharpness: float = 0.5,
+                   nvngx_dx12: bool = True, nvngx_dx11: bool = True, nvngx_vulkan: bool = True,
+                   overlay_mode: str = "Desactivado", overlay_show_fps: bool = True, overlay_show_frametime: bool = True, 
+                   overlay_show_messages: bool = True, overlay_position: str = "Superior Izquierda", 
+                   overlay_scale: float = 1.0, overlay_font_size: int = 14) -> bool:
     source_dir, source_ok = check_mod_source_files(mod_source_dir, log_func)
     if not source_ok:
         return False
@@ -552,7 +758,7 @@ def inject_fsr_mod(mod_source_dir: str, target_dir: str, log_func, spoof_dll_nam
         fg_code = FG_MODE_MAP.get(fg_mode_selected, 'auto')
         upscaler_code = UPSCALER_MAP.get(upscaler_selected, 'auto')
         upscale_code = UPSCALE_MODE_MAP.get(upscale_mode_selected, 'auto')
-        if not update_optiscaler_ini(target_dir, gpu_choice, fg_code, upscaler_code, upscale_code, sharpness_selected, overlay_selected, mb_selected, log_func):
+        if not update_optiscaler_ini(target_dir, gpu_choice, fg_code, upscaler_code, upscale_code, sharpness_selected, overlay_selected, mb_selected, log_func, auto_hdr, nvidia_hdr_override, hdr_rgb_range, log_level, open_console, log_to_file, quality_override_enabled, quality_ratio, balanced_ratio, performance_ratio, ultra_perf_ratio, cas_enabled, cas_type, cas_sharpness, nvngx_dx12, nvngx_dx11, nvngx_vulkan, overlay_mode, overlay_show_fps, overlay_show_frametime, overlay_show_messages, overlay_position, overlay_scale, overlay_font_size):
             log_func('ERROR', "Fallo al configurar OptiScaler.ini. La inyección puede no funcionar como se espera.")
         setup_bat_path = os.path.join(target_dir, 'setup_windows.bat')
         if os.path.exists(setup_bat_path): os.remove(setup_bat_path)
@@ -839,6 +1045,153 @@ def install_nukem_mod(nukem_source_dir: str, target_dir: str, log_func) -> bool:
         return False
 
 
+def install_optipatcher(target_dir: str, optipatcher_asi_path: str, log_func) -> bool:
+    """Instala OptiPatcher.asi como plugin de OptiScaler.
+    
+    OptiPatcher es un plugin ASI que parchea juegos en memoria para exponer
+    DLSS/DLSS-FG sin necesidad de spoofing, mejorando compatibilidad en GPUs no-NVIDIA.
+    
+    Args:
+        target_dir: Directorio del juego donde está instalado OptiScaler
+        optipatcher_asi_path: Ruta al archivo OptiPatcher.asi descargado
+        log_func: Función de logging
+        
+    Returns:
+        bool: True si la instalación fue exitosa
+    """
+    try:
+        if not os.path.exists(optipatcher_asi_path):
+            log_func('ERROR', f"OptiPatcher.asi no encontrado: {optipatcher_asi_path}")
+            return False
+        
+        # Crear carpeta plugins/
+        plugins_dir = os.path.join(target_dir, "plugins")
+        os.makedirs(plugins_dir, exist_ok=True)
+        log_func('INFO', f"Carpeta plugins creada: {plugins_dir}")
+        
+        # Copiar OptiPatcher.asi a plugins/
+        target_asi = os.path.join(plugins_dir, "OptiPatcher.asi")
+        
+        # Backup si ya existe
+        if os.path.exists(target_asi):
+            backup_path = target_asi + ".bak"
+            try:
+                if os.path.exists(backup_path):
+                    os.remove(backup_path)
+                os.rename(target_asi, backup_path)
+                log_func('WARN', "OptiPatcher.asi existente respaldado como .bak")
+            except Exception as e:
+                log_func('WARN', f"No se pudo crear backup: {e}")
+        
+        # Copiar archivo
+        shutil.copy2(optipatcher_asi_path, target_asi)
+        log_func('OK', "OptiPatcher.asi copiado a plugins/")
+        
+        # Habilitar LoadAsiPlugins en OptiScaler.ini
+        ini_path = os.path.join(target_dir, "OptiScaler.ini")
+        if not os.path.exists(ini_path):
+            log_func('WARN', "OptiScaler.ini no encontrado, OptiPatcher no se cargará")
+            return True  # No es un error crítico
+        
+        # Leer INI
+        config = configparser.ConfigParser()
+        config.read(ini_path, encoding='utf-8')
+        
+        # Asegurar sección [Plugins]
+        if not config.has_section('Plugins'):
+            config.add_section('Plugins')
+        
+        # Habilitar carga de plugins ASI
+        config.set('Plugins', 'LoadAsiPlugins', 'true')
+        
+        # Guardar cambios
+        with open(ini_path, 'w', encoding='utf-8') as f:
+            config.write(f)
+        
+        log_func('OK', "OptiPatcher habilitado en OptiScaler.ini (LoadAsiPlugins=true)")
+        log_func('INFO', "OptiPatcher mejora compatibilidad eliminando necesidad de spoofing en 171+ juegos")
+        
+        return True
+        
+    except PermissionError:
+        log_func('ERROR', "ACCESO DENEGADO. Asegúrese de que el juego está CERRADO.")
+        return False
+    except Exception as e:
+        log_func('ERROR', f"Error al instalar OptiPatcher: {e}")
+        return False
+
+
+def uninstall_optipatcher(target_dir: str, log_func) -> bool:
+    """Desinstala OptiPatcher.asi y desactiva la carga de plugins ASI.
+    
+    Args:
+        target_dir: Directorio del juego
+        log_func: Función de logging
+        
+    Returns:
+        bool: True si la desinstalación fue exitosa
+    """
+    try:
+        plugins_dir = os.path.join(target_dir, "plugins")
+        target_asi = os.path.join(plugins_dir, "OptiPatcher.asi")
+        removed = False
+        
+        # Eliminar OptiPatcher.asi
+        if os.path.exists(target_asi):
+            try:
+                os.remove(target_asi)
+                log_func('OK', "OptiPatcher.asi eliminado")
+                removed = True
+            except Exception as e:
+                log_func('ERROR', f"No se pudo eliminar OptiPatcher.asi: {e}")
+                return False
+        
+        # Restaurar backup si existe
+        backup_path = target_asi + ".bak"
+        if os.path.exists(backup_path):
+            try:
+                os.rename(backup_path, target_asi)
+                log_func('INFO', "Backup restaurado")
+            except Exception as e:
+                log_func('WARN', f"No se pudo restaurar backup: {e}")
+        
+        # Eliminar carpeta plugins/ si está vacía
+        if os.path.exists(plugins_dir) and not os.listdir(plugins_dir):
+            try:
+                os.rmdir(plugins_dir)
+                log_func('INFO', "Carpeta plugins/ eliminada (estaba vacía)")
+            except Exception as e:
+                log_func('WARN', f"No se pudo eliminar carpeta plugins/: {e}")
+        
+        # Desactivar LoadAsiPlugins en OptiScaler.ini
+        ini_path = os.path.join(target_dir, "OptiScaler.ini")
+        if os.path.exists(ini_path):
+            try:
+                config = configparser.ConfigParser()
+                config.read(ini_path, encoding='utf-8')
+                
+                if config.has_section('Plugins'):
+                    config.set('Plugins', 'LoadAsiPlugins', 'false')
+                    
+                    with open(ini_path, 'w', encoding='utf-8') as f:
+                        config.write(f)
+                    
+                    log_func('OK', "LoadAsiPlugins desactivado en OptiScaler.ini")
+            except Exception as e:
+                log_func('WARN', f"No se pudo modificar OptiScaler.ini: {e}")
+        
+        if removed:
+            log_func('OK', "OptiPatcher desinstalado correctamente")
+        else:
+            log_func('INFO', "OptiPatcher no estaba instalado")
+        
+        return True
+        
+    except Exception as e:
+        log_func('ERROR', f"Error al desinstalar OptiPatcher: {e}")
+        return False
+
+
 def install_combined_mods(
     optiscaler_source_dir: str,
     nukem_source_dir: str, 
@@ -897,7 +1250,32 @@ def install_combined_mods(
         upscale_mode_selected,
         sharpness_selected,
         overlay_selected,
-        mb_selected
+        mb_selected,
+        # Usar valores por defecto para parámetros no especificados
+        auto_hdr=True,
+        nvidia_hdr_override=False,
+        hdr_rgb_range=100.0,
+        log_level="Info",
+        open_console=False,
+        log_to_file=True,
+        quality_override_enabled=False,
+        quality_ratio=1.5,
+        balanced_ratio=1.7,
+        performance_ratio=2.0,
+        ultra_perf_ratio=3.0,
+        cas_enabled=False,
+        cas_type="RCAS",
+        cas_sharpness=0.5,
+        nvngx_dx12=True,
+        nvngx_dx11=True,
+        nvngx_vulkan=True,
+        overlay_mode="Desactivado",
+        overlay_show_fps=True,
+        overlay_show_frametime=True,
+        overlay_show_messages=True,
+        overlay_position="Superior Izquierda",
+        overlay_scale=1.0,
+        overlay_font_size=14
     )
     
     if not optiscaler_ok:

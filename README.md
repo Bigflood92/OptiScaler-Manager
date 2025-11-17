@@ -1,6 +1,6 @@
 # 🎮 OptiScaler Manager
 
-![Version](https://img.shields.io/badge/version-2.3.1-blue)
+![Version](https://img.shields.io/badge/version-2.4.0-blue)
 ![Python](https://img.shields.io/badge/python-3.12-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-orange)
@@ -48,7 +48,31 @@
 
 ## ✨ Características
 
-### 🎮 WideComboBox con Navegación Completa (NUEVO v2.3.0)
+### � Auto-Actualización de la Aplicación (NUEVO v2.4.0)
+- **Verificación automática**: Busca nuevas versiones al iniciar
+- **Un clic para actualizar**: Descarga, instala y reinicia automáticamente
+- **Ventana informativa**: Muestra changelog completo del nuevo release
+- **Proceso seguro**: Crea backup antes de actualizar y permite rollback
+- **Sin configuración**: Funciona automáticamente en segundo plano
+
+### �📊 Overlay Settings (NUEVO v2.4.0)
+- **Monitorización en tiempo real**: FPS, Frame Time y mensajes de depuración
+- **3 modos de visualización**: Desactivado, Básico (solo FPS), Completo (FPS + Frame Time + Mensajes)
+- **Personalización completa**:
+  - **Posición**: Esquinas de pantalla (Superior Izquierda, Superior Derecha, etc.)
+  - **Escala**: 100% a 200%
+  - **Tamaño de fuente**: Pequeña (12px), Media (16px), Grande (20px)
+- **Integración con presets**: Cada preset incluye configuración de overlay predefinida
+
+### 🔧 OptiPatcher Plugin (NUEVO v2.4.0)
+- **Soporte para 171+ juegos**: Black Myth: Wukong, Stalker 2, Hogwarts Legacy, Final Fantasy VII Rebirth...
+- **Elimina errores D3D12** en GPUs Intel Arc
+- **Instalación automática**: Se integra con OptiScaler sin configuración adicional
+- **Descarga con un clic**: Sistema de actualización automática desde GitHub
+- **Sin spoofing necesario**: Expone DLSS/DLSS-FG nativamente mediante parches en memoria
+- **Gestión de versiones**: Tracking de versión instalada con fecha y tamaño
+
+### 🎮 WideComboBox con Navegación Completa (v2.3.0)
 - **Controles desplegables personalizados** optimizados para gamepad/teclado
 - **Autoscroll interno**: Los menús desplegables largos hacen scroll automático al navegar
 - **Foco visual mejorado**: Borde único y claro, indicador de opción activa
@@ -120,7 +144,7 @@
 
 **[📦 Descargar última versión](https://github.com/Bigflood92/OptiScaler-Manager/releases/latest)**
 
-1. Descarga `Gestor OptiScaler V2.3.1.exe`
+1. Descarga `Gestor OptiScaler V2.4.0.exe`
 2. Doble clic (Windows solicitará permisos de administrador automáticamente)
 3. Se crearán las carpetas en `Config Optiscaler Gestor/` junto al .exe
 4. ¡Listo para usar!
@@ -160,7 +184,7 @@ python -m src.main
 
 ### Primera Ejecución
 
-1. Ejecuta `Gestor OptiScaler V2.3.1.exe` (solicitará permisos de administrador automáticamente)
+1. Ejecuta `Gestor OptiScaler V2.4.0.exe` (solicitará permisos de administrador automáticamente)
 2. Aparecerá un tutorial de bienvenida en el primer inicio
 3. Ve a **Ajustes de la App** → **Gestionar Carpetas de Escaneo**
 4. Añade rutas donde tienes juegos instalados (ej: `D:\Juegos`, `C:\XboxGames`)
@@ -240,7 +264,7 @@ pip install nuitka ordered-set zstandard
 # Build con elevación UAC automática
 ./build_nuitka_admin.ps1
 
-# El ejecutable queda en dist/Gestor OptiScaler V2.3.1.exe
+# El ejecutable queda en dist/Gestor OptiScaler V2.4.0.exe
 ```
 
 ### Alternativa: PyInstaller (obsoleto, no recomendado)

@@ -5,7 +5,7 @@ class WideComboBox(ctk.CTkFrame):
     Interfaz mínima compatible con CTkComboBox (get, set, configure, variable, values).
     """
     def __init__(self, master, values, variable: ctk.StringVar, width=300, height=28,
-                 font=None, command=None, **kwargs):
+                 font=None, command=None, max_visible_items=8, **kwargs):
         super().__init__(master, width=width, height=height, fg_color="#151515", corner_radius=4, **kwargs)
         self._values = list(values)
         self._variable = variable or ctk.StringVar()
@@ -18,6 +18,7 @@ class WideComboBox(ctk.CTkFrame):
         self._font = font or ctk.CTkFont(size=13)
         self._option_buttons = []
         self._current_index = 0
+        self._max_visible_items = max_visible_items  # Parámetro configurable
 
         self.grid_propagate(False)
         self.rowconfigure(0, weight=1)
@@ -139,20 +140,29 @@ class WideComboBox(ctk.CTkFrame):
         y = self.winfo_rooty() + self.winfo_height()
         w = self.winfo_width()
         
-        # Altura máxima del dropdown (mostrar hasta 8 opciones, luego scroll)
-        max_visible_items = 8
+        # Altura máxima del dropdown (mostrar hasta self._max_visible_items opciones, luego scroll)
         item_height = 28
-        max_dropdown_height = min(len(self._values) * item_height, max_visible_items * item_height)
+        max_dropdown_height = min(len(self._values) * item_height, self._max_visible_items * item_height)
         
         self._dropdown.geometry(f"{w}x{max_dropdown_height}+{x}+{y}")
         
-        # Usar CTkScrollableFrame para tener scroll automático
-        self._scrollable_frame = ctk.CTkScrollableFrame(
-            self._dropdown, 
-            fg_color="#1e1e1e",
-            width=w-4,
-            height=max_dropdown_height
-        )
+        # Usar CTkFrame normal si todas las opciones caben, CTkScrollableFrame si no
+        needs_scroll = len(self._values) > self._max_visible_items
+        
+        if needs_scroll:
+            self._scrollable_frame = ctk.CTkScrollableFrame(
+                self._dropdown, 
+                fg_color="#1e1e1e",
+                width=w-4,
+                height=max_dropdown_height
+            )
+        else:
+            self._scrollable_frame = ctk.CTkFrame(
+                self._dropdown, 
+                fg_color="#1e1e1e",
+                width=w-4,
+                height=max_dropdown_height
+            )
         self._scrollable_frame.pack(fill="both", expand=True)
 
         self._option_buttons = []
@@ -161,12 +171,16 @@ class WideComboBox(ctk.CTkFrame):
             self._current_index = self._values.index(self.get())
         else:
             self._current_index = 0
+        
+        # Ajustar ancho de botones según si hay scroll o no
+        button_width = w - 20 if needs_scroll else w - 10
+        
         for i, val in enumerate(self._values):
             btn = ctk.CTkButton(
                 self._scrollable_frame,
                 text=val,
                 anchor="w",
-                width=w-20,  # Ajustar por la scrollbar
+                width=button_width,
                 fg_color="#262626",
                 hover_color="#333",
                 font=self._font,

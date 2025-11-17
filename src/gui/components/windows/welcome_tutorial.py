@@ -11,7 +11,7 @@ from pathlib import Path
 try:
     from src.gui.gaming_app import APP_VERSION
 except ImportError:
-    APP_VERSION = "2.3.0"  # Fallback
+    APP_VERSION = "2.4.0"  # Fallback
 
 
 class WelcomeTutorial(ctk.CTkToplevel):
@@ -125,6 +125,23 @@ Configuración Manual:
 • Upscaler: FSR 3.1, FSR 4.0, XeSS, DLSS
 • Frame Generation: Activado/Desactivado
 • Nitidez: Ajusta con el slider (0.0 - 1.0)
+
+NUEVO en v2.4 - Secciones Avanzadas:
+📊 Overlay Settings: Muestra FPS/Frame Time en juego
+  • 3 modos: Desactivado, Básico, Completo
+  • Personaliza posición, escala, fuente
+  • Muestra FPS, Frame Time y mensajes
+
+🔧 OptiPatcher (Plugin): Mejora compatibilidad
+  • Elimina errores D3D12 en Intel Arc
+  • Soporta 171+ juegos (Wukong, Stalker 2...)
+  • Instalación automática opcional
+
+🌈 HDR Settings: Configuración de HDR automático
+🐛 Debug/Logging: Control de logs y consola
+🎯 Quality Overrides: Personaliza ratios de calidad
+✨ CAS Sharpening: Algoritmo alternativo de nitidez
+🎭 NVNGX Spoofing: Spoofing de GPU por API
 
 Si no sabes qué elegir, usa el preset "Balanced".
                 """,
