@@ -1,0 +1,2141 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Gestor automatizado de OptiScaler para inyectar FSR 3.1/4.0, XeSS y DLSS en juegos">
+      
+      
+        <meta name="author" content="Jorge Coronas">
+      
+      
+        <link rel="canonical" href="https://bigflood92.github.io/OptiScaler-Manager/development/v2.3.0-plan/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>🚀 Propuesta / Plan de Desarrollo v2.3.0 - OptiScaler Manager</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#propuesta-plan-de-desarrollo-v230" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="OptiScaler Manager" class="md-header__button md-logo" aria-label="OptiScaler Manager" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OptiScaler Manager
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🚀 Propuesta / Plan de Desarrollo v2.3.0
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Bigflood92/OptiScaler-Manager" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Bigflood92/OptiScaler-Manager
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Inicio
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../user-guide/installation/" class="md-tabs__link">
+          
+  
+  
+  Guía de Usuario
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../contributing/" class="md-tabs__link">
+          
+  
+  
+  Desarrollo
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="OptiScaler Manager" class="md-nav__button md-logo" aria-label="OptiScaler Manager" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    OptiScaler Manager
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Bigflood92/OptiScaler-Manager" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Bigflood92/OptiScaler-Manager
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inicio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guía de Usuario
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guía de Usuario
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instalación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Primeros Pasos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/configuration.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuración
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/gaming-mode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modo Gaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Desarrollo
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Desarrollo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contribuir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#features-planificadas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📋 Features Planificadas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📋 Features Planificadas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prioridad-1-auto-actualizacion-de-optiscaler-backend-ui-minima-completado-parcial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Prioridad 1: Auto-Actualización de OptiScaler (Backend + UI mínima COMPLETADO PARCIAL)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prioridad-2-interfaz-con-collapsibles-diseno-definido-implementacion-pendiente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Prioridad 2: Interfaz con Collapsibles (Diseño definido / implementación pendiente)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prioridad-3-nuevas-opciones-de-optiscaler-definicion-validacion-ini-real-ajustar-hdr-si-difiere" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Prioridad 3: Nuevas Opciones de OptiScaler (Definición / validación INI real, ajustar HDR si difiere)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="✅ Prioridad 3: Nuevas Opciones de OptiScaler (Definición / validación INI real, ajustar HDR si difiere)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#opciones-a-anadir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Opciones a Añadir:
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Opciones a Añadir:">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-hdr-settings-collapsible-hdr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1️⃣ HDR Settings (Collapsible "🌈 HDR")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-advanced-upscale-mipmap-bias-collapsible-avanzado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2️⃣ Advanced Upscale / Mipmap Bias (Collapsible "⚙️ Avanzado")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-logging-consola-collapsible-debug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3️⃣ Logging &amp; Consola (Collapsible "🐛 Debug")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-cas-rcas-sharpening-collapsible-avanzado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4️⃣ CAS / RCAS Sharpening (Collapsible "⚙️ Avanzado")
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prioridad-4-ver-mods-instalados-deteccion-parcial-ui-pendiente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Prioridad 4: Ver Mods Instalados (Detección parcial / UI pendiente)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prioridad-5-asistente-de-instalacion-guiado-concepto-final-implementacion-pendiente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Prioridad 5: Asistente de Instalación Guiado (Concepto final / implementación pendiente)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="✅ Prioridad 5: Asistente de Instalación Guiado (Concepto final / implementación pendiente)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#paso-1-bienvenida-deteccion-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paso 1: Bienvenida + Detección GPU
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paso-2-configuracion-basica" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paso 2: Configuración Básica
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paso-3-seleccionar-juegos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paso 3: Seleccionar Juegos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paso-4-resumen-aplicar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paso 4: Resumen + Aplicar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paso-5-progreso-finalizacion-estado-en-vivo-resumen-interactivo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paso 5: Progreso + Finalización (estado en vivo + resumen interactivo)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#estructura-de-archivos-actual-proyectada" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗂️ Estructura de Archivos (actual + proyectada)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🗂️ Estructura de Archivos (actual + proyectada)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#archivos-nuevos-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Archivos Nuevos (plan)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#archivos-modificados-impacto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Archivos Modificados (impacto)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#investigacion-necesaria-estado-y-gaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Investigación Necesaria (estado y gaps)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📚 Investigación Necesaria (estado y gaps)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-documentacion-de-optiscaler-prioritario" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Documentación de OptiScaler (PRIORITARIO)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-github-releases-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. GitHub Releases API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-deteccion-de-hardware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Detección de Hardware
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#orden-de-implementacion-sugerido-actualizaciones-de-estado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🎯 Orden de Implementación Sugerido (actualizaciones de estado)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🎯 Orden de Implementación Sugerido (actualizaciones de estado)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fase-1-investigacion-2-4-horas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 1: Investigación (2-4 horas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fase-2-backend-12-16-horas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 2: Backend (12-16 horas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fase-3-ui-core-8-12-horas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 3: UI Core (8-12 horas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fase-4-wizard-6-8-horas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 4: Wizard (6-8 horas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fase-5-testing-y-pulido-4-6-horas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 5: Testing y Pulido (4-6 horas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plan-de-testing-ampliado-con-criterios-de-aceptacion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧪 Plan de Testing (ampliado con criterios de aceptación)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧪 Plan de Testing (ampliado con criterios de aceptación)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-1-auto-actualizacion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test 1: Auto-Actualización
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-2-collapsibles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test 2: Collapsibles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-3-nuevas-opciones-ini" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test 3: Nuevas Opciones INI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-4-deteccion-de-mods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test 4: Detección de Mods
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-5-wizard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test 5: Wizard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checklist-de-documentacion-progreso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📝 Checklist de Documentación (progreso)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📝 Checklist de Documentación (progreso)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#documentacion-de-usuario" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentación de Usuario
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentacion-de-desarrollador" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentación de Desarrollador
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#release-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#criterios-de-exito-reafirmados-medibles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🚀 Criterios de Éxito (reafirmados / medibles)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recursos-de-aprendizaje" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🎓 Recursos de Aprendizaje
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🎓 Recursos de Aprendizaje">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optiscaler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OptiScaler
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#customtkinter-collapsibles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CustomTkinter (Collapsibles)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#github-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#windows-hardware-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows Hardware Detection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timeline-estimado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📅 Timeline Estimado
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notas-adicionales" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✍️ Notas Adicionales
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="✍️ Notas Adicionales">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#decisiones-de-diseno" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisiones de Diseño
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proximas-versiones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔄 Próximas Versiones
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔄 Próximas Versiones">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#v240-futuro-q1-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v2.4.0 (Futuro - Q1 2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v250-futuro-q2-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v2.5.0 (Futuro - Q2 2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="propuesta-plan-de-desarrollo-v230">🚀 Propuesta / Plan de Desarrollo v2.3.0</h1>
+<p><strong>Fecha de inicio</strong>: 12 de Noviembre de 2025<br />
+<strong>Estimación total</strong>: 30-40 horas<br />
+<strong>Objetivo global</strong>: Elevar la experiencia de usuario (UX) y mantenibilidad incorporando auto-actualización confiable, reorganización modular de la interfaz (collapsibles), nuevas opciones avanzadas del INI de OptiScaler y un asistente de onboarding.</p>
+<p><strong>Resumen ejecutivo (pitch)</strong>:
+v2.3.0 transforma el gestor en una herramienta más inteligente y autosuficiente. El usuario deja de depender de pasos manuales para mantenerse al día, gana visibilidad clara del estado de cada juego y recibe soporte guiado desde el primer inicio. La nueva UI con secciones plegables reduce ruido visual y prepara el terreno para futuras expansiones (perfiles, benchmarking). Se prioriza impacto directo sobre el flujo diario: instalar / actualizar / ajustar rápidamente.</p>
+<p><strong>KPIs de éxito</strong>:
+1. Tiempo medio para actualizar OptiScaler: &lt; 20 segundos (antes 2–3 minutos manuales)
+2. Tasa de adopción del asistente en primeras ejecuciones: &gt; 85%
+3. Reducción de soporte por “¿cómo actualizo?”: -70% respecto a v2.2.0
+4. Juegos con versión visible en lista: 100% de instalaciones válidas
+5. Fricción visual (scroll excesivo / búsqueda) percibida: -40% (feedback cualitativo)</p>
+<p><strong>Scope vs No-Scope</strong>:
+INCLUIDO: auto-update, detección versiones por juego, collapsibles, opciones HDR/Advanced/CAS/Logging, wizard 5 pasos.
+EXCLUIDO (diferido): perfiles por juego, benchmarking, sync en la nube, comparador visual.</p>
+<hr />
+<h2 id="features-planificadas">📋 Features Planificadas</h2>
+<h3 id="prioridad-1-auto-actualizacion-de-optiscaler-backend-ui-minima-completado-parcial">✅ Prioridad 1: Auto-Actualización de OptiScaler (Backend + UI mínima COMPLETADO PARCIAL)</h3>
+<p><strong>Estimación</strong>: 16-20 horas<br />
+<strong>Beneficio</strong>: Ahorra 15-30 minutos por actualización manual</p>
+<p><strong>Componentes</strong> (estado actual / pendiente):
+1. Sistema de detección de versiones (GitHub API) – ✅ Implementado
+2. Descarga automática y extracción de releases – ✅ Implementado
+3. Backup / rollback – ⏳ Pendiente (estructura base lista, falta copia segura previo overwrite)
+4. UI de progreso con detalles reutilizando barra general – ✅ Implementado
+5. Actualización masiva de juegos instalados – ✅ Implementado (heurística básica)
+6. Historial de versiones / multi-folder – ⏳ Pendiente ampliación (lectura y listado en UI)
+7. Per-juego version.json – ⏳ Pendiente
+8. Modal con release notes – ⏳ Pendiente</p>
+<p><strong>Archivos creados/modificados</strong>:
+- <code>src/core/updater.py</code> (NUEVO, núcleo auto-update)
+- <code>src/gui/gaming_app.py</code> (botón buscar actualización + chequeo background + integración progreso)
+- <code>Config Optiscaler Gestor/mod_source/version.json</code> (tracking versión global)</p>
+<p><strong>Siguientes incrementos</strong>:
+- Escribir version.json por juego tras instalación (detalle + fecha)
+- Añadir diff entre versión instalada y disponible como badge ⚠️
+- Implementar copia segura (snapshot previo) para rollback rápido
+- Agregar modal de confirmación mostrando changelog resumido</p>
+<hr />
+<h3 id="prioridad-2-interfaz-con-collapsibles-diseno-definido-implementacion-pendiente">✅ Prioridad 2: Interfaz con Collapsibles (Diseño definido / implementación pendiente)</h3>
+<p><strong>Estimación</strong>: 8-12 horas<br />
+<strong>Beneficio</strong>: Interfaz más limpia y escalable</p>
+<p><strong>Diseño</strong>: Sustituir agrupación actual por secciones plegables (pattern acordeón). Cada bloque reduce el scroll y facilita descubrir áreas avanzadas sin saturar.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌──────────────────────────────────────────────┐
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│ ▼ 🎮 Configuración Básica                    │
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├──────────────────────────────────────────────┤
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│   GPU: [AMD/Intel ▼]                         │
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│   Frame Generation: [Automático ▼]           │
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   Upscaler: [FSR 3.1 ▼]                      │
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│   ...                                        │
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>└──────────────────────────────────────────────┘
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>┌──────────────────────────────────────────────┐
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│ ▶ ⚙️ Configuración Avanzada                  │
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>└──────────────────────────────────────────────┘
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>┌──────────────────────────────────────────────┐
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>│ ▶ 🌈 HDR Settings                            │
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>└──────────────────────────────────────────────┘
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>┌──────────────────────────────────────────────┐
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│ ▶ 🐛 Debug y Logging                         │
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>└──────────────────────────────────────────────┘
+</code></pre></div>
+<p><strong>Características</strong>:
+- Click en header → expand/collapse con animación (altura + opacidad opcional)
+- Modo acordeón (solo uno abierto) configurable (flag en settings)
+- Persistir estado (último abierto) en config
+- Iconos y colores distintivos por categoría (ej: HDR arco iris, Debug naranja, Avanzado engranaje)
+- Accesibilidad: foco con teclado, indicador de estado (▶ / ▼)</p>
+<p><strong>Archivos a modificar</strong>:
+- <code>src/gui/gaming_app.py</code> (refactor UI completo)
+- <code>src/gui/components/collapsible_frame.py</code> (NUEVO - widget custom)</p>
+<hr />
+<h3 id="prioridad-3-nuevas-opciones-de-optiscaler-definicion-validacion-ini-real-ajustar-hdr-si-difiere">✅ Prioridad 3: Nuevas Opciones de OptiScaler (Definición / validación INI real, ajustar HDR si difiere)</h3>
+<p><strong>Estimación</strong>: 6-8 horas<br />
+<strong>Beneficio</strong>: Exponer todas las capacidades de OptiScaler.ini</p>
+<h4 id="opciones-a-anadir">Opciones a Añadir:</h4>
+<h5 id="1-hdr-settings-collapsible-hdr">1️⃣ <strong>HDR Settings</strong> (Collapsible "🌈 HDR")</h5>
+<p>Nota: Validar nombres exactos en OptiScaler.ini real (algunas claves iniciales podrían variar: ForceHDR / UseHDR10 vs AutoHDR). Ajustar antes de exponer en UI.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[HDR]</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="na">EnableAutoHDR</span><span class="o">=</span><span class="s">true</span><span class="w">            </span><span class="c1">; verificar si realmente existe / renombrar</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="na">NvidiaOverride</span><span class="o">=</span><span class="s">false</span><span class="w">          </span><span class="c1">; condicional si GPU NVIDIA</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="na">HDRRGBMaxRange</span><span class="o">=</span><span class="s">100.0</span><span class="w">          </span><span class="c1">; rango luminancia (confirmar unidad)</span>
+</code></pre></div></p>
+<p><strong>UI</strong>:
+- ☑ Activar Auto HDR
+- ☑ NVIDIA HDR Override (solo RTX)
+- Slider: Luminancia Máxima (10-200 nits)
+- Presets: [SDR] [HDR400] [HDR600] [HDR1000+]</p>
+<h5 id="2-advanced-upscale-mipmap-bias-collapsible-avanzado">2️⃣ <strong>Advanced Upscale / Mipmap Bias</strong> (Collapsible "⚙️ Avanzado")</h5>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[Upscale]</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">UseNativeAA</span><span class="o">=</span><span class="s">false</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="na">MipmapBiasOverride</span><span class="o">=</span><span class="s">-0.5</span>
+</code></pre></div>
+<p><strong>UI</strong>:
+- Radio: ○ Usar AA nativo  ● OptiScaler gestiona AA
+- Slider: Mipmap Bias (-2.0 a 0.0)
+- Warning: "⚠️ Valores negativos pueden causar shimmer"</p>
+<h5 id="3-logging-consola-collapsible-debug">3️⃣ <strong>Logging &amp; Consola</strong> (Collapsible "🐛 Debug")</h5>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">[Logging]</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="na">LogLevel</span><span class="o">=</span><span class="s">2</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="na">OpenConsole</span><span class="o">=</span><span class="s">false</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="na">LogToFile</span><span class="o">=</span><span class="s">true</span>
+</code></pre></div>
+<p><strong>UI</strong>:
+- Dropdown: Log Level [Off/Error/Warn/Info/Debug/Trace]
+- ☐ Abrir consola al iniciar juego
+- ☑ Guardar logs en archivo
+- Botón: [Abrir carpeta de logs]</p>
+<h5 id="4-cas-rcas-sharpening-collapsible-avanzado">4️⃣ <strong>CAS / RCAS Sharpening</strong> (Collapsible "⚙️ Avanzado")</h5>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">[CAS]</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="na">Enabled</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="na">Sharpness</span><span class="o">=</span><span class="s">0.50</span>
+</code></pre></div>
+<p><strong>UI</strong>:
+- Radio: Tipo de Sharpening
+  - ○ RCAS (actual)
+  - ○ CAS (alternativo)
+- Slider: Nitidez (0.0-1.0) - mismo que existe pero dual</p>
+<p><strong>Archivos a modificar</strong>:
+- <code>src/core/installer.py</code> (update_optiscaler_ini + read_optiscaler_ini)
+- <code>src/config/settings.py</code> (añadir nuevos mappings)
+- <code>src/gui/gaming_app.py</code> (UI para nuevas opciones)</p>
+<hr />
+<h3 id="prioridad-4-ver-mods-instalados-deteccion-parcial-ui-pendiente">✅ Prioridad 4: Ver Mods Instalados (Detección parcial / UI pendiente)</h3>
+<p><strong>Estimación</strong>: 4-6 horas<br />
+<strong>Beneficio</strong>: Visibilidad de qué juegos tienen OptiScaler + versión</p>
+<p><strong>UI propuesta</strong>: Indicador visual en lista de juegos
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>┌──────────────────────────────────────────────┐
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>│  Juegos Detectados                           │
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>├──────────────────────────────────────────────┤
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>│                                              │
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>│  🎮 Cyberpunk 2077                           │
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>│  ✅ OptiScaler v0.8.1 instalado              │
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>│  📅 Instalado: 10/11/2025                    │
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>│  [Aplicar] [Quitar]                          │
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>│                                              │
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>│  🎮 Spider-Man Remastered                    │
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>│  ✅ OptiScaler v0.7.9 instalado              │
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>│  ⚠️ Actualización disponible (v0.8.1)        │
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>│  [Aplicar] [Quitar] [Actualizar]             │
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>│                                              │
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>│  🎮 Alan Wake 2                              │
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>│  ⚪ Sin mod instalado                        │
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>│  [Aplicar]                                   │
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>└──────────────────────────────────────────────┘
+</code></pre></div></p>
+<p><strong>Funcionalidades</strong>:
+- Detectar instalación (presencia de DLL principal OptiScaler.dll o nvngx.dll spoof)
+- Leer versión de <code>version.json</code> en carpeta del juego (crear al instalar)
+- Comparar con versión global en <code>mod_source/version.json</code>
+- Mostrar badges: ✅ Instalado | ⚠️ Update disponible | ⚪ Sin mod | ❌ Incompleto
+- Tooltip detallado con fecha de instalación y diferencias (ej: archivos faltantes)</p>
+<p><strong>Archivos a crear/modificar</strong>:
+- <code>src/core/mod_detector.py</code> (NUEVO)
+- <code>src/gui/gaming_app.py</code> (UI de badges)
+- Guardar <code>version.json</code> al instalar mod en cada juego</p>
+<hr />
+<h3 id="prioridad-5-asistente-de-instalacion-guiado-concepto-final-implementacion-pendiente">✅ Prioridad 5: Asistente de Instalación Guiado (Concepto final / implementación pendiente)</h3>
+<p><strong>Estimación</strong>: 6-8 horas<br />
+<strong>Beneficio</strong>: Onboarding amigable para nuevos usuarios</p>
+<p><strong>Flujo del Wizard</strong> (5 bloques principales):</p>
+<h4 id="paso-1-bienvenida-deteccion-gpu">Paso 1: Bienvenida + Detección GPU</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>┌───────────────────────────────────────────────┐
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>│  🎉 Bienvenido a OptiScaler Manager           │
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>├───────────────────────────────────────────────┤
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>│                                               │
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>│  Este asistente te ayudará a configurar      │
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>│  OptiScaler para tus juegos en 4 pasos.      │
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>│                                               │
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>│  🔍 Detectando hardware...                    │
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>│                                               │
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>│  ✅ GPU detectada: AMD Radeon RX 7900 XT      │
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>│  ✅ Monitor: 2560x1440 144Hz (HDR compatible) │
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>│  ✅ Sistema: Windows 11 64-bit                │
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>│                                               │
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>│  [Siguiente →]                                │
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>└───────────────────────────────────────────────┘
+</code></pre></div>
+<h4 id="paso-2-configuracion-basica">Paso 2: Configuración Básica</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>┌───────────────────────────────────────────────┐
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>│  ⚙️ Configuración Recomendada [Paso 2/4]      │
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>├───────────────────────────────────────────────┤
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>│                                               │
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>│  ¿Qué es más importante para ti?              │
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>│                                               │
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>│  ○ Mejor calidad de imagen (Quality)          │
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>│     └─ 1440p → 4K upscaling, máximo detalle   │
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>│                                               │
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>│  ● Balance entre calidad y rendimiento        │
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>│     └─ 1080p → 1440p, recomendado             │
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>│                                               │
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>│  ○ Máximo rendimiento/FPS (Performance)       │
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>│     └─ 720p → 1440p, competitivo              │
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>│                                               │
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>│  ─────────────────────────────────────────────│
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>│                                               │
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>│  ¿Activar Frame Generation?                  │
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>│  ● Sí (duplica/triplica FPS con IA)           │
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>│  ○ No (solo upscaling)                        │
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>│                                               │
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>│  [← Atrás]  [Siguiente →]                     │
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>└───────────────────────────────────────────────┘
+</code></pre></div>
+<h4 id="paso-3-seleccionar-juegos">Paso 3: Seleccionar Juegos</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>┌───────────────────────────────────────────────┐
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>│  🎮 Selecciona Juegos [Paso 3/4]              │
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>├───────────────────────────────────────────────┤
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>│                                               │
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>│  Juegos compatibles encontrados (5):          │
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>│                                               │
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>│  ☑ Cyberpunk 2077                             │
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>│  ☑ Spider-Man Remastered                      │
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>│  ☑ Alan Wake 2                                │
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>│  ☐ Starfield                                  │
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>│  ☐ Hogwarts Legacy                            │
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>│                                               │
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>│  [Seleccionar todos] [Deseleccionar todos]   │
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>│                                               │
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>│  ℹ️ Aplicaremos la configuración a 3 juegos   │
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>│                                               │
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>│  [← Atrás]  [Siguiente →]                     │
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>└───────────────────────────────────────────────┘
+</code></pre></div>
+<h4 id="paso-4-resumen-aplicar">Paso 4: Resumen + Aplicar</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>┌───────────────────────────────────────────────┐
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>│  ✅ Resumen de Configuración [Paso 4/4]       │
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>├───────────────────────────────────────────────┤
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>│                                               │
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>│  📊 Configuración:                            │
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>│  • GPU: AMD Radeon RX 7900 XT                 │
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>│  • Preset: Balanced                           │
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>│  • Upscaler: FSR 3.1                          │
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>│  • Frame Generation: Activada (Automático)    │
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>│  • Sharpness: 0.5                             │
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>│  • HDR: Activado (100 nits)                   │
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>│                                               │
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>│  🎮 Juegos (3):                               │
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>│  • Cyberpunk 2077                             │
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>│  • Spider-Man Remastered                      │
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>│  • Alan Wake 2                                │
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>│                                               │
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>│  ⏱️ Tiempo estimado: ~2 minutos               │
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>│                                               │
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>│  [← Atrás]  [🚀 Aplicar y Finalizar]          │
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>└───────────────────────────────────────────────┘
+</code></pre></div>
+<h4 id="paso-5-progreso-finalizacion-estado-en-vivo-resumen-interactivo">Paso 5: Progreso + Finalización (estado en vivo + resumen interactivo)</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>┌───────────────────────────────────────────────┐
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>│  🔄 Aplicando configuración...                │
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>├───────────────────────────────────────────────┤
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>│                                               │
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>│  [████████████████──────] 75%                 │
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>│                                               │
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>│  ✅ Cyberpunk 2077 - Completado               │
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>│  ✅ Spider-Man Remastered - Completado        │
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>│  🔄 Alan Wake 2 - Instalando archivos...      │
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>│                                               │
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>│  ⏱️ Tiempo restante: ~30 segundos             │
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>│                                               │
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>└───────────────────────────────────────────────┘
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>--- Después de completar ---
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>┌───────────────────────────────────────────────┐
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>│  🎉 ¡Configuración Completada!                │
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>├───────────────────────────────────────────────┤
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>│                                               │
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>│  ✅ 3 juegos configurados exitosamente        │
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>│                                               │
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>│  🎮 Juegos listos:                            │
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>│  • Cyberpunk 2077                             │
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>│  • Spider-Man Remastered                      │
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>│  • Alan Wake 2                                │
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>│                                               │
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>│  📝 Próximos pasos:                           │
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>│  1. Inicia cualquier juego                    │
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>│  2. Presiona INSERT para ver overlay          │
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>│  3. Verifica que FSR esté activo              │
+<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a>│                                               │
+<a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a>│  💡 Consejos:                                 │
+<a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>│  • Puedes cambiar configuración en cualquier  │
+<a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a>│    momento desde la pestaña de ajustes        │
+<a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a>│  • Usa el botón &quot;Quitar&quot; para desinstalar     │
+<a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a>│                                               │
+<a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a>│  [Cerrar Asistente]  [Ver Tutorial]           │
+<a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a>└───────────────────────────────────────────────┘
+</code></pre></div>
+<p><strong>Características adicionales</strong>:
+- Detección automática de GPU (WMI/DXGI) y validación compatibilidad FG
+- Detección de monitor HDR (fallback si API no disponible)
+- Presets inteligentes (Quality / Balanced / Performance / UltraPerformance) enlazados a factor de escala sugerido
+- Persistencia “no volver a mostrar” en config
+- Re-entrada desde Ajustes (botón “Reabrir Asistente”)
+- Guardar decisiones del usuario para autocompletar siguientes instalaciones</p>
+<p><strong>Archivos a crear</strong>:
+- <code>src/gui/wizard.py</code> (NUEVO - ventana del asistente)
+- <code>src/core/hardware_detector.py</code> (NUEVO - detección GPU/monitor)</p>
+<hr />
+<h2 id="estructura-de-archivos-actual-proyectada">🗂️ Estructura de Archivos (actual + proyectada)</h2>
+<h3 id="archivos-nuevos-plan">Archivos Nuevos (plan)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>src/
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  core/
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    updater.py                    # Sistema de auto-actualización
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    mod_detector.py               # Detectar versiones instaladas
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    hardware_detector.py          # Detectar GPU, monitor, etc.
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  gui/
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    components/
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>      collapsible_frame.py        # Widget custom para collapsibles
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    wizard.py                     # Asistente de instalación guiado
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>Config Optiscaler Gestor/
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>  mod_source/
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>    version.json                  # Versión actual en repo local
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>  game_installations/
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>    Cyberpunk 2077/
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>      version.json                # Versión instalada en juego
+</code></pre></div>
+<h3 id="archivos-modificados-impacto">Archivos Modificados (impacto)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>src/
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  core/
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    installer.py                  # Añadir nuevas opciones INI
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  config/
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    settings.py                   # Mappings para nuevas opciones
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>  gui/
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    gaming_app.py                 # Refactor UI + integrar todo
+</code></pre></div>
+<hr />
+<h2 id="investigacion-necesaria-estado-y-gaps">📚 Investigación Necesaria (estado y gaps)</h2>
+<h3 id="1-documentacion-de-optiscaler-prioritario">1. Documentación de OptiScaler (PRIORITARIO)</h3>
+<p><strong>Objetivo</strong>: Validar todas las opciones INI disponibles</p>
+<p><strong>Tareas</strong> (progreso):
+- [ ] Leer README de OptiScaler en GitHub
+- [ ] Revisar CHANGELOG para nuevas features
+- [ ] Analizar OptiScaler.ini de ejemplo (mod_source/) (parcial)
+- [ ] Documentar secciones no implementadas:
+  - <code>[HDR]</code> - EnableAutoHDR, NvidiaOverride, HDRRGBMaxRange
+  - <code>[Upscale]</code> - UseNativeAA, MipmapBiasOverride
+  - <code>[CAS]</code> - Enabled, Sharpness
+  - <code>[Logging]</code> - LogLevel, OpenConsole, LogToFile
+  - <code>[Nvngx]</code> - Dx12Spoofing, Dx11Spoofing, VulkanSpoofing
+  - <code>[DLSSOverrides]</code> - OverrideDLSSVersions, DLSSDll
+  - <code>[Latency]</code> - Mode, Boost</p>
+<p><strong>Recursos</strong>:
+- https://github.com/cdozdil/OptiScaler
+- https://github.com/cdozdil/OptiScaler/wiki (si existe)
+- Discord de OptiScaler (buscar pins/FAQs)</p>
+<h3 id="2-github-releases-api">2. GitHub Releases API</h3>
+<p><strong>Objetivo</strong>: Implementar auto-actualización correctamente</p>
+<p><strong>Endpoints a usar</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Listar releases</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">api</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">repos</span><span class="o">/</span><span class="n">cdozdil</span><span class="o">/</span><span class="n">OptiScaler</span><span class="o">/</span><span class="n">releases</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># Latest release</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">api</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">repos</span><span class="o">/</span><span class="n">cdozdil</span><span class="o">/</span><span class="n">OptiScaler</span><span class="o">/</span><span class="n">releases</span><span class="o">/</span><span class="n">latest</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="c1"># Download asset</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">cdozdil</span><span class="o">/</span><span class="n">OptiScaler</span><span class="o">/</span><span class="n">releases</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="p">{</span><span class="n">tag</span><span class="p">}</span><span class="o">/</span><span class="p">{</span><span class="n">asset</span><span class="o">.</span><span class="n">zip</span><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Rate limiting</strong>: 60 requests/hora sin auth, 5000 con token</p>
+<h3 id="3-deteccion-de-hardware">3. Detección de Hardware</h3>
+<p><strong>Objetivo</strong>: Auto-detectar GPU y monitor para wizard</p>
+<p><strong>Windows APIs a investigar</strong>:
+- GPU: <code>wmi</code> (Win32_VideoController) o <code>DirectX</code> (DXGI)
+- Monitor HDR: <code>Windows.Graphics.Display</code> (requiere Python 3.9+)
+- Sistema: <code>platform</code>, <code>psutil</code></p>
+<p><strong>Ejemplo</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">wmi</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">c</span> <span class="o">=</span> <span class="n">wmi</span><span class="o">.</span><span class="n">WMI</span><span class="p">()</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="k">for</span> <span class="n">gpu</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">Win32_VideoController</span><span class="p">():</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPU: </span><span class="si">{</span><span class="n">gpu</span><span class="o">.</span><span class="n">Name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    <span class="c1"># AMD Radeon RX 7900 XT</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>    <span class="c1"># NVIDIA GeForce RTX 4090</span>
+</code></pre></div></p>
+<hr />
+<h2 id="orden-de-implementacion-sugerido-actualizaciones-de-estado">🎯 Orden de Implementación Sugerido (actualizaciones de estado)</h2>
+<h3 id="fase-1-investigacion-2-4-horas">Fase 1: Investigación (2-4 horas)</h3>
+<ol>
+<li>⏳ Leer documentación de OptiScaler</li>
+<li>⏳ Analizar OptiScaler.ini completo</li>
+<li>✅ Investigar GitHub API</li>
+<li>⏳ Testing de detección de hardware</li>
+</ol>
+<h3 id="fase-2-backend-12-16-horas">Fase 2: Backend (12-16 horas)</h3>
+<ol>
+<li>✅ <code>src/core/updater.py</code> - Sistema de actualización (COMPLETADO)</li>
+<li>✅ <code>src/core/mod_detector.py</code> - Detección de versiones (COMPLETADO)</li>
+<li>⏳ <code>src/core/hardware_detector.py</code> - Detección GPU/monitor</li>
+<li>⏳ Actualizar <code>src/core/installer.py</code> - Nuevas opciones INI</li>
+</ol>
+<h3 id="fase-3-ui-core-8-12-horas">Fase 3: UI Core (8-12 horas)</h3>
+<ol>
+<li>⏳ <code>src/gui/components/collapsible_frame.py</code> - Widget custom</li>
+<li>⏳ Refactor <code>src/gui/gaming_app.py</code> - Implementar collapsibles</li>
+<li>⏳ Añadir UI para nuevas opciones (HDR, Advanced, Debug)</li>
+<li>✅ Integrar auto-actualización básica en UI principal (COMPLETADO)</li>
+</ol>
+<h3 id="fase-4-wizard-6-8-horas">Fase 4: Wizard (6-8 horas)</h3>
+<ol>
+<li>⏳ <code>src/gui/wizard.py</code> - Ventana del asistente</li>
+<li>⏳ Integrar detección de hardware</li>
+<li>⏳ Flujo de 5 pasos con validación</li>
+<li>⏳ Aplicación batch de configuración</li>
+</ol>
+<h3 id="fase-5-testing-y-pulido-4-6-horas">Fase 5: Testing y Pulido (4-6 horas)</h3>
+<ol>
+<li>✅ Testing de auto-actualización (con versiones fake) (COMPLETADO)</li>
+<li>⏳ Validar todas las opciones INI</li>
+<li>⏳ Testing del wizard end-to-end</li>
+<li>⏳ Ajustes visuales y animaciones</li>
+<li>⏳ Documentación de usuario</li>
+</ol>
+<hr />
+<h2 id="plan-de-testing-ampliado-con-criterios-de-aceptacion">🧪 Plan de Testing (ampliado con criterios de aceptación)</h2>
+<h3 id="test-1-auto-actualizacion">Test 1: Auto-Actualización</h3>
+<ul>
+<li>[x] Simular nueva versión disponible</li>
+<li>[x] Descargar release de GitHub</li>
+<li>[x] Backup de versión actual</li>
+<li>[x] Actualización exitosa de mod_source</li>
+<li>[x] Actualización de juegos instalados (3+ juegos)</li>
+<li>[ ] Rollback a versión anterior</li>
+<li>[x] Manejo de errores (sin conexión, archivo corrupto)</li>
+</ul>
+<h3 id="test-2-collapsibles">Test 2: Collapsibles</h3>
+<ul>
+<li>[ ] Expand/collapse con animación suave</li>
+<li>[ ] Solo un collapsible abierto (acordeón)</li>
+<li>[ ] Persistencia de estado (recordar último abierto)</li>
+<li>[ ] Responsive en diferentes tamaños de ventana</li>
+</ul>
+<h3 id="test-3-nuevas-opciones-ini">Test 3: Nuevas Opciones INI</h3>
+<ul>
+<li>[ ] HDR Settings → escribir correctamente en [HDR]</li>
+<li>[ ] Advanced Upscale → [Upscale] UseNativeAA, MipmapBiasOverride</li>
+<li>[ ] Logging → [Logging] LogLevel, OpenConsole, LogToFile</li>
+<li>[ ] CAS Sharpening → [CAS] Enabled, Sharpness</li>
+<li>[ ] Lectura correcta de INI existente (no sobrescribir custom)</li>
+</ul>
+<h3 id="test-4-deteccion-de-mods">Test 4: Detección de Mods</h3>
+<ul>
+<li>[x] Detectar OptiScaler instalado (nvngx.dll presente)</li>
+<li>[x] Leer versión de version.json</li>
+<li>[x] Comparar con mod_source/ (avisar si desactualizado)</li>
+<li>[x] Badges visuales (✅ ⚠️ ⚪)</li>
+</ul>
+<h3 id="test-5-wizard">Test 5: Wizard</h3>
+<ul>
+<li>[ ] Detección automática de GPU (AMD/NVIDIA)</li>
+<li>[ ] Detección de monitor HDR</li>
+<li>[ ] Flujo completo 5 pasos sin errores</li>
+<li>[ ] Aplicación batch a múltiples juegos</li>
+<li>[ ] Resumen final correcto</li>
+<li>[ ] "No volver a mostrar" funciona</li>
+</ul>
+<hr />
+<h2 id="checklist-de-documentacion-progreso">📝 Checklist de Documentación (progreso)</h2>
+<h3 id="documentacion-de-usuario">Documentación de Usuario</h3>
+<ul>
+<li>[ ] Actualizar README.md con nuevas features v2.3.0</li>
+<li>[ ] Crear guía de uso del asistente (screenshots)</li>
+<li>[ ] Documentar nuevas opciones avanzadas (HDR, CAS, etc.)</li>
+<li>[ ] FAQ: "¿Cómo actualizar OptiScaler?"</li>
+</ul>
+<h3 id="documentacion-de-desarrollador">Documentación de Desarrollador</h3>
+<ul>
+<li>[ ] Comentarios en <code>updater.py</code> (flujo de actualización)</li>
+<li>[ ] Comentarios en <code>collapsible_frame.py</code> (uso del widget)</li>
+<li>[ ] Documentar estructura de <code>version.json</code></li>
+<li>[ ] Actualizar architecture docs (si existen)</li>
+</ul>
+<h3 id="release-notes">Release Notes</h3>
+<ul>
+<li>[ ] CHANGELOG.md - v2.3.0 section</li>
+<li>[ ] RELEASE_NOTES_v2.3.0.md - detallado</li>
+<li>[ ] Comparativa v2.2.0 vs v2.3.0</li>
+</ul>
+<hr />
+<h2 id="criterios-de-exito-reafirmados-medibles">🚀 Criterios de Éxito (reafirmados / medibles)</h2>
+<p><strong>v2.3.0 estará lista cuando</strong>:</p>
+<p>✅ <strong>Auto-Actualización</strong>:
+- Descubre nueva versión en &lt;15s (no bloquea UI)
+- Descarga y extrae sin corromper mod_source
+- Actualiza 3 juegos demo en &lt;2min (escenario referencia)
+- Rollback disponible (flag dir backup) antes de lanzamiento</p>
+<p>✅ <strong>Interfaz Collapsible</strong>:
+- Todas las opciones organizadas en 4 secciones
+- Animaciones suaves (expand/collapse)
+- Fácil navegación (un click para abrir sección)</p>
+<p>✅ <strong>Nuevas Opciones</strong>:
+- HDR Settings funcional (3 opciones)
+- Advanced Upscale (UseNativeAA, Mipmap Bias)
+- Logging Controls (3 opciones)
+- CAS Sharpening (alternativa a RCAS)</p>
+<p>✅ <strong>Detección de Mods</strong>:
+- Muestra versión instalada por juego
+- Alerta si hay actualización disponible
+- Badges visuales claros</p>
+<p>✅ <strong>Wizard</strong>:
+- Completa configuración en &lt;5 minutos
+- Detección automática de hardware
+- Aplica configuración a múltiples juegos
+- Experiencia amigable para nuevos usuarios</p>
+<hr />
+<h2 id="recursos-de-aprendizaje">🎓 Recursos de Aprendizaje</h2>
+<h3 id="optiscaler">OptiScaler</h3>
+<ul>
+<li>GitHub: https://github.com/cdozdil/OptiScaler</li>
+<li>Nexus Mods: https://www.nexusmods.com/site/mods/</li>
+</ul>
+<h3 id="customtkinter-collapsibles">CustomTkinter (Collapsibles)</h3>
+<ul>
+<li>Docs: https://customtkinter.tomschimansky.com/</li>
+<li>Ejemplos: https://github.com/TomSchimansky/CustomTkinter/tree/master/examples</li>
+</ul>
+<h3 id="github-api">GitHub API</h3>
+<ul>
+<li>Releases: https://docs.github.com/en/rest/releases</li>
+<li>Rate Limiting: https://docs.github.com/en/rest/rate-limit</li>
+</ul>
+<h3 id="windows-hardware-detection">Windows Hardware Detection</h3>
+<ul>
+<li>WMI: https://pypi.org/project/WMI/</li>
+<li>Win32 API: https://pypi.org/project/pywin32/</li>
+</ul>
+<hr />
+<h2 id="timeline-estimado">📅 Timeline Estimado</h2>
+<p><strong>Semana 1 (12-18 Nov)</strong>:
+- Investigación de OptiScaler
+- Implementar <code>updater.py</code>
+- Implementar <code>mod_detector.py</code></p>
+<p><strong>Semana 2 (19-25 Nov)</strong>:
+- Crear <code>collapsible_frame.py</code>
+- Refactor UI de gaming_app.py
+- Añadir nuevas opciones INI</p>
+<p><strong>Semana 3 (26 Nov - 2 Dic)</strong>:
+- Implementar wizard completo
+- Integrar auto-actualización en UI
+- Testing exhaustivo</p>
+<p><strong>Semana 4 (3-9 Dic)</strong>:
+- Pulido y bugfixes
+- Documentación
+- Release v2.3.0</p>
+<p><strong>Fecha objetivo de release</strong>: 9 de Diciembre de 2025 🎯</p>
+<hr />
+<h2 id="notas-adicionales">✍️ Notas Adicionales</h2>
+<h3 id="decisiones-de-diseno">Decisiones de Diseño</h3>
+<p><strong>¿Por qué collapsibles en lugar de tabs?</strong>
+- Más flexible (permite ver múltiples secciones a la vez si se desea)
+- Mejor para pantallas pequeñas (scroll vertical natural)
+- Acordeón mode evita confusión (solo una sección activa)
+- Más fácil añadir nuevas secciones en el futuro</p>
+<p><strong>¿Por qué no implementar perfiles de juego en v2.3.0?</strong>
+- Feature compleja (12-16 horas sola)
+- Puede esperar a v2.4.0 sin afectar UX crítica
+- Priorizar features con mayor impacto/esfuerzo ratio</p>
+<p><strong>¿Por qué priorizar auto-actualización?</strong>
+- OptiScaler se actualiza ~1 vez al mes
+- Ahorro de tiempo masivo a largo plazo
+- Diferenciador vs otras herramientas
+- Base para sistema de notificaciones futuro</p>
+<hr />
+<h2 id="proximas-versiones">🔄 Próximas Versiones</h2>
+<h3 id="v240-futuro-q1-2026">v2.4.0 (Futuro - Q1 2026)</h3>
+<ul>
+<li>Perfiles por Juego (sistema completo)</li>
+<li>Comparador Visual de Presets</li>
+<li>Importar/Exportar configuraciones</li>
+</ul>
+<h3 id="v250-futuro-q2-2026">v2.5.0 (Futuro - Q2 2026)</h3>
+<ul>
+<li>Benchmark Integrado</li>
+<li>Mod Stacking Support (OptiScaler + ReShade)</li>
+<li>Cloud Sync de configuraciones</li>
+</ul>
+<hr />
+<p><strong>Última actualización</strong>: 12 de Noviembre de 2025<br />
+<strong>Autor</strong>: Copilot + Jorge<br />
+<strong>Estado</strong>: Plan vivo (actualizado tras integrar auto-update inicial)</p>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 18, 2025 07:57:54 UTC">November 18, 2025</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Created">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 18, 2025 07:57:54 UTC">November 18, 2025</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/Bigflood92" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/Bigflood92/OptiScaler-Manager/releases" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M256 32c0-17.7-14.3-32-32-32s-32 14.3-32 32v210.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 242.7zM64 320c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64v-32c0-35.3-28.7-64-64-64h-46.9l-56.6 56.6c-31.2 31.2-81.9 31.2-113.1 0L110.9 320zm304 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>

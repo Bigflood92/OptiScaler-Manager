@@ -1,0 +1,1586 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Gestor automatizado de OptiScaler para inyectar FSR 3.1/4.0, XeSS y DLSS en juegos">
+      
+      
+        <meta name="author" content="Jorge Coronas">
+      
+      
+        <link rel="canonical" href="https://bigflood92.github.io/OptiScaler-Manager/user-guide/auto-update-guide/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>🔄 Auto-Actualización de OptiScaler - Guía de Usuario - OptiScaler Manager</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#auto-actualizacion-de-optiscaler-guia-de-usuario" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="OptiScaler Manager" class="md-header__button md-logo" aria-label="OptiScaler Manager" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OptiScaler Manager
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🔄 Auto-Actualización de OptiScaler - Guía de Usuario
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Bigflood92/OptiScaler-Manager" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Bigflood92/OptiScaler-Manager
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Inicio
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../installation/" class="md-tabs__link">
+          
+  
+  
+  Guía de Usuario
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../development/contributing/" class="md-tabs__link">
+          
+  
+  
+  Desarrollo
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="OptiScaler Manager" class="md-nav__button md-logo" aria-label="OptiScaler Manager" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    OptiScaler Manager
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Bigflood92/OptiScaler-Manager" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Bigflood92/OptiScaler-Manager
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inicio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guía de Usuario
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guía de Usuario
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instalación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Primeros Pasos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuración
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gaming-mode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modo Gaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Desarrollo
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Desarrollo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contribuir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/architecture.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/api.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#descripcion-general" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📋 Descripción General
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📋 Descripción General">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#caracteristicas-principales" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✨ Características Principales
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uso-basico" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🚀 Uso Básico
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🚀 Uso Básico">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#metodo-1-chequeo-automatico-recomendado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Método 1: Chequeo Automático (Recomendado)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metodo-2-chequeo-manual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Método 2: Chequeo Manual
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#badges-de-version-en-juegos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🎮 Badges de Versión en Juegos
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🎮 Badges de Versión en Juegos">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#como-se-detecta-la-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ¿Cómo se detecta la versión?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#estructura-de-archivos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📁 Estructura de Archivos
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📁 Estructura de Archivos">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ubicacion-de-versiones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ubicación de Versiones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#versionado-por-juego" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versionado por Juego
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proceso-de-actualizacion-detallado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ⚙️ Proceso de Actualización Detallado
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="⚙️ Proceso de Actualización Detallado">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fase-1-deteccion-2-5-segundos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 1: Detección (2-5 segundos)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fase-2-descarga-30-90-segundos-segun-conexion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 2: Descarga (30-90 segundos según conexión)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fase-3-extraccion-10-20-segundos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 3: Extracción (10-20 segundos)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fase-4-actualizacion-de-metadatos-1-segundo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 4: Actualización de Metadatos (&lt; 1 segundo)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fase-5-actualizacion-de-juegos-5-30-segundos-por-juego" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fase 5: Actualización de Juegos (5-30 segundos por juego)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#seguridad-y-backup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🛡️ Seguridad y Backup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🛡️ Seguridad y Backup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backup-automatico" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backup Automático
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rollback-manual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback Manual
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solucion-de-problemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔧 Solución de Problemas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔧 Solución de Problemas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#problema-no-se-pudo-obtener-releases-de-github" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problema: "No se pudo obtener releases de GitHub"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#problema-error-al-extraer-archivo-7z" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problema: "Error al extraer archivo .7z"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#problema-badge-muestra-actualizacion-disponible-pero-ya-actualice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problema: Badge muestra "⚠️ Actualización disponible" pero ya actualicé
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-del-sistema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🎯 Testing del Sistema
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🎯 Testing del Sistema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#para-desarrolladores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Para Desarrolladores
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Para Desarrolladores">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-test_updaterpy-seguro-no-modifica-archivos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. test_updater.py (Seguro - NO modifica archivos)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-test_updater_realpy-actualizacion-real-con-confirmacion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. test_updater_real.py (Actualización real con confirmación)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metricas-de-rendimiento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📊 Métricas de Rendimiento
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#roadmap-futuro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔮 Roadmap Futuro
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#soporte" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📞 Soporte
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="auto-actualizacion-de-optiscaler-guia-de-usuario">🔄 Auto-Actualización de OptiScaler - Guía de Usuario</h1>
+<p><strong>Versión</strong>: v2.3.0<br />
+<strong>Última actualización</strong>: 13 de Noviembre de 2025</p>
+<hr />
+<h2 id="descripcion-general">📋 Descripción General</h2>
+<p>El sistema de auto-actualización permite mantener OptiScaler siempre actualizado de forma automática, descargando las últimas versiones desde GitHub y aplicándolas tanto al repositorio local como a todos los juegos instalados.</p>
+<h3 id="caracteristicas-principales">✨ Características Principales</h3>
+<ul>
+<li>✅ <strong>Chequeo automático</strong> al iniciar la aplicación</li>
+<li>✅ <strong>Notificación visual</strong> cuando hay nuevas versiones</li>
+<li>✅ <strong>Descarga en segundo plano</strong> con barra de progreso</li>
+<li>✅ <strong>Actualización masiva</strong> de todos los juegos instalados</li>
+<li>✅ <strong>Historial de versiones</strong> preservado en carpetas separadas</li>
+<li>✅ <strong>Detección de versión por juego</strong> con badges visuales</li>
+<li>✅ <strong>Soporte para archivos .7z</strong> (formato nativo de OptiScaler)</li>
+</ul>
+<hr />
+<h2 id="uso-basico">🚀 Uso Básico</h2>
+<h3 id="metodo-1-chequeo-automatico-recomendado">Método 1: Chequeo Automático (Recomendado)</h3>
+<ol>
+<li><strong>Inicia la aplicación</strong> normalmente</li>
+<li><strong>Espera 2 segundos</strong> → el sistema verifica automáticamente</li>
+<li>Si hay actualización disponible, verás una <strong>notificación azul</strong> en la barra de progreso:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>🆕 OptiScaler 0.8.0 disponible (clic para actualizar)
+</code></pre></div></li>
+<li><strong>Haz clic</strong> en la notificación → aparece diálogo de confirmación</li>
+<li>Confirma → descarga e instalación automática</li>
+</ol>
+<h3 id="metodo-2-chequeo-manual">Método 2: Chequeo Manual</h3>
+<ol>
+<li>Ve a <strong>⚙️ Ajustes</strong> (panel lateral)</li>
+<li>Busca la sección <strong>"📥 Gestión de Mods"</strong></li>
+<li>Haz clic en <strong>"🔄 Buscar actualización"</strong></li>
+<li>El sistema consulta GitHub y muestra el resultado:</li>
+<li>✅ <strong>"Nueva versión: X.X.X"</strong> → botón de actualización disponible</li>
+<li>ℹ️ <strong>"Ya tienes la última versión"</strong> → no hay nada que hacer</li>
+</ol>
+<hr />
+<h2 id="badges-de-version-en-juegos">🎮 Badges de Versión en Juegos</h2>
+<p>Cada juego en la lista muestra un <strong>badge de estado</strong> que indica:</p>
+<table>
+<thead>
+<tr>
+<th>Badge</th>
+<th>Significado</th>
+<th>Acción Recomendada</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>⚪ Sin mod</strong></td>
+<td>OptiScaler no instalado</td>
+<td>Instalar desde panel Auto</td>
+</tr>
+<tr>
+<td><strong>✅ OptiScaler v0.7.9</strong></td>
+<td>Instalado y actualizado</td>
+<td>Ninguna</td>
+</tr>
+<tr>
+<td><strong>⚠️ Actualización disponible (v0.7.9 → v0.8.0)</strong></td>
+<td>Versión desactualizada</td>
+<td>Usar "Buscar actualización"</td>
+</tr>
+<tr>
+<td><strong>❌ Instalación incompleta</strong></td>
+<td>Archivos faltantes</td>
+<td>Re-instalar</td>
+</tr>
+</tbody>
+</table>
+<h3 id="como-se-detecta-la-version">¿Cómo se detecta la versión?</h3>
+<ol>
+<li>
+<p>Al <strong>instalar</strong> OptiScaler en un juego, se crea <code>version.json</code> con metadata:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.7.9&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;tag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v0.7.9&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">&quot;installed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-11-13T10:30:00&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="nt">&quot;source_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://github.com/optiscaler/OptiScaler/releases/tag/v0.7.9&quot;</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>Al <strong>escanear juegos</strong>, el sistema lee este archivo y compara con la versión global</p>
+</li>
+<li>
+<p>El <strong>badge se actualiza</strong> automáticamente tras instalar/actualizar</p>
+</li>
+</ol>
+<hr />
+<h2 id="estructura-de-archivos">📁 Estructura de Archivos</h2>
+<h3 id="ubicacion-de-versiones">Ubicación de Versiones</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Config Optiscaler Gestor/
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  mod_source/
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    OptiScaler/
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>      version.json              ← Versión global (última descargada)
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>      OptiScaler_0.7.9/         ← Versión 0.7.9
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        OptiScaler.dll
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        OptiScaler.ini
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        ...
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>      OptiScaler_0.8.0/         ← Versión 0.8.0 (nueva)
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>        OptiScaler.dll
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>        OptiScaler.ini
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>        ...
+</code></pre></div>
+<h3 id="versionado-por-juego">Versionado por Juego</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>C:/Games/Cyberpunk 2077/bin/x64/
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  OptiScaler.dll
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  OptiScaler.ini
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  nvngx.dll                    ← DLL spoofed
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  version.json                 ← Metadata de versión instalada
+</code></pre></div>
+<hr />
+<h2 id="proceso-de-actualizacion-detallado">⚙️ Proceso de Actualización Detallado</h2>
+<h3 id="fase-1-deteccion-2-5-segundos">Fase 1: Detección (2-5 segundos)</h3>
+<ol>
+<li>Consulta GitHub API: <code>https://api.github.com/repos/optiscaler/OptiScaler/releases</code></li>
+<li>Obtiene última versión publicada (ej: <code>0.8.0</code>)</li>
+<li>Lee versión local desde <code>mod_source/OptiScaler/version.json</code></li>
+<li>Compara versiones usando semver (ej: <code>0.8.0 &gt; 0.7.9</code>)</li>
+</ol>
+<h3 id="fase-2-descarga-30-90-segundos-segun-conexion">Fase 2: Descarga (30-90 segundos según conexión)</h3>
+<ol>
+<li>Descarga asset <code>.7z</code> desde GitHub Releases</li>
+<li>Muestra progreso en barra: <code>[████████░░] 80%</code></li>
+<li>Guarda temporalmente en <code>_download_0.8.0.7z</code></li>
+</ol>
+<h3 id="fase-3-extraccion-10-20-segundos">Fase 3: Extracción (10-20 segundos)</h3>
+<ol>
+<li>Usa <code>7z.exe</code> para extraer contenido</li>
+<li>Crea carpeta <code>OptiScaler_0.8.0/</code></li>
+<li>Preserva versiones anteriores (no se eliminan)</li>
+</ol>
+<h3 id="fase-4-actualizacion-de-metadatos-1-segundo">Fase 4: Actualización de Metadatos (&lt; 1 segundo)</h3>
+<ol>
+<li>Escribe <code>version.json</code> global con nueva versión</li>
+<li>Marca la nueva carpeta como versión activa</li>
+</ol>
+<h3 id="fase-5-actualizacion-de-juegos-5-30-segundos-por-juego">Fase 5: Actualización de Juegos (5-30 segundos por juego)</h3>
+<ol>
+<li><strong>Detecta</strong> juegos con OptiScaler instalado (busca <code>version.json</code> en cada juego)</li>
+<li><strong>Copia</strong> archivos esenciales desde <code>OptiScaler_0.8.0/</code>:</li>
+<li><code>OptiScaler.dll</code></li>
+<li><code>OptiScaler.ini</code></li>
+<li><code>amd_fidelityfx_*.dll</code></li>
+<li><code>libxess*.dll</code></li>
+<li><strong>Actualiza</strong> <code>version.json</code> en cada juego con nueva versión</li>
+<li><strong>Muestra</strong> progreso: <code>Actualizando juego 3/5...</code></li>
+</ol>
+<hr />
+<h2 id="seguridad-y-backup">🛡️ Seguridad y Backup</h2>
+<h3 id="backup-automatico">Backup Automático</h3>
+<ul>
+<li>✅ <strong>Versiones anteriores se preservan</strong> en carpetas separadas (<code>OptiScaler_0.7.9/</code>, <code>OptiScaler_0.8.0/</code>)</li>
+<li>✅ <strong>Archivos .bak</strong> creados al instalar (ej: <code>dxgi.dll.bak</code>)</li>
+<li>⚠️ <strong>NO se hace backup de juegos</strong> antes de actualizar (se sobrescribe directamente)</li>
+</ul>
+<h3 id="rollback-manual">Rollback Manual</h3>
+<p>Si necesitas volver a una versión anterior:</p>
+<ol>
+<li>Ve a <strong>⚙️ Ajustes</strong> → <strong>"📥 Gestión de Mods"</strong></li>
+<li>En <strong>"Versión activa"</strong>, selecciona <code>OptiScaler_0.7.9</code> del dropdown</li>
+<li>Haz clic en <strong>"✓ APLICAR"</strong> en los juegos que desees revertir</li>
+</ol>
+<hr />
+<h2 id="solucion-de-problemas">🔧 Solución de Problemas</h2>
+<h3 id="problema-no-se-pudo-obtener-releases-de-github">Problema: "No se pudo obtener releases de GitHub"</h3>
+<p><strong>Causas posibles</strong>:
+- Sin conexión a internet
+- GitHub API temporalmente inaccesible
+- Firewall bloqueando acceso a <code>api.github.com</code></p>
+<p><strong>Solución</strong>:
+1. Verifica tu conexión a internet
+2. Intenta de nuevo en 5 minutos
+3. Si persiste, descarga manualmente desde: https://github.com/optiscaler/OptiScaler/releases</p>
+<hr />
+<h3 id="problema-error-al-extraer-archivo-7z">Problema: "Error al extraer archivo .7z"</h3>
+<p><strong>Causas posibles</strong>:
+- <code>7z.exe</code> no encontrado en <code>mod_source/</code>
+- Archivo <code>.7z</code> corrupto (descarga interrumpida)</p>
+<p><strong>Solución</strong>:
+1. Verifica que existe <code>Config Optiscaler Gestor/mod_source/7z.exe</code>
+2. Elimina archivo temporal <code>_download_*.7z</code>
+3. Intenta de nuevo</p>
+<hr />
+<h3 id="problema-badge-muestra-actualizacion-disponible-pero-ya-actualice">Problema: Badge muestra "⚠️ Actualización disponible" pero ya actualicé</h3>
+<p><strong>Causa</strong>: El <code>version.json</code> del juego no se actualizó</p>
+<p><strong>Solución</strong>:
+1. Ve al juego en panel <strong>🎮 Detección Automática</strong>
+2. Haz clic en <strong>"Quitar"</strong>
+3. Luego <strong>"✓ APLICAR"</strong> de nuevo
+4. Esto recreará el <code>version.json</code> con versión correcta</p>
+<hr />
+<h2 id="testing-del-sistema">🎯 Testing del Sistema</h2>
+<h3 id="para-desarrolladores">Para Desarrolladores</h3>
+<p>Se incluyen dos scripts de prueba:</p>
+<h4 id="1-test_updaterpy-seguro-no-modifica-archivos">1. <code>test_updater.py</code> (Seguro - NO modifica archivos)</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">.\.</span><span class="n">venv312</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">python</span><span class="p">.</span><span class="n">exe</span> <span class="n">test_updater</span><span class="p">.</span><span class="n">py</span>
+</code></pre></div>
+<p><strong>Verifica</strong>:
+- ✅ Conexión a GitHub API
+- ✅ Detección de versión instalada
+- ✅ Comparación de versiones
+- ✅ URLs de descarga válidas</p>
+<h4 id="2-test_updater_realpy-actualizacion-real-con-confirmacion">2. <code>test_updater_real.py</code> (Actualización real con confirmación)</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">.\.</span><span class="n">venv312</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">python</span><span class="p">.</span><span class="n">exe</span> <span class="n">test_updater_real</span><span class="p">.</span><span class="n">py</span>
+</code></pre></div>
+<p><strong>Ejecuta</strong>:
+- ⚠️ Descarga real desde GitHub
+- ⚠️ Extracción de archivos
+- ⚠️ Actualización de <code>mod_source/</code>
+- ✅ Pide confirmación antes de proceder</p>
+<hr />
+<h2 id="metricas-de-rendimiento">📊 Métricas de Rendimiento</h2>
+<table>
+<thead>
+<tr>
+<th>Operación</th>
+<th>Tiempo Promedio</th>
+<th>Nota</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chequeo GitHub</td>
+<td>2-5 segundos</td>
+<td>Depende de latencia</td>
+</tr>
+<tr>
+<td>Descarga .7z (30MB)</td>
+<td>30-90 segundos</td>
+<td>Depende de velocidad de internet</td>
+</tr>
+<tr>
+<td>Extracción</td>
+<td>10-20 segundos</td>
+<td>Archivo .7z comprimido</td>
+</tr>
+<tr>
+<td>Actualización por juego</td>
+<td>2-5 segundos</td>
+<td>Copia de ~8 archivos</td>
+</tr>
+<tr>
+<td><strong>Total (3 juegos)</strong></td>
+<td><strong>1-2 minutos</strong></td>
+<td>Vs 5-10 minutos manual</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ahorro de tiempo</strong>: ~70% comparado con actualización manual</p>
+<hr />
+<h2 id="roadmap-futuro">🔮 Roadmap Futuro</h2>
+<p>Mejoras planificadas para futuras versiones:</p>
+<ul>
+<li>[ ] <strong>Rollback automático</strong> si falla actualización de juegos</li>
+<li>[ ] <strong>Hash verification</strong> de archivos descargados (SHA256)</li>
+<li>[ ] <strong>Delta updates</strong> (solo archivos modificados)</li>
+<li>[ ] <strong>Changelog modal</strong> mostrando notas de release antes de actualizar</li>
+<li>[ ] <strong>Programación de chequeos</strong> (diario, semanal, manual)</li>
+<li>[ ] <strong>Notificaciones de escritorio</strong> Windows cuando hay updates</li>
+</ul>
+<hr />
+<h2 id="soporte">📞 Soporte</h2>
+<ul>
+<li><strong>GitHub Issues</strong>: https://github.com/Bigflood92/OptiScaler-Manager/issues</li>
+<li><strong>Documentación</strong>: <code>docs/development/v2.3.0-plan.md</code></li>
+<li><strong>Logs</strong>: <code>gestor_optiscaler_log.txt</code></li>
+</ul>
+<hr />
+<p><strong>Última revisión</strong>: 13 de Noviembre de 2025<br />
+<strong>Autor</strong>: Jorge + GitHub Copilot<br />
+<strong>Versión del documento</strong>: 1.0</p>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 18, 2025 07:57:54 UTC">November 18, 2025</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Created">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 18, 2025 07:57:54 UTC">November 18, 2025</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/Bigflood92" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/Bigflood92/OptiScaler-Manager/releases" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M256 32c0-17.7-14.3-32-32-32s-32 14.3-32 32v210.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 242.7zM64 320c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64v-32c0-35.3-28.7-64-64-64h-46.9l-56.6 56.6c-31.2 31.2-81.9 31.2-113.1 0L110.9 320zm304 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>
