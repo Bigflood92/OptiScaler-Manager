@@ -22,7 +22,35 @@ else:
     BASE_DIR = Path(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 # Application configuration directory (next to exe)
-APP_DIR = BASE_DIR / "Config Optiscaler Gestor"
+# By default we place the config next to the executable for portable installs.
+# However, when the exe is installed into a protected location (Program Files)
+# writing will fail. Detect writability and fall back to the per-user AppData
+# folder when necessary.
+default_app_dir = BASE_DIR / "Config Optiscaler Gestor"
+
+def _writable_dir(path: Path) -> bool:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        test_file = path / ".write_test"
+        with open(test_file, 'w', encoding='utf-8') as f:
+            f.write('ok')
+        test_file.unlink()
+        return True
+    except Exception:
+        return False
+
+if _writable_dir(default_app_dir):
+    APP_DIR = default_app_dir
+else:
+    # Fallback to %APPDATA% on Windows or ~/.config on other OS
+    if sys.platform.startswith('win'):
+        appdata = os.getenv('APPDATA') or str(Path.home() / 'AppData' / 'Roaming')
+        APP_DIR = Path(appdata) / 'OptiScalerGestor'
+    else:
+        APP_DIR = Path(os.getenv('XDG_CONFIG_HOME') or Path.home() / '.config') / 'OptiScalerGestor'
+
+# Ensure APP_DIR exists
+APP_DIR.mkdir(parents=True, exist_ok=True)
 
 # Configuration and cache files
 CONFIG_FILE = APP_DIR / "injector_config.json"

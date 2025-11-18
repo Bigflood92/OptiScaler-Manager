@@ -7,6 +7,30 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [2.4.2] - 2025-11-18
+
+### Corregido
+- **🖼️ Íconos en Ejecutables**: Mejorado sistema de detección de rutas para iconos en PyInstaller y Nuitka
+  - Múltiples fallbacks para encontrar carpeta `icons` en diferentes entornos
+  - Logs diagnósticos para debugging de rutas de iconos en ejecutables
+- **📝 Tutorial de Bienvenida**: Arreglado problema de persistencia del checkbox "No volver a mostrar"
+  - Solucionado archivo `injector_config.json` corrupto que causaba errores JSON
+  - Configuración ahora persiste correctamente entre sesiones
+- **🎮 Gamepad Navigation**: Resuelto error "video system not initialized" en ejecutables
+  - Inicialización más segura del subsistema joystick
+  - Fallback automático a display oculto cuando es necesario
+  - Manejo robusto de errores de inicialización pygame
+- **📁 Directorio de Configuración**: Implementado sistema de ubicaciones escribibles
+  - Detecta automáticamente si directorio junto al exe es escribible
+  - Fallback a `%APPDATA%/OptiScalerGestor` en ubicaciones protegidas (Program Files)
+  - Garantiza persistencia de configuración en todas las instalaciones
+- **⬇️ Interfaz**: Corregido ícono de descarga en ventana de OptiScaler (de ⬆️ a ⬇️)
+
+### Mejorado
+- **🔍 Diagnósticos**: Logs mejorados para debugging en ejecutables compilados
+- **💾 Robustez**: Manejo más seguro de archivos de configuración corruptos
+- **⚙️ Inicialización**: Proceso de arranque más estable para todos los subsistemas
+
 ## [2.4.1] - 2025-01-17
 
 ### Corregido

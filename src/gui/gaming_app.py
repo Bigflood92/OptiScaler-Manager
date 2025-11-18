@@ -310,6 +310,17 @@ class GamingApp(ctk.CTk):
             else:
                 # Ejecutando como script Python
                 icons_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "icons")
+
+            # Diagnostic: log resolved icons_dir and contents (helps debugging in exe)
+            try:
+                self.log('INFO', f"IconManager: buscando iconos en: {icons_dir}")
+                if os.path.exists(icons_dir):
+                    files = os.listdir(icons_dir)
+                    self.log('INFO', f"IconManager: encontrados {len(files)} archivos en {icons_dir}")
+                else:
+                    self.log('INFO', f"IconManager: folder {icons_dir} no existe")
+            except Exception as e:
+                self.log('DEBUG', f"IconManager diagnostico fallo: {e}")
             
             icon_files = {
                 "scan": "rescan.png",
@@ -389,10 +400,19 @@ class GamingApp(ctk.CTk):
     def init_gamepad(self):
         """Inicializa pygame y comienza monitoreo de gamepad."""
         try:
-            pygame.init()
-            pygame.joystick.init()
-            self.log('INFO', "Sistema de gamepad inicializado")
-            
+            # Prefer initializing only the joystick subsystem first to avoid
+            # video subsystem errors in frozen executables. Some builds
+            # raise "video system not initialized" when calling
+            # event.pump() if display isn't initialized. We'll try a
+            # minimal safe approach and fall back to initializing a hidden
+            # display if necessary.
+            try:
+                pygame.joystick.init()
+                self.log('INFO', "Sistema de gamepad (joystick) inicializado")
+            except Exception as e:
+                self.log('WARNING', f"No se pudo inicializar joystick por separado: {e}; intentando pygame.init() entero")
+                pygame.init()
+
             # Iniciar thread de monitoreo
             self.gamepad_running = True
             self.gamepad_thread = threading.Thread(target=self.monitor_gamepad, daemon=True)
@@ -406,7 +426,34 @@ class GamingApp(ctk.CTk):
         
         while self.gamepad_running:
             try:
-                pygame.event.pump()  # Actualizar eventos de pygame
+                # Pump events if possible. Wrap because some builds complain
+                # if video subsystem is not initialized.
+                try:
+                    pygame.event.pump()
+                except Exception as e_event:
+                    msg = str(e_event)
+                    if 'video system not initialized' in msg.lower() or 'video system' in msg.lower():
+                        # Attempt to initialize a tiny hidden display to satisfy pygame
+                        try:
+                            self.log('WARNING', 'Gamepad: video system not initialized, intentando inicializar display oculto...')
+                            import os
+                            if sys.platform.startswith('win'):
+                                os.environ.setdefault('SDL_VIDEODRIVER', 'windib')
+                            pygame.display.init()
+                            try:
+                                pygame.display.set_mode((1, 1), pygame.HIDDEN)
+                            except Exception:
+                                try:
+                                    pygame.display.set_mode((1, 1))
+                                except Exception:
+                                    pass
+                            self.log('INFO', 'Gamepad: display inicializado, reintentando event.pump()')
+                            pygame.event.pump()
+                        except Exception as e_disp:
+                            self.log('ERROR', f'Error inicializando display para gamepad: {e_disp}')
+                    else:
+                        raise
+
                 current_count = pygame.joystick.get_count()
                 
                 # Detectar cambios en conexión
@@ -6810,7 +6857,7 @@ class DownloadWindow(ctk.CTkToplevel):
         header.pack(fill="x", padx=10, pady=10)
         header.pack_propagate(False)
         
-        icons = {"optiscaler": "⬆️", "nukem": "🎮"}
+        icons = {"optiscaler": "⬇️", "nukem": "🎮"}
         names = {"optiscaler": "OptiScaler", "nukem": "dlssg-to-fsr3"}
         
         ctk.CTkLabel(

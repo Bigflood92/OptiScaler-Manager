@@ -81,17 +81,42 @@ class IconManager:
     
     def _get_default_icons_dir(self):
         """Obtiene la ruta por defecto de la carpeta de iconos."""
-        # Detectar si estamos en un ejecutable compilado con PyInstaller
-        if getattr(sys, 'frozen', False):
-            # Estamos ejecutando en un .exe compilado
-            base_path = Path(sys._MEIPASS)
-            return base_path / "icons"
-        else:
-            # Estamos ejecutando como script Python
-            # Asume estructura: src/gui/icon_manager.py -> ../../icons/
+        # Detectar si estamos en un ejecutable compilado.
+        # PyInstaller uses sys._MEIPASS. Nuitka onefile may extract data next to the
+        # executable directory. Try multiple likely locations and fall back to
+        # the project `icons/` when running from source.
+        possible = []
+        try:
+            if getattr(sys, 'frozen', False):
+                # PyInstaller
+                if hasattr(sys, '_MEIPASS'):
+                    possible.append(Path(sys._MEIPASS) / "icons")
+                # Nuitka onefile (extracted next to the executable in many setups)
+                try:
+                    possible.append(Path(os.path.dirname(sys.executable)) / "icons")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # When running as script, assume project-root/icons
+        try:
             current_file = Path(__file__).resolve()
             project_root = current_file.parent.parent.parent
-            return project_root / "icons"
+            possible.append(project_root / "icons")
+        except Exception:
+            pass
+
+        # Return the first existing candidates, otherwise default to the first candidate
+        for p in possible:
+            try:
+                if p.exists():
+                    return p
+            except Exception:
+                pass
+
+        # If nothing exists, return the first candidate (useful for diagnostic logs)
+        return possible[0] if possible else Path("icons")
     
     def _load_custom_icons(self):
         """Carga iconos personalizados desde la carpeta icons/."""
